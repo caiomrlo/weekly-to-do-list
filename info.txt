@@ -1,0 +1,84 @@
+==============================================================================
+GUIA RÁPIDO: DOCKER, BANCO DE DADOS E DRIZZLE ORM
+==============================================================================
+
+1. INFORMAÇÕES DO BANCO DE DADOS
+------------------------------------------------------------------------------
+* Banco de Dados: weekly_todo_db
+* Usuário padrão: appuser
+* Senha padrão:   apppass
+* Porta do Postgres (Host): 5432
+* Nome da Tabela: todos (definida em src/db/schema.ts)
+
+IMPORTANTE: Ao iniciar o Docker pela primeira vez, o container cria o banco de 
+dados vazio. A tabela 'todos' NÃO é criada automaticamente até que você execute 
+o comando de migração/push do Drizzle.
+
+
+2. EXECUTANDO O DOCKER EM DESENVOLVIMENTO
+------------------------------------------------------------------------------
+Execute os comandos diretamente no terminal na raiz do projeto:
+
+* Modo Recomendado (com sincronização em tempo real / Fast Refresh):
+  docker compose up --watch --build
+  (ou apenas 'docker compose watch' se os containers já estiverem criados)
+
+* Modo Padrão (em segundo plano):
+  docker compose up -d --build
+
+* Ver logs da aplicação em tempo real:
+  docker compose logs -f app
+
+* Parar os containers:
+  docker compose down
+
+
+3. SINCRONIZAÇÃO E MIGRAÇÕES DO BANCO (DRIZZLE ORM)
+------------------------------------------------------------------------------
+* FLUXO FORMAL DE MIGRAÇÃO (Padrão da Indústria / Versionável com Git):
+  1. Gerar os arquivos SQL de migração na pasta /drizzle:
+     npm run db:generate
+     (ou via Docker: docker compose exec app npm run db:generate)
+
+  2. Aplicar as migrações geradas no banco de dados:
+     npm run db:migrate
+     (ou via Docker: docker compose exec app npm run db:migrate)
+
+* FLUXO DE PROTOTIPAGEM RÁPIDA (db:push):
+  Aplica as mudanças do schema diretamente no banco sem criar arquivos .sql:
+  npm run db:push
+  (ou via Docker: docker compose exec app npm run db:push)
+
+BOAS PRÁTICAS:
+- A pasta 'drizzle/' (arquivos .sql e meta/) DEVE ser incluída nos commits do Git.
+- Para novas alterações em tabelas: edite src/db/schema.ts -> gere novo SQL com 
+  'db:generate' -> aplique com 'db:migrate'. Nunca edite migrations antigas já aplicadas.
+
+
+4. VISUALIZANDO O BANCO DE DADOS (DRIZZLE STUDIO)
+------------------------------------------------------------------------------
+Com o Docker rodando, abra um terminal local no seu computador e execute:
+  npm run db:studio
+
+Ele abrirá o navegador em: https://local.drizzle.studio
+
+DICA / SOLUÇÃO CASO FIQUE SÓ CARREGANDO NO NAVEGADOR:
+Os navegadores modernos bloqueiam por padrão requisições HTTPS para localhost.
+Para liberar:
+1. Na barra de endereço do navegador em 'local.drizzle.studio', clique no ícone de ajustes ao lado do cadeado.
+2. Ative as duas opções:
+   - [x] Rede local
+   - [x] Apps no dispositivo
+3. Recarregue a página (F5).
+
+
+5. COMO AUTOMATIZAR A MIGRAÇÃO AO INICIAR O DOCKER
+------------------------------------------------------------------------------
+Para que as tabelas sejam criadas/atualizadas automaticamente sempre que o container
+da aplicação iniciar, adicione a instrução 'command' no serviço 'app' dentro do compose.yaml:
+
+  services:
+    app:
+      ...
+      command: sh -c "npx drizzle-kit migrate && npm run dev"
+==============================================================================

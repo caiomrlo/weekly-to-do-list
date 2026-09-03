@@ -1,0 +1,60 @@
+services:
+  app:
+    container_name: weekly-app
+    image: weekly-app:dev
+    build:
+      context: .
+      # Use Dockerfile.dev for live development or Dockerfile for production builds
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-appuser}:${POSTGRES_PASSWORD:-apppass}@db:5432/${POSTGRES_DB:-weekly_todo_db}
+      NODE_ENV: development
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    develop:
+      watch:
+        # Fast Refresh synchronization of source code without container rebuild
+        - action: sync
+          path: ./src
+          target: /app/src
+        - action: sync
+          path: ./public
+          target: /app/public
+        - action: sync
+          path: ./drizzle
+          target: /app/drizzle
+        # Rebuild container automatically when dependencies are updated
+        - action: rebuild
+          path: ./package.json
+
+  db:
+    container_name: weekly-db
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apppass}
+      POSTGRES_DB: ${POSTGRES_DB:-weekly_todo_db}
+    ports:
+      # Exposes port 5432 to host for GUI tools / local development tools
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  pgdata:

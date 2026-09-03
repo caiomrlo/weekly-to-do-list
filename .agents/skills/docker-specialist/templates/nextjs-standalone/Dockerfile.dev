@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1
+# Next.js Development Dockerfile (Fast Refresh & Live Reload)
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install compatibility libraries for native packages (e.g. sharp, turbo)
+RUN apk add --no-cache libc6-compat
+
+# Install dependencies including devDependencies with persistent cache mount
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
+
+# Copy source code (used as fallback; overridden by compose watch / bind mount)
+COPY . .
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV NODE_ENV=development
+
+# Optional: Enable polling if file system events fail on Windows hosts
+# ENV WATCHPACK_POLLING=true
+
+EXPOSE 3000
+
+# Start development server with Turbopack (or npm run dev)
+CMD ["npm", "run", "dev"]

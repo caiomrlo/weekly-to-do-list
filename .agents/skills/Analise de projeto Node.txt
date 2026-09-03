@@ -1,0 +1,10 @@
+Analise o meu projeto e verifique como podemos melhorar a arquitetura do projeto. Quero que realize uma refatoração e organização das pastas dentro de src. Verifique qual a melhor arquitetura a utilizar. Não torne mais complicado, seu objetivo é melhor organização para futuras atualizações e manutenção do codigo.
+
+Verifique se compensa utilizar "components".
+
+Utilize as melhores tecnicas, mas de forma cauteloza e que não quebre a aplicação. Não faça alterações de design.
+
+Analise 
+
+package.json
+para entender a Stack.
