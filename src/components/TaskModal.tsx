@@ -6,10 +6,15 @@ import { updateTaskAction, deleteTaskAction } from "@/app/actions/tasks";
 import { getUserTagsAction, createTagAction } from "@/app/actions/tags";
 import { TAG_COLORS, getTagColorStyles } from "@/lib/tag-utils";
 import {
+  formatDuration,
+  parseNaturalDuration,
+} from "@/lib/date-utils";
+import {
   X,
   Trash2,
   Calendar,
   Clock,
+  Timer,
   CheckCircle2,
   Circle,
   Loader2,
@@ -45,6 +50,10 @@ function TaskModalDialog({
   const [content, setContent] = useState(task.content || "");
   const [date, setDate] = useState(task.date);
   const [time, setTime] = useState(task.time || "");
+  const [duration, setDuration] = useState<number | null>(task.duration ?? null);
+  const [durationText, setDurationText] = useState<string>(
+    task.duration ? formatDuration(task.duration) : ""
+  );
   const [completed, setCompleted] = useState(task.completed);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(task.tag || null);
 
@@ -126,6 +135,7 @@ function TaskModalDialog({
     content?: string;
     date?: string;
     time?: string | null;
+    duration?: number | null;
     tagId?: string | null;
   }) => {
     if (debounceTimerRef.current) {
@@ -166,6 +176,41 @@ function TaskModalDialog({
   const handleTimeChange = (val: string) => {
     setTime(val);
     triggerAutoSave({ time: val || null });
+  };
+
+  const handleDurationInputChange = (val: string) => {
+    setDurationText(val);
+    const parsed = parseNaturalDuration(val);
+    if (val.trim() === "") {
+      setDuration(null);
+      triggerAutoSave({ duration: null });
+    } else if (parsed !== null) {
+      setDuration(parsed);
+      triggerAutoSave({ duration: parsed });
+    }
+  };
+
+  const handleDurationBlur = () => {
+    if (duration) {
+      setDurationText(formatDuration(duration));
+    } else if (durationText.trim() !== "") {
+      const parsed = parseNaturalDuration(durationText);
+      if (parsed) {
+        setDuration(parsed);
+        setDurationText(formatDuration(parsed));
+        triggerAutoSave({ duration: parsed });
+      } else {
+        setDurationText("");
+        setDuration(null);
+        triggerAutoSave({ duration: null });
+      }
+    }
+  };
+
+  const handleClearDuration = () => {
+    setDurationText("");
+    setDuration(null);
+    triggerAutoSave({ duration: null });
   };
 
   const handleSelectTag = (tag: Tag | null) => {
@@ -308,8 +353,8 @@ function TaskModalDialog({
 
           {/* Date, Time & Tag Selectors */}
           <div className="space-y-3 p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/60">
-            {/* Grid for Date & Time */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Grid for Date, Time & Duration */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Date Picker */}
               <div>
                 <label className="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1.5">
@@ -336,6 +381,53 @@ function TaskModalDialog({
                   onChange={(e) => handleTimeChange(e.target.value)}
                   className="w-full text-sm bg-white/80 border border-slate-200/80 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
+              </div>
+
+              {/* Duration Picker (Smart Natural Language Input) */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Timer className="w-3.5 h-3.5 text-amber-500" />
+                    Duração
+                  </span>
+                  {duration ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/60 shadow-2xs">
+                        {formatDuration(duration)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleClearDuration}
+                        className="text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
+                        title="Limpar duração"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-normal">Opcional</span>
+                  )}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={durationText}
+                    onChange={(e) => handleDurationInputChange(e.target.value)}
+                    onBlur={handleDurationBlur}
+                    placeholder="Ex: 30m, 1h, 1h30..."
+                    className="w-full text-sm bg-white/80 border border-slate-200/80 rounded-xl pl-3 pr-7 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  />
+                  {durationText && (
+                    <button
+                      type="button"
+                      onClick={handleClearDuration}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 p-0.5 rounded transition-colors cursor-pointer"
+                      title="Limpar"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 

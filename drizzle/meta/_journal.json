@@ -15,6 +15,13 @@
       "when": 1788481480827,
       "tag": "0001_green_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788547431076,
+      "tag": "0002_panoramic_gideon",
+      "breakpoints": true
     }
   ]
 }

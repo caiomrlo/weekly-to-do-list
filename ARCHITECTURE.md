@@ -154,6 +154,7 @@ flowchart TD
   - `content` (`text`, Default `""`, Not Null)
   - `date` (`date`, Format `'YYYY-MM-DD'`, Not Null) — *Guarantees total immunity against client/server timezone offsets.*
   - `time` (`varchar(5)`, Format `'HH:mm'`, Nullable)
+  - `duration` (`integer`, Estimated duration in total minutes, Nullable)
   - `completed` (`boolean`, Default `false`, Not Null)
   - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
   - `updated_at` (`timestamp with time zone`, `defaultNow()`, Not Null)

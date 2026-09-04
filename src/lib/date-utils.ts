@@ -151,3 +151,156 @@ export function formatMonthYear(monday: Date): string {
 
   return `${startMonth}, ${startYear}`;
 }
+
+/**
+ * Formata a duração em minutos de forma simplificada e legível.
+ * Exemplos:
+ *  - 60 -> "1h"
+ *  - 120 -> "2h"
+ *  - 30 -> "30min"
+ *  - 90 -> "1h 30min"
+ *  - 75 -> "1h 15min"
+ */
+export function formatDuration(minutes: number | null | undefined): string {
+  if (minutes === null || minutes === undefined || minutes <= 0) {
+    return "";
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  if (hours > 0 && mins === 0) {
+    return `${hours}h`;
+  }
+
+  if (hours === 0 && mins > 0) {
+    return `${mins}min`;
+  }
+
+  return `${hours}h ${mins}min`;
+}
+
+/**
+ * Converte minutos inteiros para string no formato "HH:mm" (usado por inputs de hora).
+ * Exemplos:
+ *  - 60 -> "01:00"
+ *  - 30 -> "00:30"
+ *  - 90 -> "01:30"
+ */
+export function minutesToTimeString(minutes: number | null | undefined): string {
+  if (minutes === null || minutes === undefined || minutes <= 0) {
+    return "";
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+/**
+ * Converte string no formato "HH:mm" ou "H:mm" para minutos inteiros.
+ * Exemplos:
+ *  - "01:00" ou "1:00" -> 60
+ *  - "00:30" ou "0:30" -> 30
+ *  - "01:30" ou "1:30" -> 90
+ */
+export function timeStringToMinutes(timeStr: string | null | undefined): number | null {
+  if (!timeStr || typeof timeStr !== "string") {
+    return null;
+  }
+
+  const trimmed = timeStr.trim();
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  const hours = parseInt(match[1], 10);
+  const mins = parseInt(match[2], 10);
+
+  if (isNaN(hours) || isNaN(mins) || mins < 0 || mins > 59 || hours < 0) {
+    return null;
+  }
+
+  const total = hours * 60 + mins;
+  return total > 0 ? total : null;
+}
+
+/**
+ * Converte entradas em linguagem natural ou abreviada para minutos inteiros.
+ * Exemplos aceitos:
+ *  - "30", "30m", "30min", "30 minutos" -> 30
+ *  - "1h", "1 h", "1 hora", "1hr" -> 60
+ *  - "1:30", "1h30", "1h 30m", "1h 30min", "1.5h", "1,5h" -> 90
+ *  - "2h", "2:00", "2 hrs" -> 120
+ *  - "2h15", "2h 15m" -> 135
+ *  - "" ou inválido -> null
+ */
+export function parseNaturalDuration(input: string | null | undefined): number | null {
+  if (!input || typeof input !== "string") return null;
+  const str = input.trim().toLowerCase().replace(/,/g, ".");
+  if (!str) return null;
+
+  // Formato "1:30", "0:45", "2:00", "01:30"
+  const colonMatch = str.match(/^(\d{1,2}):(\d{1,2})$/);
+  if (colonMatch) {
+    const h = parseInt(colonMatch[1], 10);
+    const m = parseInt(colonMatch[2], 10);
+    if (!isNaN(h) && !isNaN(m) && m < 60) {
+      const total = h * 60 + m;
+      return total > 0 ? total : null;
+    }
+  }
+
+  // Formato decimal de horas: "1.5h", "0.5h", "2.5h", "1.5 horas"
+  const decimalHourMatch = str.match(/^(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hora|horas)$/);
+  if (decimalHourMatch) {
+    const hours = parseFloat(decimalHourMatch[1]);
+    if (!isNaN(hours) && hours > 0) {
+      return Math.round(hours * 60);
+    }
+  }
+
+  // Formato composto: "1h30", "1h 30m", "1h 30min", "2h 15min"
+  const combinedMatch = str.match(
+    /^(\d+)\s*(?:h|hr|hrs|hora|horas)\s*(\d+)?\s*(?:m|min|mins|minuto|minutos)?$/
+  );
+  if (combinedMatch) {
+    const h = parseInt(combinedMatch[1], 10);
+    const m = combinedMatch[2] ? parseInt(combinedMatch[2], 10) : 0;
+    if (!isNaN(h) && !isNaN(m)) {
+      const total = h * 60 + m;
+      return total > 0 ? total : null;
+    }
+  }
+
+  // Formato apenas minutos: "30m", "30min", "45 mins", "15 minutos"
+  const minutesOnlyMatch = str.match(/^(\d+)\s*(?:m|min|mins|minuto|minutos)$/);
+  if (minutesOnlyMatch) {
+    const m = parseInt(minutesOnlyMatch[1], 10);
+    return !isNaN(m) && m > 0 ? m : null;
+  }
+
+  // Apenas números puros sem unidade
+  const pureNumMatch = str.match(/^(\d+(?:\.\d+)?)$/);
+  if (pureNumMatch) {
+    const val = parseFloat(pureNumMatch[1]);
+    if (!isNaN(val) && val > 0) {
+      if (str.includes(".")) {
+        // Ex: "1.5" -> 90 min, "0.5" -> 30 min
+        return Math.round(val * 60);
+      }
+      if (val <= 12) {
+        // Ex: "1" -> 60 min (1h), "2" -> 120 min (2h)
+        return Math.round(val * 60);
+      }
+      // Ex: "15", "30", "45", "90" -> minutos
+      return Math.round(val);
+    }
+  }
+
+  return null;
+}
+
+

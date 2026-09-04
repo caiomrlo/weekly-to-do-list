@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, date } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -29,6 +29,7 @@ export const tasks = pgTable("tasks", {
   content: text("content").default("").notNull(),
   date: date("date").notNull(), // Formato 'YYYY-MM-DD' - imune a timezone
   time: varchar("time", { length: 5 }), // Formato opcional 'HH:mm'
+  duration: integer("duration"), // Duração estimada em minutos (ex: 30, 60, 90)
   completed: boolean("completed").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

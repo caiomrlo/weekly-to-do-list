@@ -7,6 +7,7 @@ import {
   getWeekDays,
   formatMonthYear,
   toDateString,
+  formatDuration,
 } from "@/lib/date-utils";
 import {
   getWeekTasksAction,
@@ -22,6 +23,7 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  Timer,
   Plus,
   LogOut,
   CalendarDays,
@@ -132,6 +134,7 @@ export function WeeklyBoard({
       content: "",
       date: dateStr,
       time: null,
+      duration: null,
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -349,8 +352,8 @@ export function WeeklyBoard({
                             {t.title}
                           </p>
 
-                          {/* Tag & Time Badges row */}
-                          {(t.tag || t.time) && (
+                          {/* Tag, Time & Duration Badges row */}
+                          {(t.tag || t.time || (t.duration && t.duration > 0)) && (
                             <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                               {/* Tag badge */}
                               {t.tag && tagStyles && (
@@ -379,6 +382,21 @@ export function WeeklyBoard({
                                   {t.time}
                                 </span>
                               )}
+
+                              {/* Duration badge */}
+                              {t.duration && t.duration > 0 ? (
+                                <span
+                                  className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${
+                                    t.completed
+                                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                                      : "bg-amber-50/90 text-amber-700 border-amber-200/60"
+                                  }`}
+                                  title={`Duração estimada: ${formatDuration(t.duration)}`}
+                                >
+                                  <Timer className={`w-2.5 h-2.5 ${t.completed ? "text-slate-400" : "text-amber-500"}`} />
+                                  {formatDuration(t.duration)}
+                                </span>
+                              ) : null}
                             </div>
                           )}
                         </div>

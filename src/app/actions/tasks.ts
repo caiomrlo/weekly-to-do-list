@@ -48,6 +48,7 @@ export async function createTaskAction(data: {
   title: string;
   date: string;
   time?: string;
+  duration?: number | null;
   tagId?: string | null;
 }): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
@@ -70,6 +71,7 @@ export async function createTaskAction(data: {
         title,
         date: data.date,
         time: data.time?.trim() || null,
+        duration: data.duration ?? null,
         content: "",
         completed: false,
         createdAt: now,
@@ -132,6 +134,7 @@ export async function updateTaskAction(
     content?: string;
     date?: string;
     time?: string | null;
+    duration?: number | null;
     tagId?: string | null;
   }
 ): Promise<{ task?: TaskWithTag; error?: string }> {
@@ -149,6 +152,7 @@ export async function updateTaskAction(
     if (data.content !== undefined) updateValues.content = data.content;
     if (data.date !== undefined) updateValues.date = data.date;
     if (data.time !== undefined) updateValues.time = data.time ? data.time.trim() : null;
+    if (data.duration !== undefined) updateValues.duration = data.duration && data.duration > 0 ? data.duration : null;
     if (data.tagId !== undefined) updateValues.tagId = data.tagId ? data.tagId : null;
 
     await db
