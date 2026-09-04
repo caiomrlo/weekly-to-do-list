@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
-import { Task } from "@/db/schema";
+import { TaskWithTag } from "@/db/schema";
 import {
   getMondayOfWeek,
   getWeekDays,
@@ -14,6 +14,7 @@ import {
   toggleTaskStatusAction,
 } from "@/app/actions/tasks";
 import { logoutAction } from "@/app/actions/auth";
+import { getTagColorStyles } from "@/lib/tag-utils";
 import { TaskModal } from "./TaskModal";
 import {
   ChevronLeft,
@@ -27,7 +28,7 @@ import {
 } from "lucide-react";
 
 interface WeeklyBoardProps {
-  initialTasks: Task[];
+  initialTasks: TaskWithTag[];
   userEmail: string;
   initialMondayStr: string; // 'YYYY-MM-DD'
 }
@@ -43,8 +44,8 @@ export function WeeklyBoard({
     return new Date(y, m - 1, d);
   });
 
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [tasks, setTasks] = useState<TaskWithTag[]>(initialTasks);
+  const [selectedTask, setSelectedTask] = useState<TaskWithTag | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // New task inline input state per day: { [dateStr]: string }
@@ -98,7 +99,7 @@ export function WeeklyBoard({
 
   // Group tasks by day ('YYYY-MM-DD')
   const tasksByDay = useMemo(() => {
-    const map: Record<string, Task[]> = {};
+    const map: Record<string, TaskWithTag[]> = {};
     weekDays.forEach((day) => {
       map[day.dateStr] = [];
     });
@@ -122,9 +123,11 @@ export function WeeklyBoard({
 
     // Optimistic temporary task
     const tempId = `temp-${crypto.randomUUID()}`;
-    const optimisticTask: Task = {
+    const optimisticTask: TaskWithTag = {
       id: tempId,
       userId: "",
+      tagId: null,
+      tag: null,
       title,
       content: "",
       date: dateStr,
@@ -150,7 +153,7 @@ export function WeeklyBoard({
   // Toggle completed status (maintaining order as decided)
   const handleToggleCompleted = async (
     e: React.MouseEvent,
-    taskToToggle: Task
+    taskToToggle: TaskWithTag
   ) => {
     e.stopPropagation();
     const newCompleted = !taskToToggle.completed;
@@ -170,13 +173,13 @@ export function WeeklyBoard({
   };
 
   // Open modal
-  const handleOpenTask = (task: Task) => {
+  const handleOpenTask = (task: TaskWithTag) => {
     setSelectedTask(task);
     setIsModalOpen(true);
   };
 
   // Modal updates
-  const handleTaskUpdated = (updatedTask: Task) => {
+  const handleTaskUpdated = (updatedTask: TaskWithTag) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
     );
@@ -308,51 +311,80 @@ export function WeeklyBoard({
 
                 {/* Tasks List for the Day */}
                 <div className="flex-1 space-y-2 overflow-y-auto max-h-[560px] pr-0.5">
-                  {dayTasks.map((t) => (
-                    <div
-                      key={t.id}
-                      onClick={() => handleOpenTask(t)}
-                      className={`group relative flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                        t.completed
-                          ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
-                          : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <button
-                        type="button"
-                        onClick={(e) => handleToggleCompleted(e, t)}
-                        className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
+                  {dayTasks.map((t) => {
+                    const tagStyles = t.tag ? getTagColorStyles(t.tag.color) : null;
+
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => handleOpenTask(t)}
+                        className={`group relative flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                          t.completed
+                            ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
+                            : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
+                        }`}
                       >
-                        {t.completed ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        ) : (
-                          <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
-                        )}
-                      </button>
-
-                      {/* Title and details */}
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-xs font-medium leading-snug break-words ${
-                            t.completed
-                              ? "line-through text-slate-400"
-                              : "text-slate-700"
-                          }`}
+                        {/* Checkbox */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleCompleted(e, t)}
+                          className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
                         >
-                          {t.title}
-                        </p>
+                          {t.completed ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          ) : (
+                            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
+                          )}
+                        </button>
 
-                        {/* Time badge if present */}
-                        {t.time && (
-                          <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-slate-500 font-medium">
-                            <Clock className="w-2.5 h-2.5 text-indigo-400" />
-                            {t.time}
-                          </span>
-                        )}
+                        {/* Title and details */}
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`text-xs font-medium leading-snug break-words ${
+                              t.completed
+                                ? "line-through text-slate-400"
+                                : "text-slate-700"
+                            }`}
+                          >
+                            {t.title}
+                          </p>
+
+                          {/* Tag & Time Badges row */}
+                          {(t.tag || t.time) && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                              {/* Tag badge */}
+                              {t.tag && tagStyles && (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
+                                    t.completed
+                                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                                      : tagStyles.badgeClass
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      t.completed ? "bg-slate-400" : tagStyles.dotClass
+                                    }`}
+                                  />
+                                  <span className="truncate max-w-[110px]">
+                                    {t.tag.name}
+                                  </span>
+                                </span>
+                              )}
+
+                              {/* Time badge */}
+                              {t.time && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                                  <Clock className="w-2.5 h-2.5 text-indigo-400" />
+                                  {t.time}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Inline Quick Add Input immediately below the last task (or at start if 0 tasks) */}
                   <div className="pt-0.5">
@@ -408,3 +440,4 @@ export function WeeklyBoard({
     </div>
   );
 }
+

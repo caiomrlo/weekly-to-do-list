@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { tasks, Task } from "@/db/schema";
+import { tasks, tags, TaskWithTag } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { and, eq, gte, lte, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -9,16 +9,20 @@ import { revalidatePath } from "next/cache";
 export async function getWeekTasksAction(
   startDate: string,
   endDate: string
-): Promise<{ tasks?: Task[]; error?: string }> {
+): Promise<{ tasks?: TaskWithTag[]; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
     return { error: "Não autenticado." };
   }
 
   try {
-    const list = await db
-      .select()
+    const rows = await db
+      .select({
+        task: tasks,
+        tag: tags,
+      })
       .from(tasks)
+      .leftJoin(tags, eq(tasks.tagId, tags.id))
       .where(
         and(
           eq(tasks.userId, session.userId),
@@ -27,6 +31,11 @@ export async function getWeekTasksAction(
         )
       )
       .orderBy(asc(tasks.createdAt));
+
+    const list: TaskWithTag[] = rows.map((r) => ({
+      ...r.task,
+      tag: r.tag || null,
+    }));
 
     return { tasks: list };
   } catch (err: unknown) {
@@ -39,7 +48,8 @@ export async function createTaskAction(data: {
   title: string;
   date: string;
   time?: string;
-}): Promise<{ task?: Task; error?: string }> {
+  tagId?: string | null;
+}): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
     return { error: "Não autenticado." };
@@ -52,10 +62,11 @@ export async function createTaskAction(data: {
 
   try {
     const now = new Date();
-    const [newTask] = await db
+    const [inserted] = await db
       .insert(tasks)
       .values({
         userId: session.userId,
+        tagId: data.tagId || null,
         title,
         date: data.date,
         time: data.time?.trim() || null,
@@ -65,6 +76,20 @@ export async function createTaskAction(data: {
         updatedAt: now,
       })
       .returning();
+
+    let tagObj = null;
+    if (inserted.tagId) {
+      const [foundTag] = await db
+        .select()
+        .from(tags)
+        .where(eq(tags.id, inserted.tagId));
+      tagObj = foundTag || null;
+    }
+
+    const newTask: TaskWithTag = {
+      ...inserted,
+      tag: tagObj,
+    };
 
     revalidatePath("/");
     return { task: newTask };
@@ -107,8 +132,9 @@ export async function updateTaskAction(
     content?: string;
     date?: string;
     time?: string | null;
+    tagId?: string | null;
   }
-): Promise<{ task?: Task; error?: string }> {
+): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
     return { error: "Não autenticado." };
@@ -123,12 +149,30 @@ export async function updateTaskAction(
     if (data.content !== undefined) updateValues.content = data.content;
     if (data.date !== undefined) updateValues.date = data.date;
     if (data.time !== undefined) updateValues.time = data.time ? data.time.trim() : null;
+    if (data.tagId !== undefined) updateValues.tagId = data.tagId ? data.tagId : null;
 
-    const [updated] = await db
+    await db
       .update(tasks)
       .set(updateValues)
-      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)))
-      .returning();
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
+
+    const rows = await db
+      .select({
+        task: tasks,
+        tag: tags,
+      })
+      .from(tasks)
+      .leftJoin(tags, eq(tasks.tagId, tags.id))
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
+
+    if (!rows.length) {
+      return { error: "Tarefa não encontrada." };
+    }
+
+    const updated: TaskWithTag = {
+      ...rows[0].task,
+      tag: rows[0].tag || null,
+    };
 
     revalidatePath("/");
     return { task: updated };
@@ -158,3 +202,4 @@ export async function deleteTaskAction(
     return { error: "Erro ao excluir tarefa." };
   }
 }
+
