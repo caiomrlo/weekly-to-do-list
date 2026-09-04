@@ -10,6 +10,7 @@ export interface DayInfo {
   dayNumber: number; // 7, 8, etc.
   monthNameShort: string; // 'set.', etc.
   isToday: boolean;
+  dayOfWeek: number; // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
 }
 
 const DAY_NAMES = [
@@ -96,6 +97,7 @@ export function getWeekDays(monday: Date): DayInfo[] {
       dayNumber: current.getDate(),
       monthNameShort: MONTH_NAMES_SHORT[current.getMonth()],
       isToday: dateStr === todayStr,
+      dayOfWeek,
     });
   }
 

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "preferences" jsonb DEFAULT '{"showSaturday":false,"showSunday":false}'::jsonb NOT NULL;

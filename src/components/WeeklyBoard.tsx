@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
-import { TaskWithTag } from "@/db/schema";
+import { useState, useTransition, useMemo, useRef, useEffect } from "react";
+import { TaskWithTag, UserPreferences, DEFAULT_USER_PREFERENCES } from "@/db/schema";
 import {
   getMondayOfWeek,
   getWeekDays,
@@ -15,6 +15,7 @@ import {
   toggleTaskStatusAction,
 } from "@/app/actions/tasks";
 import { logoutAction } from "@/app/actions/auth";
+import { updateUserPreferencesAction } from "@/app/actions/user";
 import { getTagColorStyles } from "@/lib/tag-utils";
 import { TaskModal } from "./TaskModal";
 import {
@@ -27,24 +28,33 @@ import {
   Plus,
   LogOut,
   CalendarDays,
+  SlidersHorizontal,
 } from "lucide-react";
 
 interface WeeklyBoardProps {
   initialTasks: TaskWithTag[];
   userEmail: string;
   initialMondayStr: string; // 'YYYY-MM-DD'
+  initialPreferences?: UserPreferences;
 }
 
 export function WeeklyBoard({
   initialTasks,
   userEmail,
   initialMondayStr,
+  initialPreferences,
 }: WeeklyBoardProps) {
   // Current monday date object
   const [currentMonday, setCurrentMonday] = useState<Date>(() => {
     const [y, m, d] = initialMondayStr.split("-").map(Number);
     return new Date(y, m - 1, d);
   });
+
+  const [preferences, setPreferences] = useState<UserPreferences>(
+    initialPreferences || DEFAULT_USER_PREFERENCES
+  );
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+  const viewMenuRef = useRef<HTMLDivElement>(null);
 
   const [tasks, setTasks] = useState<TaskWithTag[]>(initialTasks);
   const [selectedTask, setSelectedTask] = useState<TaskWithTag | null>(null);
@@ -54,8 +64,62 @@ export function WeeklyBoard({
   const [newTitles, setNewTitles] = useState<Record<string, string>>({});
   const [isNavigating, startNavTransition] = useTransition();
 
+  // Close view menu on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        viewMenuRef.current &&
+        !viewMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsViewMenuOpen(false);
+      }
+    }
+
+    if (isViewMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isViewMenuOpen]);
+
+  // Toggle visible day setting
+  const handleToggleDay = async (dayKey: "showSaturday" | "showSunday") => {
+    const nextVal = !preferences[dayKey];
+    const updated = { ...preferences, [dayKey]: nextVal };
+    setPreferences(updated);
+
+    try {
+      await updateUserPreferencesAction({ [dayKey]: nextVal });
+    } catch (err) {
+      console.error("Erro ao salvar preferências:", err);
+    }
+  };
+
   // Calculate the 7 days of current week
   const weekDays = useMemo(() => getWeekDays(currentMonday), [currentMonday]);
+
+  // Filter visible days based on user preferences (Saturday and Sunday hidden by default)
+  const visibleWeekDays = useMemo(() => {
+    return weekDays.filter((day) => {
+      if (day.dayOfWeek === 6 && !preferences.showSaturday) return false;
+      if (day.dayOfWeek === 0 && !preferences.showSunday) return false;
+      return true;
+    });
+  }, [weekDays, preferences.showSaturday, preferences.showSunday]);
+
+  // Dynamic grid column class based on count of visible days
+  const gridColsClass = useMemo(() => {
+    switch (visibleWeekDays.length) {
+      case 5:
+        return "lg:grid-cols-5";
+      case 6:
+        return "lg:grid-cols-6";
+      case 7:
+      default:
+        return "lg:grid-cols-7";
+    }
+  }, [visibleWeekDays.length]);
 
   // Load tasks when week changes
   const fetchWeekTasks = (monday: Date) => {
@@ -248,6 +312,86 @@ export function WeeklyBoard({
               </button>
             </div>
 
+            {/* View Settings Popover */}
+            <div className="relative" ref={viewMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsViewMenuOpen((prev) => !prev)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium shadow-xs transition-all cursor-pointer ${
+                  isViewMenuOpen || preferences.showSaturday || preferences.showSunday
+                    ? "bg-indigo-50/90 text-indigo-700 border-indigo-200/80"
+                    : "bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/70"
+                }`}
+                title="Ajustes de visualização dos dias"
+                aria-label="Ajustes de visualização dos dias"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Visualização</span>
+                {(preferences.showSaturday || preferences.showSunday) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                )}
+              </button>
+
+              {isViewMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 p-3 rounded-2xl glass-panel shadow-xl border border-white/80 bg-white/95 backdrop-blur-md z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="pb-2 mb-2 border-b border-slate-200/60 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-800">Dias da Semana</p>
+                    <span className="text-[10px] text-slate-500 font-medium">
+                      {visibleWeekDays.length} de 7 dias
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {/* Seg a Sex indicator */}
+                    <div className="px-2 py-1.5 text-[11px] text-slate-500 bg-slate-100/60 rounded-lg flex items-center justify-between">
+                      <span>Segunda – Sexta</span>
+                      <span className="font-semibold text-slate-400 text-[10px]">Padrão</span>
+                    </div>
+
+                    {/* Sábado Switch */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleDay("showSaturday")}
+                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 cursor-pointer transition-colors text-left"
+                    >
+                      <span className="text-xs font-medium text-slate-700">Sábado</span>
+                      <div
+                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+                          preferences.showSaturday ? "bg-indigo-600" : "bg-slate-300"
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                            preferences.showSaturday ? "translate-x-3.5" : "translate-x-0"
+                          }`}
+                        />
+                      </div>
+                    </button>
+
+                    {/* Domingo Switch */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleDay("showSunday")}
+                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 cursor-pointer transition-colors text-left"
+                    >
+                      <span className="text-xs font-medium text-slate-700">Domingo</span>
+                      <div
+                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+                          preferences.showSunday ? "bg-indigo-600" : "bg-slate-300"
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                            preferences.showSunday ? "translate-x-3.5" : "translate-x-0"
+                          }`}
+                        />
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Separator */}
             <div className="h-5 w-px bg-slate-200/80 mx-1 hidden sm:block" />
 
@@ -274,10 +418,10 @@ export function WeeklyBoard({
         </div>
       </header>
 
-      {/* Main 7-Days Board Container */}
+      {/* Main Board Container */}
       <main className="flex-1 px-3 sm:px-6 pb-8 w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3.5 items-start">
-          {weekDays.map((day) => {
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${gridColsClass} gap-3.5 items-start`}>
+          {visibleWeekDays.map((day) => {
             const dayTasks = tasksByDay[day.dateStr] || [];
             const completedCount = dayTasks.filter((t) => t.completed).length;
 

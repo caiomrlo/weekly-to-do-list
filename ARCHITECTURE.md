@@ -13,7 +13,8 @@ weekly-to-do-list/
 │   │   ├── actions/              # Typed Next.js Server Actions (RPC layer)
 │   │   │   ├── auth.ts           # Authentication actions (login, register, logout)
 │   │   │   ├── tags.ts           # Tag actions (getUserTags, createTag, deleteTag)
-│   │   │   └── tasks.ts          # Task actions (CRUD, status toggling, range querying, tag joins)
+│   │   │   ├── tasks.ts          # Task actions (CRUD, status toggling, range querying, tag joins)
+│   │   │   └── user.ts           # User preference actions (getUserPreferences, updateUserPreferences)
 │   │   ├── login/                # Authentication route (/login)
 │   │   │   └── page.tsx          # Login & registration glassmorphism card
 │   │   ├── favicon.ico           # Application favicon
@@ -22,7 +23,7 @@ weekly-to-do-list/
 │   │   └── page.tsx              # Protected root page (/) rendering the WeeklyBoard
 │   ├── components/               # Reusable client and server UI components
 │   │   ├── TaskModal.tsx         # Task details modal with tag selection/creation, auto-resize textarea & auto-save
-│   │   └── WeeklyBoard.tsx       # 7-day interactive weekly board with tag badges
+│   │   └── WeeklyBoard.tsx       # Interactive weekly board with configurable day visibility and tag badges
 │   ├── db/                       # Database connection and schema definitions
 │   │   ├── index.ts              # PostgreSQL connection pool with Drizzle ORM client
 │   │   └── schema.ts             # Drizzle table schemas (users, tags, tasks) and TypeScript types
@@ -32,9 +33,6 @@ weekly-to-do-list/
 │   │   └── tag-utils.ts          # Tag color tokens and visual badge style helpers
 │   └── middleware.ts             # Edge middleware for route protection and auth redirection
 ├── drizzle/                      # Drizzle Kit migration files and metadata
-│   ├── 0000_funny_marvel_boy.sql # Initial schema migration (users, tasks)
-│   ├── 0001_green_jackpot.sql    # Schema migration for tags table & tasks.tag_id
-│   └── meta/                     # Migration snapshots and journals
 ├── public/                       # Static public assets (SVG icons, logos)
 ├── compose.yaml                  # Multi-container Docker Compose orchestration (app, db)
 ├── Dockerfile                    # Production multi-stage Docker build
@@ -70,6 +68,7 @@ flowchart TD
             AuthActions["Auth Actions\n(login, register, logout)"]
             TagActions["Tag Actions\n(getTags, createTag, deleteTag)"]
             TaskActions["Task Actions\n(create, update, toggle, delete, query with tags)"]
+            UserActions["User Actions\n(getPreferences, updatePreferences)"]
         end
 
         subgraph Lib["Core Utilities (src/lib/*)"]
@@ -92,6 +91,7 @@ flowchart TD
     AuthActions --> AuthLib
     AuthActions --> Drizzle
     WeeklyBoard -->|"Manage Tasks / Navigate Weeks"| TaskActions
+    WeeklyBoard -->|"Toggle Visible Days"| UserActions
     WeeklyBoard --> TaskModal
     TaskModal -->|"Manage Tags"| TagActions
     TaskModal -->|"Debounced Auto-Save"| TaskActions
@@ -99,6 +99,7 @@ flowchart TD
     WeeklyBoard --> TagUtils
     TaskActions --> Drizzle
     TagActions --> Drizzle
+    UserActions --> Drizzle
     Drizzle -->|"SQL Queries / Migrations"| Postgres
 ```
 
@@ -111,7 +112,7 @@ flowchart TD
 - **Styling & Design System**: Tailwind CSS v4 with custom glassmorphism design tokens (`.glass-panel`, `.glass-card`, `.glass-card-today`, `.glass-input`) and ambient multi-stop background gradients.
 - **Icons**: `lucide-react` vector icons.
 - **Key UI Modules**:
-  - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Renders 7 columns starting on Monday, highlights the current day ("Hoje"), provides week navigation buttons (Previous, Today, Next), renders tag badges per task, and supports optimistic inline task creation via `+ Nova tarefa`.
+  - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Renders interactive weekly board with configurable day visibility (Saturday and Sunday hidden by default, toggled via glassmorphic View Popover), dynamic grid layout (5, 6, or 7 columns), highlights the current day ("Hoje"), provides week navigation buttons (Previous, Today, Next), renders tag badges per task, and supports optimistic inline task creation via `+ Nova tarefa`.
   - **`TaskModal` (`src/components/TaskModal.tsx`)**: Self-contained details modal with tag selection & inline creation (8 palette colors), auto-resizing textarea, debounced auto-save (600ms latency), date rescheduling picker, optional time setter (`HH:mm`), and deletion confirmation.
   - **`LoginPage` (`src/app/login/page.tsx`)**: Minimalist authentication card with tab toggling between "Entrar" and "Criar Conta", password visibility toggle, and loading state transitions.
 
@@ -121,6 +122,7 @@ flowchart TD
   - **`src/app/actions/auth.ts`**: Handles registration (email uniqueness check, bcrypt hashing), login (password comparison, `lastLoginAt` update), and logout with HTTP-only cookie invalidation.
   - **`src/app/actions/tags.ts`**: Provides `getUserTagsAction`, `createTagAction` (color-validated), and `deleteTagAction`.
   - **`src/app/actions/tasks.ts`**: Provides `getWeekTasksAction` (joined with `tags` table), `createTaskAction`, `toggleTaskStatusAction`, `updateTaskAction` (partial updates for auto-save and tag assignment), and `deleteTaskAction`.
+  - **`src/app/actions/user.ts`**: Provides `getUserPreferencesAction` and `updateUserPreferencesAction` for user-level JSON preferences persistence (e.g. `showSaturday`, `showSunday`).
 - **Route Middleware (`src/middleware.ts`)**: Intercepts requests on the Edge runtime, decrypts and validates JWT session tokens from the `auth_token` cookie, preventing unauthorized access to `/` and redirecting authenticated users away from `/login`.
 
 ---
@@ -137,6 +139,7 @@ flowchart TD
   - `id` (`uuid`, Primary Key, `defaultRandom()`)
   - `email` (`varchar(255)`, Unique, Not Null)
   - `password_hash` (`text`, Not Null)
+  - `preferences` (`jsonb`, Default `{"showSaturday":false,"showSunday":false}`, Not Null) — *Extensible JSON storage for user UI settings and configs.*
   - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
   - `last_login_at` (`timestamp with time zone`, Nullable)
 - **`tags` Table**:

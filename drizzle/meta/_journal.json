@@ -22,6 +22,13 @@
       "when": 1788547431076,
       "tag": "0002_panoramic_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788549299406,
+      "tag": "0003_perpetual_spencer_smythe",
+      "breakpoints": true
     }
   ]
 }

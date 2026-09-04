@@ -1,9 +1,21 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb } from "drizzle-orm/pg-core";
+
+export interface UserPreferences {
+  showSaturday?: boolean;
+  showSunday?: boolean;
+  [key: string]: unknown;
+}
+
+export const DEFAULT_USER_PREFERENCES: UserPreferences = {
+  showSaturday: false,
+  showSunday: false,
+};
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  preferences: jsonb("preferences").$type<UserPreferences>().default(DEFAULT_USER_PREFERENCES).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
 });

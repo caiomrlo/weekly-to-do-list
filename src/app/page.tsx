@@ -2,6 +2,8 @@ import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getMondayOfWeek, toDateString } from "@/lib/date-utils";
 import { getWeekTasksAction } from "@/app/actions/tasks";
+import { getUserPreferencesAction } from "@/app/actions/user";
+import { DEFAULT_USER_PREFERENCES } from "@/db/schema";
 import { WeeklyBoard } from "@/components/WeeklyBoard";
 
 export default async function HomePage() {
@@ -21,14 +23,20 @@ export default async function HomePage() {
   const startStr = toDateString(monday);
   const endStr = toDateString(sunday);
 
-  const res = await getWeekTasksAction(startStr, endStr);
+  const [res, prefRes] = await Promise.all([
+    getWeekTasksAction(startStr, endStr),
+    getUserPreferencesAction(),
+  ]);
+
   const initialTasks = res.tasks || [];
+  const initialPreferences = prefRes.preferences || DEFAULT_USER_PREFERENCES;
 
   return (
     <WeeklyBoard
       initialTasks={initialTasks}
       userEmail={session.email}
       initialMondayStr={startStr}
+      initialPreferences={initialPreferences}
     />
   );
 }
