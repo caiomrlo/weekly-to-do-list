@@ -128,3 +128,26 @@ export function formatWeekRange(monday: Date): string {
 
   return `${startDay} a ${endDay} de ${startMonth} de ${startYear}`;
 }
+
+/**
+ * Formata o mês e ano da semana atual para exibição no cabeçalho.
+ * Ex: "Julho, 2026" ou "Agosto / Setembro, 2026"
+ */
+export function formatMonthYear(monday: Date): string {
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+
+  const startMonth = MONTH_NAMES[monday.getMonth()];
+  const endMonth = MONTH_NAMES[sunday.getMonth()];
+  const startYear = monday.getFullYear();
+  const endYear = sunday.getFullYear();
+
+  if (startYear !== endYear) {
+    return `${startMonth} ${startYear} / ${endMonth} ${endYear}`;
+  }
+
+  if (startMonth !== endMonth) {
+    return `${startMonth} / ${endMonth}, ${startYear}`;
+  }
+
+  return `${startMonth}, ${startYear}`;
+}

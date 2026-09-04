@@ -5,7 +5,7 @@ import { Task } from "@/db/schema";
 import {
   getMondayOfWeek,
   getWeekDays,
-  formatWeekRange,
+  formatMonthYear,
   toDateString,
 } from "@/lib/date-utils";
 import {
@@ -195,76 +195,73 @@ export function WeeklyBoard({
     <div className="flex flex-col min-h-screen">
       {/* Top Glassmorphic Navigation Bar */}
       <header className="sticky top-0 z-30 px-4 sm:px-8 py-3.5 glass-panel border-b border-white/60 mb-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Logo & App Title */}
+        <div className="w-full flex items-center justify-between gap-4">
+          {/* Month & Year Title (Left) */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 flex-shrink-0">
               <CalendarDays className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                Weekly To-Do
+              <h1 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+                {formatMonthYear(currentMonday)}
               </h1>
-              <p className="text-xs text-slate-500 font-medium hidden sm:block">
-                Planejamento Semanal
-              </p>
             </div>
           </div>
 
-          {/* Week Navigation Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
-            <button
-              type="button"
-              onClick={handlePrevWeek}
-              disabled={isNavigating}
-              className="p-2 rounded-xl bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border border-slate-200/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Semana anterior"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+          {/* Right Controls: Week Navigation + User Avatar Circle + Logout */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Week Navigation Controls */}
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <button
+                type="button"
+                onClick={handlePrevWeek}
+                disabled={isNavigating}
+                className="p-2 rounded-xl bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border border-slate-200/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                title="Semana anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
 
-            <button
-              type="button"
-              onClick={handleGoToday}
-              disabled={isNavigating}
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 text-indigo-700 font-semibold text-xs border border-indigo-200/60 shadow-xs transition-all cursor-pointer"
-            >
-              Hoje
-            </button>
+              <button
+                type="button"
+                onClick={handleGoToday}
+                disabled={isNavigating}
+                className="px-3.5 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 text-indigo-700 font-semibold text-xs border border-indigo-200/60 shadow-xs transition-all cursor-pointer"
+              >
+                Hoje
+              </button>
 
-            <button
-              type="button"
-              onClick={handleNextWeek}
-              disabled={isNavigating}
-              className="p-2 rounded-xl bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border border-slate-200/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Próxima semana"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-
-            <div className="ml-2 pl-3 border-l border-slate-200/80 text-center sm:text-left">
-              <span className="text-xs sm:text-sm font-semibold text-slate-800">
-                {formatWeekRange(currentMonday)}
-              </span>
+              <button
+                type="button"
+                onClick={handleNextWeek}
+                disabled={isNavigating}
+                className="p-2 rounded-xl bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border border-slate-200/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                title="Próxima semana"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-          </div>
 
-          {/* User Info & Logout */}
-          <div className="flex items-center gap-3">
-            <span
-              className="text-xs text-slate-500 max-w-[150px] truncate hidden md:inline-block"
+            {/* Separator */}
+            <div className="h-5 w-px bg-slate-200/80 mx-1 hidden sm:block" />
+
+            {/* User Avatar Circle */}
+            <div
+              className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-bold text-xs flex items-center justify-center shadow-xs select-none uppercase flex-shrink-0"
               title={userEmail}
             >
-              {userEmail}
-            </span>
+              {userEmail ? userEmail.charAt(0).toUpperCase() : "U"}
+            </div>
+
+            {/* Logout Button (Icon only) */}
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 bg-white/60 hover:bg-rose-50/80 px-3 py-1.5 rounded-xl border border-slate-200/70 transition-colors cursor-pointer"
+                className="p-2 text-slate-500 hover:text-rose-600 bg-white/60 hover:bg-rose-50/80 rounded-xl border border-slate-200/70 transition-colors cursor-pointer flex items-center justify-center"
                 title="Encerrar sessão"
+                aria-label="Encerrar sessão"
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sair</span>
+                <LogOut className="w-4 h-4" />
               </button>
             </form>
           </div>
@@ -272,7 +269,7 @@ export function WeeklyBoard({
       </header>
 
       {/* Main 7-Days Board Container */}
-      <main className="flex-1 px-3 sm:px-6 pb-8 max-w-7xl mx-auto w-full">
+      <main className="flex-1 px-3 sm:px-6 pb-8 w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3.5 items-start">
           {weekDays.map((day) => {
             const dayTasks = tasksByDay[day.dateStr] || [];
@@ -301,11 +298,6 @@ export function WeeklyBoard({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {day.isToday && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
-                        Hoje
-                      </span>
-                    )}
                     {dayTasks.length > 0 && (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
                         {completedCount}/{dayTasks.length}
@@ -315,93 +307,85 @@ export function WeeklyBoard({
                 </div>
 
                 {/* Tasks List for the Day */}
-                <div className="flex-1 space-y-2 overflow-y-auto max-h-[520px] pr-0.5">
-                  {dayTasks.length === 0 ? (
-                    <div className="h-28 flex flex-col items-center justify-center text-center p-2">
-                      <p className="text-xs text-slate-400 font-medium">
-                        Sem tarefas
-                      </p>
-                    </div>
-                  ) : (
-                    dayTasks.map((t) => (
-                      <div
-                        key={t.id}
-                        onClick={() => handleOpenTask(t)}
-                        className={`group relative flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          t.completed
-                            ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
-                            : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
-                        }`}
-                      >
-                        {/* Checkbox */}
-                        <button
-                          type="button"
-                          onClick={(e) => handleToggleCompleted(e, t)}
-                          className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
-                        >
-                          {t.completed ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
-                          )}
-                        </button>
-
-                        {/* Title and details */}
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className={`text-xs font-medium leading-snug break-words ${
-                              t.completed
-                                ? "line-through text-slate-400"
-                                : "text-slate-700"
-                            }`}
-                          >
-                            {t.title}
-                          </p>
-
-                          {/* Time badge if present */}
-                          {t.time && (
-                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-slate-500 font-medium">
-                              <Clock className="w-2.5 h-2.5 text-indigo-400" />
-                              {t.time}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Inline Quick Add Input at Column Bottom */}
-                <div className="mt-3 pt-2.5 border-t border-slate-200/40">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={newTitles[day.dateStr] || ""}
-                      onChange={(e) =>
-                        setNewTitles((prev) => ({
-                          ...prev,
-                          [day.dateStr]: e.target.value,
-                        }))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleQuickAdd(day.dateStr);
-                        }
-                      }}
-                      placeholder="+ Nova tarefa"
-                      className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white border border-slate-200/60 rounded-xl pl-3 pr-8 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
-                    />
-                    {(newTitles[day.dateStr] || "").trim() && (
+                <div className="flex-1 space-y-2 overflow-y-auto max-h-[560px] pr-0.5">
+                  {dayTasks.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => handleOpenTask(t)}
+                      className={`group relative flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        t.completed
+                          ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
+                          : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
+                      }`}
+                    >
+                      {/* Checkbox */}
                       <button
                         type="button"
-                        onClick={() => handleQuickAdd(day.dateStr)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 p-0.5 cursor-pointer"
-                        title="Adicionar"
+                        onClick={(e) => handleToggleCompleted(e, t)}
+                        className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
                       >
-                        <Plus className="w-4 h-4" />
+                        {t.completed ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
+                        )}
                       </button>
-                    )}
+
+                      {/* Title and details */}
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-xs font-medium leading-snug break-words ${
+                            t.completed
+                              ? "line-through text-slate-400"
+                              : "text-slate-700"
+                          }`}
+                        >
+                          {t.title}
+                        </p>
+
+                        {/* Time badge if present */}
+                        {t.time && (
+                          <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-slate-500 font-medium">
+                            <Clock className="w-2.5 h-2.5 text-indigo-400" />
+                            {t.time}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Inline Quick Add Input immediately below the last task (or at start if 0 tasks) */}
+                  <div className="pt-0.5">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={newTitles[day.dateStr] || ""}
+                        onChange={(e) =>
+                          setNewTitles((prev) => ({
+                            ...prev,
+                            [day.dateStr]: e.target.value,
+                          }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleQuickAdd(day.dateStr);
+                          }
+                        }}
+                        placeholder="+ Nova tarefa"
+                        className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white border border-slate-200/60 rounded-xl pl-3 pr-8 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-2xs"
+                      />
+                      {(newTitles[day.dateStr] || "").trim() && (
+                        <button
+                          type="button"
+                          onClick={() => handleQuickAdd(day.dateStr)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 p-0.5 cursor-pointer"
+                          title="Adicionar"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
