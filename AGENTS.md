@@ -8,13 +8,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Project Architecture Guidelines
+# Project Architecture & Workflow Guidelines
 
 ## 1. Mandatory Architecture Review Before Any Task
 - **Always read [ARCHITECTURE.md](./ARCHITECTURE.md) before starting any new task, feature, or refactoring.**
 - Familiarize yourself with the project structure, components, data models, Server Actions, state flow, and security rules outlined in `ARCHITECTURE.md` before proposing or writing code.
 
-## 2. Judicious Architecture Maintenance
+## 2. Database Schema & Migration Workflow
+Whenever a task requires changes to the database structure (adding tables, altering columns, new relations):
+1. **Update Schema**: Edit `src/db/schema.ts` with the new Drizzle table definitions or schema modifications.
+2. **Run Migrations at the Start**: Run the migration commands immediately after updating schemas before implementing business logic:
+   - `npm run db:generate`: Generates the migration SQL files in the `drizzle/` directory.
+   - `npm run db:migrate`: Executes and applies the generated migrations to the database.
+
+## 3. Post-Task Verification Commands
+Always validate your changes before considering a task completed:
+- **`npm run lint`**:
+  - **When to use**: After finishing code edits in TypeScript/TSX/JavaScript files.
+  - **Purpose**: Checks for ESLint errors, code quality issues, unused variables, and Next.js lint rules.
+- **`npm run build`**:
+  - **When to use**: After completing feature implementations, refactoring, or schema changes.
+  - **Purpose**: Validates full TypeScript type safety and tests the Next.js production build to ensure there are no compilation or route export errors.
+
+## 4. Judicious Architecture Maintenance
 - **Be Self-Critical When Updating [ARCHITECTURE.md](./ARCHITECTURE.md)**: When the user requests an update or after implementing changes, critically evaluate whether an update is truly warranted.
 - **Do NOT update for trivial changes**: Minor bug fixes, cosmetic styling adjustments, small copy tweaks, or internal component logic tweaks that do not change system design should not trigger an architecture document rewrite.
 - **DO update for significant architectural changes**:
@@ -22,3 +38,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   - New core architectural layers, major feature modules, or routes.
   - Changes in authentication, session management, or authorization strategies.
   - Introduction of new infrastructure components, external integrations, services, or significant package additions.
+

@@ -74,7 +74,7 @@ flowchart TD
 
         subgraph Lib["Core Utilities (src/lib/*)"]
             AuthLib["Auth Lib (jose + bcryptjs)"]
-            DateUtils["Date Utils (ISO 'YYYY-MM-DD')"]
+            DateUtils["Date Utils (ISO YYYY-MM-DD)"]
             TagUtils["Tag Utils (Palette Styles & Tokens)"]
         end
     end
@@ -85,21 +85,21 @@ flowchart TD
     end
 
     %% Flow connections
-    User -->|HTTP Request| Middleware
-    Middleware -->|Authorized (Cookie Valid)| WeeklyBoard
-    Middleware -->|Unauthorized| LoginPage
-    LoginPage -->|Submit Credentials| AuthActions
+    User -->|"HTTP Request"| Middleware
+    Middleware -->|"Authorized (Cookie Valid)"| WeeklyBoard
+    Middleware -->|"Unauthorized"| LoginPage
+    LoginPage -->|"Submit Credentials"| AuthActions
     AuthActions --> AuthLib
     AuthActions --> Drizzle
-    WeeklyBoard -->|Manage Tasks / Navigate Weeks| TaskActions
+    WeeklyBoard -->|"Manage Tasks / Navigate Weeks"| TaskActions
     WeeklyBoard --> TaskModal
-    TaskModal -->|Manage Tags| TagActions
-    TaskModal -->|Debounced Auto-Save| TaskActions
+    TaskModal -->|"Manage Tags"| TagActions
+    TaskModal -->|"Debounced Auto-Save"| TaskActions
     WeeklyBoard --> DateUtils
     WeeklyBoard --> TagUtils
     TaskActions --> Drizzle
     TagActions --> Drizzle
-    Drizzle -->|SQL Queries / Migrations| Postgres
+    Drizzle -->|"SQL Queries / Migrations"| Postgres
 ```
 
 ---
