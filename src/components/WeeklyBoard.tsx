@@ -657,13 +657,17 @@ export function WeeklyBoard({
                             </p>
 
                             {/* Tag, Time, Duration & Subtask Progress Badges row */}
-                            {(t.tag ||
-                              t.time ||
-                              (t.duration && t.duration > 0) ||
-                              (t.subtaskCount && t.subtaskCount > 0)) && (
+                            {Boolean(
+                              t.tag ||
+                                t.time ||
+                                (t.duration != null && t.duration > 0) ||
+                                (t.subtaskCount != null && t.subtaskCount > 0)
+                            ) && (
                               <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                 {/* Subtask progress count badge for main tasks */}
-                                {t.subtaskCount && t.subtaskCount > 0 ? (
+                                {Boolean(
+                                  t.subtaskCount != null && t.subtaskCount > 0
+                                ) && (
                                   <span
                                     className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
                                       t.completed ||
@@ -687,7 +691,7 @@ export function WeeklyBoard({
                                       {t.subtaskCount}
                                     </span>
                                   </span>
-                                ) : null}
+                                )}
 
                                 {/* Tag badge */}
                                 {t.tag && tagStyles && (
@@ -720,7 +724,7 @@ export function WeeklyBoard({
                                 )}
 
                                 {/* Duration badge */}
-                                {t.duration && t.duration > 0 ? (
+                                {Boolean(t.duration != null && t.duration > 0) && (
                                   <span
                                     className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${
                                       t.completed
@@ -728,7 +732,7 @@ export function WeeklyBoard({
                                         : "bg-amber-50/90 text-amber-700 border-amber-200/60"
                                     }`}
                                     title={`Duração estimada: ${formatDuration(
-                                      t.duration
+                                      t.duration!
                                     )}`}
                                   >
                                     <Timer
@@ -738,9 +742,9 @@ export function WeeklyBoard({
                                           : "text-amber-500"
                                       }`}
                                     />
-                                    {formatDuration(t.duration)}
+                                    {formatDuration(t.duration!)}
                                   </span>
-                                ) : null}
+                                )}
                               </div>
                             )}
                           </div>
@@ -803,7 +807,7 @@ export function WeeklyBoard({
                         placeholder="+ Nova tarefa"
                         className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white border border-slate-200/60 rounded-xl pl-3 pr-8 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-2xs"
                       />
-                      {(newTitles[day.dateStr] || "").trim() && (
+                      {Boolean((newTitles[day.dateStr] || "").trim()) && (
                         <button
                           type="button"
                           onClick={() => handleQuickAdd(day.dateStr)}
