@@ -22,7 +22,8 @@ weekly-to-do-list/
 │   │   ├── layout.tsx            # Root HTML layout with Geist font configuration
 │   │   └── page.tsx              # Protected root page (/) rendering the WeeklyBoard
 │   ├── components/               # Reusable client and server UI components
-│   │   ├── TaskModal.tsx         # Task details modal with tag selection/creation, auto-resize textarea & auto-save
+│   │   ├── TaskDescriptionEditor.tsx # WYSIWYG rich text editor powered by Tiptap with formatting toolbar
+│   │   ├── TaskModal.tsx         # Task details modal with tag selection/creation, Tiptap WYSIWYG description & auto-save
 │   │   └── WeeklyBoard.tsx       # Interactive weekly board with configurable day visibility and tag badges
 │   ├── db/                       # Database connection and schema definitions
 │   │   ├── index.ts              # PostgreSQL connection pool with Drizzle ORM client
@@ -113,8 +114,14 @@ flowchart TD
 - **Icons**: `lucide-react` vector icons.
 - **Key UI Modules**:
   - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Renders interactive weekly board with configurable day visibility (Saturday and Sunday hidden by default, toggled via glassmorphic View Popover), dynamic grid layout (5, 6, or 7 columns), highlights the current day ("Hoje"), provides week navigation buttons (Previous, Today, Next), renders tag badges per task, displays hierarchical same-day subtasks with indentation and guide lines, indicates cross-day subtasks with parent indicator pills, shows subtask completion progress counters (e.g. `1/3`), supports optimistic inline task creation via `+ Nova tarefa`, and implements a fluid **Native HTML5 Drag and Drop** system allowing users to reorder tasks within a day, migrate tasks between days (automatically moving same-day subtasks in batch), nest tasks as subtasks when dropped onto the center of another top-level task (enforcing the 1-level nesting limit), and drag subtasks out to day columns to make them independent.
-  - **`TaskModal` (`src/components/TaskModal.tsx`)**: Self-contained details modal with tag selection & inline creation (8 palette colors), auto-resizing textarea, debounced auto-save (600ms latency), date rescheduling picker, optional time setter (`HH:mm`), subtasks management section (quick inline creation with Enter, status toggle, date pills, deletion, and deep-link navigation), 1-level nesting enforcement, subtask parent header banner, and cascade deletion confirmation.
+  - **`TaskModal` (`src/components/TaskModal.tsx`)**: Self-contained details modal with tag selection & inline creation (8 palette colors), rich WYSIWYG description editor (`TaskDescriptionEditor` powered by Tiptap), debounced auto-save (600ms latency), date rescheduling picker, optional time setter (`HH:mm`), subtasks management section (quick inline creation with Enter, status toggle, date pills, deletion, and deep-link navigation), 1-level nesting enforcement, subtask parent header banner, and cascade deletion confirmation.
   - **`LoginPage` (`src/app/login/page.tsx`)**: Minimalist authentication card with tab toggling between "Entrar" and "Criar Conta", password visibility toggle, and loading state transitions.
+- **Clean UI & Cognitive Load Reduction (Mandatory across all views, layouts & components)**:
+  - **Inline Over Container Nesting**: Avoid "card-inside-card" fatigue. Group related metadata and controls horizontally into compact inline rows (subtle pills, semantic icons) instead of nested wrappers or heavy borders.
+  - **Zero Visual Clutter (No Meta-Labels or "(Opcional)")**: Omit static labels and optionality indicators when semantic icons, formatted values, or contextual placeholders self-describe the element.
+  - **Progressive Disclosure**: Keep default surfaces high-signal and distraction-free. Expose secondary controls (tags, filters, configurations) via compact inline triggers, delegating complexity to ephemeral popovers.
+  - **Transient-Only State Feedback**: Never render permanent static notices (e.g. "Salvo"). Display feedback exclusively during active mutations (e.g. animated `"Salvando..."`), returning to neutral/empty state once resolved.
+  - **Top-Down Cognitive Hierarchy**: Sequence layout flow consistently: Primary Identity/Action -> Inline Metadata -> Core Content -> Nested/Relational Artifacts.
 
 ### 3.2. Backend Services & Server Actions
 - **Architecture Pattern**: Next.js Server Actions with direct Drizzle ORM queries and optimistic client synchronization.

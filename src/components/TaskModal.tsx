@@ -15,6 +15,7 @@ import {
   formatDuration,
   parseNaturalDuration,
 } from "@/lib/date-utils";
+import { TaskDescriptionEditor } from "./TaskDescriptionEditor";
 import {
   X,
   Trash2,
@@ -89,11 +90,9 @@ function TaskModalDialog({
   const [tagError, setTagError] = useState("");
 
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -142,17 +141,6 @@ function TaskModalDialog({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Auto-resize textarea according to content
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.max(
-        textareaRef.current.scrollHeight,
-        140
-      )}px`;
-    }
-  }, [content]);
-
   // Handle escape key to close modal
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -188,7 +176,6 @@ function TaskModalDialog({
         const res = await updateTaskAction(task.id, updates);
         if (res.task) {
           onTaskUpdated(res.task);
-          setLastSavedTime(new Date());
         }
       } catch (err) {
         console.error("Falha no auto-save:", err);
@@ -408,19 +395,12 @@ function TaskModalDialog({
       <div className="relative w-full max-w-xl glass-panel rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col max-h-[90vh] overflow-hidden z-10 border border-white/80">
         {/* Header Bar */}
         <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-200/50">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-            {isSaving ? (
-              <span className="flex items-center gap-1.5 text-indigo-600 font-medium">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 min-h-[20px]">
+            {isSaving && (
+              <span className="flex items-center gap-1.5 text-indigo-600 font-medium animate-in fade-in duration-150">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Salvando...
               </span>
-            ) : lastSavedTime ? (
-              <span className="flex items-center gap-1.5 text-emerald-600 font-medium">
-                <Check className="w-3.5 h-3.5" />
-                Salvo automaticamente
-              </span>
-            ) : (
-              <span className="text-slate-400">Edição com salvamento automático</span>
             )}
           </div>
 
@@ -487,121 +467,132 @@ function TaskModalDialog({
             />
           </div>
 
-          {/* Date, Time & Tag Selectors */}
-          <div className="space-y-3 p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/60">
-            {/* Grid for Date, Time & Duration */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Date Picker */}
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-                  Dia da Tarefa
-                </label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="w-full text-sm bg-white/80 border border-slate-200/80 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Time Picker */}
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-indigo-500" />
-                  Horário (Opcional)
-                </label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => handleTimeChange(e.target.value)}
-                  className="w-full text-sm bg-white/80 border border-slate-200/80 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Duration Picker (Smart Natural Language Input) */}
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Timer className="w-3.5 h-3.5 text-amber-500" />
-                    Duração
-                  </span>
-                  {duration ? (
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/60 shadow-2xs">
-                        {formatDuration(duration)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleClearDuration}
-                        className="text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
-                        title="Limpar duração"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-[10px] text-slate-400 font-normal">Opcional</span>
-                  )}
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={durationText}
-                    onChange={(e) => handleDurationInputChange(e.target.value)}
-                    onBlur={handleDurationBlur}
-                    placeholder="Ex: 30m, 1h, 1h30..."
-                    className="w-full text-sm bg-white/80 border border-slate-200/80 rounded-xl pl-3 pr-7 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                  />
-                  {durationText && (
-                    <button
-                      type="button"
-                      onClick={handleClearDuration}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 p-0.5 rounded transition-colors cursor-pointer"
-                      title="Limpar"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
+          {/* Date, Time & Duration clean single row */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {/* Date Pill */}
+            <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 border border-slate-200/70 text-slate-700 transition-all cursor-pointer group">
+              <Calendar className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
+              <span className="pointer-events-none">
+                {date ? date.split("-").reverse().join("/") : "Definir data"}
+              </span>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  if (e.target.value) handleDateChange(e.target.value);
+                }}
+                onClick={(e) => {
+                  try {
+                    (e.target as HTMLInputElement).showPicker?.();
+                  } catch {}
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-0"
+                title="Alterar data"
+              />
             </div>
 
-            {/* Tag Selection Row */}
-            <div className="pt-2 border-t border-slate-200/50 relative" ref={tagDropdownRef}>
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                  <TagIcon className="w-3.5 h-3.5 text-indigo-500" />
-                  Tag
-                </label>
-              </div>
+            {/* Time Pill */}
+            <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 border border-slate-200/70 text-slate-700 transition-all cursor-pointer group">
+              <Clock className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
+              {time ? (
+                <>
+                  <span className="pointer-events-none">{time}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTimeChange("");
+                    }}
+                    className="relative z-10 text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
+                    title="Remover horário"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </>
+              ) : (
+                <span className="text-slate-400 group-hover:text-slate-600 transition-colors pointer-events-none">
+                  Adicionar horário
+                </span>
+              )}
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => handleTimeChange(e.target.value)}
+                onClick={(e) => {
+                  try {
+                    (e.target as HTMLInputElement).showPicker?.();
+                  } catch {}
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-0"
+                title={time ? `Horário: ${time}` : "Adicionar horário"}
+              />
+            </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Current Tag Badge / Trigger */}
-                {selectedTag ? (
-                  <div
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border shadow-2xs ${
+            {/* Duration Pill */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 border border-slate-200/70 text-slate-700 focus-within:bg-white focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/20 transition-all">
+              <Timer className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <input
+                type="text"
+                value={durationText}
+                onChange={(e) => handleDurationInputChange(e.target.value)}
+                onBlur={handleDurationBlur}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                placeholder="Duração"
+                className="bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none w-14 focus:w-20 transition-all"
+              />
+              {durationText && (
+                <button
+                  type="button"
+                  onClick={handleClearDuration}
+                  className="text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
+                  title="Limpar duração"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Compact Tag Line */}
+          <div className="relative" ref={tagDropdownRef}>
+            <div className="flex items-center gap-2">
+              <TagIcon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+
+              {selectedTag ? (
+                <div className="inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsTagDropdownOpen((prev) => !prev);
+                      setIsCreatingTag(false);
+                      setTagError("");
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border shadow-2xs hover:opacity-90 transition-all cursor-pointer ${
                       selectedTagStyles?.badgeClass || "bg-indigo-50 text-indigo-700 border-indigo-200"
                     }`}
                   >
                     <span
-                      className={`w-2 h-2 rounded-full ${
+                      className={`w-1.5 h-1.5 rounded-full ${
                         selectedTagStyles?.dotClass || "bg-indigo-500"
                       }`}
                     />
                     <span>{selectedTag.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectTag(null)}
-                      className="ml-1 text-slate-400 hover:text-slate-700 rounded-full p-0.5 transition-colors cursor-pointer"
-                      title="Remover tag"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : null}
-
-                {/* Open Tag Selector Button */}
+                    <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTag(null)}
+                    className="text-slate-400 hover:text-rose-500 p-0.5 rounded-md transition-colors cursor-pointer"
+                    title="Remover tag"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
                 <button
                   type="button"
                   onClick={() => {
@@ -609,172 +600,182 @@ function TaskModalDialog({
                     setIsCreatingTag(false);
                     setTagError("");
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 shadow-2xs hover:border-indigo-300 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-600 font-medium py-1 px-1.5 rounded-lg hover:bg-slate-100/70 transition-colors cursor-pointer"
                 >
-                  <TagIcon className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{selectedTag ? "Alterar Tag" : "+ Adicionar Tag"}</span>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Adicionar tag</span>
                 </button>
-              </div>
-
-              {/* Tag Dropdown Popover */}
-              {isTagDropdownOpen && (
-                <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
-                  {!isCreatingTag ? (
-                    <div>
-                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 text-xs font-semibold text-slate-600">
-                        <span>Selecionar Tag</span>
-                        <button
-                          type="button"
-                          onClick={() => setIsCreatingTag(true)}
-                          className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          Nova Tag
-                        </button>
-                      </div>
-
-                      {/* Tag list */}
-                      <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
-                        {selectedTag && (
-                          <button
-                            type="button"
-                            onClick={() => handleSelectTag(null)}
-                            className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center justify-between transition-colors cursor-pointer"
-                          >
-                            <span>Nenhuma (Remover tag)</span>
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
-                        {userTags.length === 0 ? (
-                          <div className="py-4 text-center text-xs text-slate-400">
-                            Nenhuma tag criada ainda.
-                          </div>
-                        ) : (
-                          userTags.map((tag) => {
-                            const styles = getTagColorStyles(tag.color);
-                            const isSelected = selectedTag?.id === tag.id;
-
-                            return (
-                              <button
-                                key={tag.id}
-                                type="button"
-                                onClick={() => handleSelectTag(tag)}
-                                className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-all cursor-pointer ${
-                                  isSelected
-                                    ? `${styles.badgeClass} ring-1 ring-indigo-400/40 font-semibold`
-                                    : "hover:bg-slate-100/80 text-slate-700"
-                                }`}
-                              >
-                                <span className="flex items-center gap-2">
-                                  <span
-                                    className={`w-2 h-2 rounded-full ${styles.dotClass}`}
-                                  />
-                                  <span>{tag.name}</span>
-                                </span>
-                                {isSelected && (
-                                  <Check className="w-3.5 h-3.5 text-indigo-600" />
-                                )}
-                              </button>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    /* Inline Tag Creation Form */
-                    <form onSubmit={handleCreateNewTag} className="space-y-3">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-100 text-xs font-semibold text-slate-700">
-                        <span>Criar Nova Tag</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCreatingTag(false);
-                            setTagError("");
-                          }}
-                          className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {tagError && (
-                        <div className="text-[11px] text-rose-600 font-medium bg-rose-50 p-2 rounded-lg">
-                          {tagError}
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                          Nome da Tag
-                        </label>
-                        <input
-                          type="text"
-                          autoFocus
-                          value={newTagName}
-                          onChange={(e) => setNewTagName(e.target.value)}
-                          placeholder="Ex: Trabalho, Estudos, Pessoal..."
-                          maxLength={50}
-                          className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                          Cor da Tag
-                        </label>
-                        <div className="grid grid-cols-4 gap-2">
-                          {Object.values(TAG_COLORS).map((colorOpt) => (
-                            <button
-                              key={colorOpt.key}
-                              type="button"
-                              onClick={() => setNewTagColor(colorOpt.key)}
-                              className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-[10px] font-medium transition-all cursor-pointer ${
-                                newTagColor === colorOpt.key
-                                  ? `${colorOpt.badgeClass} ring-2 ring-indigo-500/30 font-bold border-indigo-400`
-                                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                            >
-                              <span
-                                className={`w-2 h-2 rounded-full ${colorOpt.dotClass}`}
-                              />
-                              <span className="truncate">{colorOpt.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCreatingTag(false);
-                            setTagError("");
-                          }}
-                          className="px-2.5 py-1 text-slate-500 hover:bg-slate-100 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                        >
-                          Voltar
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={isCreatingTagLoading || !newTagName.trim()}
-                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-                        >
-                          {isCreatingTagLoading && (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          )}
-                          Salvar Tag
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
               )}
             </div>
+
+            {/* Tag Dropdown Popover */}
+            {isTagDropdownOpen && (
+              <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
+                {!isCreatingTag ? (
+                  <div>
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 text-xs font-semibold text-slate-600">
+                      <span>Selecionar Tag</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsCreatingTag(true)}
+                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Nova Tag
+                      </button>
+                    </div>
+
+                    {/* Tag list */}
+                    <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                      {selectedTag && (
+                        <button
+                          type="button"
+                          onClick={() => handleSelectTag(null)}
+                          className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center justify-between transition-colors cursor-pointer"
+                        >
+                          <span>Nenhuma (Remover tag)</span>
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {userTags.length === 0 ? (
+                        <div className="py-4 text-center text-xs text-slate-400">
+                          Nenhuma tag criada ainda.
+                        </div>
+                      ) : (
+                        userTags.map((tag) => {
+                          const styles = getTagColorStyles(tag.color);
+                          const isSelected = selectedTag?.id === tag.id;
+
+                          return (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              onClick={() => handleSelectTag(tag)}
+                              className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-all cursor-pointer ${
+                                isSelected
+                                  ? `${styles.badgeClass} ring-1 ring-indigo-400/40 font-semibold`
+                                  : "hover:bg-slate-100/80 text-slate-700"
+                              }`}
+                            >
+                              <span className="flex items-center gap-2">
+                                <span
+                                  className={`w-2 h-2 rounded-full ${styles.dotClass}`}
+                                />
+                                <span>{tag.name}</span>
+                              </span>
+                              {isSelected && (
+                                <Check className="w-3.5 h-3.5 text-indigo-600" />
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* Inline Tag Creation Form */
+                  <form onSubmit={handleCreateNewTag} className="space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 text-xs font-semibold text-slate-700">
+                      <span>Criar Nova Tag</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreatingTag(false);
+                          setTagError("");
+                        }}
+                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {tagError && (
+                      <div className="text-[11px] text-rose-600 font-medium bg-rose-50 p-2 rounded-lg">
+                        {tagError}
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                        Nome da Tag
+                      </label>
+                      <input
+                        type="text"
+                        autoFocus
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        placeholder="Ex: Trabalho, Estudos, Pessoal..."
+                        maxLength={50}
+                        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                        Cor da Tag
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {Object.values(TAG_COLORS).map((colorOpt) => (
+                          <button
+                            key={colorOpt.key}
+                            type="button"
+                            onClick={() => setNewTagColor(colorOpt.key)}
+                            className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-[10px] font-medium transition-all cursor-pointer ${
+                              newTagColor === colorOpt.key
+                                ? `${colorOpt.badgeClass} ring-2 ring-indigo-500/30 font-bold border-indigo-400`
+                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${colorOpt.dotClass}`}
+                            />
+                            <span className="truncate">{colorOpt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreatingTag(false);
+                          setTagError("");
+                        }}
+                        className="px-2.5 py-1 text-slate-500 hover:bg-slate-100 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        Voltar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isCreatingTagLoading || !newTagName.trim()}
+                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                      >
+                        {isCreatingTagLoading && (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        )}
+                        Salvar Tag
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Subtasks Section (Visible only for main tasks, i.e., !task.parentId) */}
+          {/* Description / Content Rich Text Editor (WYSIWYG Tiptap) */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              Descrição
+            </label>
+            <TaskDescriptionEditor
+              value={content}
+              onChange={handleContentChange}
+            />
+          </div>
+
+          {/* Subtasks Section (Visible only for main tasks, i.e., !task.parentId) - Placed AFTER Descrição */}
           {!task.parentId && (
             <div className="space-y-3 p-4 bg-slate-50/70 rounded-2xl border border-slate-200/60">
               <div className="flex items-center justify-between gap-2">
@@ -903,20 +904,6 @@ function TaskModalDialog({
               </div>
             </div>
           )}
-
-          {/* Notes / Content Textarea (Auto-Resize) */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-              Observações & Detalhes
-            </label>
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => handleContentChange(e.target.value)}
-              placeholder="Escreva anotações, subtarefas ou observações sobre esta tarefa... (salvo automaticamente)"
-              className="w-full p-4 rounded-2xl bg-white/80 border border-slate-200/80 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none transition-all leading-relaxed"
-            />
-          </div>
         </div>
 
         {/* Footer Bar with Delete Button */}
