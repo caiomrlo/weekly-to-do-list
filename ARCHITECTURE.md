@@ -175,9 +175,12 @@ flowchart TD
 
 ## 6. Deployment & Infrastructure
 
-- **Containerization**: Docker Compose (`compose.yaml`) orchestrating two healthy services:
-  - `app` (`weekly-app`): Next.js application container with Fast Refresh file synchronization (`docker compose watch` on `./src`, `./public`, `./drizzle`).
-  - `db` (`weekly-db`): PostgreSQL 17 Alpine container with persistent volume `pgdata` and healthcheck (`pg_isready`).
+- **Containerization & Orchestration**:
+  - **Local Development (`compose.yaml`)**: Docker Compose orchestrating two services:
+    - `app` (`weekly-app`): Next.js application container via [`Dockerfile.dev`](file:///e:/DevCoding/Projects/Node/weekly-to-do-list/Dockerfile.dev) with Fast Refresh file synchronization (`docker compose watch` on `./src`, `./public`, `./drizzle`).
+    - `db` (`weekly-db`): PostgreSQL 17 Alpine container with persistent volume `pgdata` and healthcheck (`pg_isready`).
+  - **Production Docker (`Dockerfile`)**: Multi-stage standalone build with automated database migrations on container startup ([`scripts/migrate.mjs`](file:///e:/DevCoding/Projects/Node/weekly-to-do-list/scripts/migrate.mjs) via `drizzle-orm/node-postgres/migrator`), non-root `nextjs` security isolation, and portable compatibility with PaaS/container platforms (Easypanel, Coolify, Docker Compose, Cloud Run).
+- **Database Migrations**: Handled automatically in production before Next.js server starts, with idempotent execution and connection retry logic.
 - **Database GUI**: Drizzle Studio (`npm run db:studio` -> `https://local.drizzle.studio`).
 
 ---
