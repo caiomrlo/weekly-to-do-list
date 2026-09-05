@@ -112,8 +112,8 @@ flowchart TD
 - **Styling & Design System**: Tailwind CSS v4 with custom glassmorphism design tokens (`.glass-panel`, `.glass-card`, `.glass-card-today`, `.glass-input`) and ambient multi-stop background gradients.
 - **Icons**: `lucide-react` vector icons.
 - **Key UI Modules**:
-  - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Renders interactive weekly board with configurable day visibility (Saturday and Sunday hidden by default, toggled via glassmorphic View Popover), dynamic grid layout (5, 6, or 7 columns), highlights the current day ("Hoje"), provides week navigation buttons (Previous, Today, Next), renders tag badges per task, and supports optimistic inline task creation via `+ Nova tarefa`.
-  - **`TaskModal` (`src/components/TaskModal.tsx`)**: Self-contained details modal with tag selection & inline creation (8 palette colors), auto-resizing textarea, debounced auto-save (600ms latency), date rescheduling picker, optional time setter (`HH:mm`), and deletion confirmation.
+  - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Renders interactive weekly board with configurable day visibility (Saturday and Sunday hidden by default, toggled via glassmorphic View Popover), dynamic grid layout (5, 6, or 7 columns), highlights the current day ("Hoje"), provides week navigation buttons (Previous, Today, Next), renders tag badges per task, displays hierarchical same-day subtasks with indentation and guide lines, indicates cross-day subtasks with parent indicator pills, shows subtask completion progress counters (e.g. `1/3`), and supports optimistic inline task creation via `+ Nova tarefa`.
+  - **`TaskModal` (`src/components/TaskModal.tsx`)**: Self-contained details modal with tag selection & inline creation (8 palette colors), auto-resizing textarea, debounced auto-save (600ms latency), date rescheduling picker, optional time setter (`HH:mm`), subtasks management section (quick inline creation with Enter, status toggle, date pills, deletion, and deep-link navigation), 1-level nesting enforcement, subtask parent header banner, and cascade deletion confirmation.
   - **`LoginPage` (`src/app/login/page.tsx`)**: Minimalist authentication card with tab toggling between "Entrar" and "Criar Conta", password visibility toggle, and loading state transitions.
 
 ### 3.2. Backend Services & Server Actions
@@ -121,7 +121,7 @@ flowchart TD
 - **Key Action Modules**:
   - **`src/app/actions/auth.ts`**: Handles registration (email uniqueness check, bcrypt hashing), login (password comparison, `lastLoginAt` update), and logout with HTTP-only cookie invalidation.
   - **`src/app/actions/tags.ts`**: Provides `getUserTagsAction`, `createTagAction` (color-validated), and `deleteTagAction`.
-  - **`src/app/actions/tasks.ts`**: Provides `getWeekTasksAction` (joined with `tags` table), `createTaskAction`, `toggleTaskStatusAction`, `updateTaskAction` (partial updates for auto-save and tag assignment), and `deleteTaskAction`.
+  - **`src/app/actions/tasks.ts`**: Provides `getWeekTasksAction` (joined with `tags` and aliased parent `tasks`, aggregating subtask completion stats), `getSubtasksAction`, `getTaskByIdAction`, `createTaskAction` (with `parentId` and 1-level nesting validation), `toggleTaskStatusAction`, `updateTaskAction` (partial updates for auto-save, tag assignment, and subtask recount), and `deleteTaskAction` (with automatic cascade deletion of child subtasks).
   - **`src/app/actions/user.ts`**: Provides `getUserPreferencesAction` and `updateUserPreferencesAction` for user-level JSON preferences persistence (e.g. `showSaturday`, `showSunday`).
 - **Route Middleware (`src/middleware.ts`)**: Intercepts requests on the Edge runtime, decrypts and validates JWT session tokens from the `auth_token` cookie, preventing unauthorized access to `/` and redirecting authenticated users away from `/login`.
 
@@ -153,6 +153,7 @@ flowchart TD
   - `id` (`uuid`, Primary Key, `defaultRandom()`)
   - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
   - `tag_id` (`uuid`, Foreign Key -> `tags.id`, `onDelete: 'set null'`, Nullable)
+  - `parent_id` (`uuid`, Foreign Key -> `tasks.id`, `onDelete: 'cascade'`, Nullable) — *Enables 1-level hierarchical subtasks.*
   - `title` (`varchar(500)`, Not Null)
   - `content` (`text`, Default `""`, Not Null)
   - `date` (`date`, Format `'YYYY-MM-DD'`, Not Null) — *Guarantees total immunity against client/server timezone offsets.*

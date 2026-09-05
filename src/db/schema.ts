@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb, AnyPgColumn } from "drizzle-orm/pg-core";
 
 export interface UserPreferences {
   showSaturday?: boolean;
@@ -37,6 +37,7 @@ export const tasks = pgTable("tasks", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   tagId: uuid("tag_id").references(() => tags.id, { onDelete: "set null" }),
+  parentId: uuid("parent_id").references((): AnyPgColumn => tasks.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 500 }).notNull(),
   content: text("content").default("").notNull(),
   date: date("date").notNull(), // Formato 'YYYY-MM-DD' - imune a timezone
@@ -58,5 +59,8 @@ export type NewTask = typeof tasks.$inferInsert;
 
 export type TaskWithTag = Task & {
   tag?: Tag | null;
+  parent?: { id: string; title: string } | null;
+  subtaskCount?: number;
+  completedSubtaskCount?: number;
 };
 

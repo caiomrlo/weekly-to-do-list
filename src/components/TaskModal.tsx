@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { TaskWithTag, Tag } from "@/db/schema";
-import { updateTaskAction, deleteTaskAction } from "@/app/actions/tasks";
+import {
+  updateTaskAction,
+  deleteTaskAction,
+  createTaskAction,
+  getSubtasksAction,
+  toggleTaskStatusAction,
+} from "@/app/actions/tasks";
 import { getUserTagsAction, createTagAction } from "@/app/actions/tags";
 import { TAG_COLORS, getTagColorStyles } from "@/lib/tag-utils";
 import {
@@ -23,6 +29,10 @@ import {
   Tag as TagIcon,
   Plus,
   ChevronDown,
+  CornerDownRight,
+  ListTree,
+  ArrowRight,
+  ExternalLink,
 } from "lucide-react";
 
 interface TaskModalProps {
@@ -31,6 +41,8 @@ interface TaskModalProps {
   onClose: () => void;
   onTaskUpdated: (updatedTask: TaskWithTag) => void;
   onTaskDeleted: (taskId: string) => void;
+  onOpenTask?: (task: TaskWithTag | string) => void;
+  onSubtaskCreated?: (subtask: TaskWithTag) => void;
 }
 
 interface TaskModalDialogProps {
@@ -38,6 +50,8 @@ interface TaskModalDialogProps {
   onClose: () => void;
   onTaskUpdated: (updatedTask: TaskWithTag) => void;
   onTaskDeleted: (taskId: string) => void;
+  onOpenTask?: (task: TaskWithTag | string) => void;
+  onSubtaskCreated?: (subtask: TaskWithTag) => void;
 }
 
 function TaskModalDialog({
@@ -45,6 +59,8 @@ function TaskModalDialog({
   onClose,
   onTaskUpdated,
   onTaskDeleted,
+  onOpenTask,
+  onSubtaskCreated,
 }: TaskModalDialogProps) {
   const [title, setTitle] = useState(task.title);
   const [content, setContent] = useState(task.content || "");
@@ -56,6 +72,12 @@ function TaskModalDialog({
   );
   const [completed, setCompleted] = useState(task.completed);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(task.tag || null);
+
+  // Subtasks state
+  const [subtasks, setSubtasks] = useState<TaskWithTag[]>([]);
+  const [isLoadingSubtasks, setIsLoadingSubtasks] = useState(!task.parentId);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [isAddingSubtask, setIsAddingSubtask] = useState(false);
 
   // Tags list & creation state
   const [userTags, setUserTags] = useState<Tag[]>([]);
@@ -74,6 +96,24 @@ function TaskModalDialog({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch subtasks if task is a main task
+  useEffect(() => {
+    let isMounted = true;
+    if (!task.parentId) {
+      getSubtasksAction(task.id).then((res) => {
+        if (isMounted) {
+          if (res.subtasks) {
+            setSubtasks(res.subtasks);
+          }
+          setIsLoadingSubtasks(false);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [task.id, task.parentId]);
 
   // Fetch available user tags on load
   useEffect(() => {
@@ -269,6 +309,77 @@ function TaskModalDialog({
     }
   };
 
+  const handleCreateSubtask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newSubtaskTitle.trim();
+    if (!trimmed || isAddingSubtask) return;
+
+    setIsAddingSubtask(true);
+    setNewSubtaskTitle("");
+
+    try {
+      const res = await createTaskAction({
+        title: trimmed,
+        date: date,
+        parentId: task.id,
+      });
+
+      if (res.task) {
+        const created = res.task;
+        setSubtasks((prev) => [...prev, created]);
+        const nextTotal = subtasks.length + 1;
+        const nextCompleted = subtasks.filter((s) => s.completed).length;
+        onTaskUpdated({
+          ...task,
+          subtaskCount: nextTotal,
+          completedSubtaskCount: nextCompleted,
+        });
+        onSubtaskCreated?.(created);
+      }
+    } catch (err) {
+      console.error("Erro ao criar subtarefa:", err);
+    } finally {
+      setIsAddingSubtask(false);
+    }
+  };
+
+  const handleToggleSubtask = async (sub: TaskWithTag) => {
+    const nextCompleted = !sub.completed;
+    const updatedSub = { ...sub, completed: nextCompleted };
+    setSubtasks((prev) =>
+      prev.map((s) => (s.id === sub.id ? updatedSub : s))
+    );
+
+    const updatedSubtasks = subtasks.map((s) =>
+      s.id === sub.id ? updatedSub : s
+    );
+    const nextCompletedCount = updatedSubtasks.filter((s) => s.completed).length;
+
+    onTaskUpdated({
+      ...task,
+      subtaskCount: updatedSubtasks.length,
+      completedSubtaskCount: nextCompletedCount,
+    });
+    onTaskUpdated(updatedSub);
+
+    await toggleTaskStatusAction(sub.id, nextCompleted);
+  };
+
+  const handleDeleteSubtask = async (subId: string) => {
+    const remaining = subtasks.filter((s) => s.id !== subId);
+    setSubtasks(remaining);
+    const nextCompletedCount = remaining.filter((s) => s.completed).length;
+
+    onTaskUpdated({
+      ...task,
+      subtaskCount: remaining.length,
+      completedSubtaskCount: nextCompletedCount,
+    });
+    onTaskDeleted(subId);
+
+    await deleteTaskAction(subId);
+  };
+
   const handleDelete = () => {
     startDeleteTransition(async () => {
       const res = await deleteTaskAction(task.id);
@@ -282,6 +393,8 @@ function TaskModalDialog({
   const selectedTagStyles = selectedTag
     ? getTagColorStyles(selectedTag.color)
     : null;
+
+  const totalSubtasksToDelete = subtasks.length || task.subtaskCount || 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
@@ -325,6 +438,29 @@ function TaskModalDialog({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1">
+          {/* Parent Task Banner if this is a subtask */}
+          {task.parentId && (
+            <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-indigo-50/80 border border-indigo-100/90 rounded-2xl text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <CornerDownRight className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                <span className="text-slate-500 font-medium flex-shrink-0">Subtarefa de:</span>
+                <span className="font-semibold text-indigo-700 truncate">
+                  {task.parent?.title || "Tarefa Principal"}
+                </span>
+              </div>
+              {onOpenTask && task.parentId && (
+                <button
+                  type="button"
+                  onClick={() => onOpenTask(task.parentId!)}
+                  className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-800 hover:underline flex-shrink-0 cursor-pointer text-xs"
+                >
+                  <span>Ver tarefa principal</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Title and Complete Button */}
           <div className="flex items-start gap-3">
             <button
@@ -638,6 +774,136 @@ function TaskModalDialog({
             </div>
           </div>
 
+          {/* Subtasks Section (Visible only for main tasks, i.e., !task.parentId) */}
+          {!task.parentId && (
+            <div className="space-y-3 p-4 bg-slate-50/70 rounded-2xl border border-slate-200/60">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <ListTree className="w-3.5 h-3.5 text-indigo-500" />
+                  Subtarefas
+                  {subtasks.length > 0 && (
+                    <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/60 shadow-2xs">
+                      {subtasks.filter((s) => s.completed).length} de {subtasks.length} concluídas
+                    </span>
+                  )}
+                </label>
+              </div>
+
+              {/* Subtasks List */}
+              <div className="space-y-1.5">
+                {isLoadingSubtasks && subtasks.length === 0 ? (
+                  <div className="flex items-center gap-2 py-2 text-xs text-slate-400">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Carregando subtarefas...</span>
+                  </div>
+                ) : null}
+
+                {subtasks.map((sub) => {
+                  const isDiffDate = sub.date !== date;
+                  return (
+                    <div
+                      key={sub.id}
+                      className={`group flex items-center justify-between gap-2.5 p-2 rounded-xl border transition-all text-xs ${
+                        sub.completed
+                          ? "bg-slate-100/60 border-slate-200/40 text-slate-400"
+                          : "bg-white/90 hover:bg-white border-slate-200/80 text-slate-700 shadow-2xs"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSubtask(sub)}
+                          className="text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
+                          title={sub.completed ? "Marcar como pendente" : "Marcar como concluída"}
+                        >
+                          {sub.completed ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          ) : (
+                            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
+                          )}
+                        </button>
+
+                        <span
+                          className={`truncate flex-1 font-medium ${
+                            sub.completed ? "line-through text-slate-400" : "text-slate-700"
+                          }`}
+                        >
+                          {sub.title}
+                        </span>
+
+                        {/* Tag pill if subtask has a tag */}
+                        {sub.tag && (
+                          <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md flex-shrink-0">
+                            {sub.tag.name}
+                          </span>
+                        )}
+
+                        {/* Date pill if subtask is scheduled on another day */}
+                        {isDiffDate && (
+                          <span
+                            className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-md flex-shrink-0"
+                            title={`Agendada para ${sub.date}`}
+                          >
+                            {sub.date.split("-").reverse().slice(0, 2).join("/")}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {onOpenTask && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenTask(sub)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                            title="Abrir detalhes completos da subtarefa"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSubtask(sub.id)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Excluir subtarefa"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Quick Add Subtask Input */}
+                <form onSubmit={handleCreateSubtask} className="pt-1">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      placeholder="+ Adicionar subtarefa... (Enter para salvar)"
+                      disabled={isAddingSubtask}
+                      className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white border border-slate-200/80 rounded-xl pl-3 pr-8 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-2xs"
+                    />
+                    {newSubtaskTitle.trim() && (
+                      <button
+                        type="submit"
+                        disabled={isAddingSubtask}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 p-0.5 cursor-pointer"
+                        title="Adicionar subtarefa"
+                      >
+                        {isAddingSubtask ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Plus className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* Notes / Content Textarea (Auto-Resize) */}
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
@@ -667,7 +933,11 @@ function TaskModalDialog({
           ) : (
             <div className="flex items-center gap-2 bg-rose-50/90 border border-rose-200 p-2 rounded-xl text-xs sm:text-sm">
               <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              <span className="text-rose-700 font-medium">Excluir tarefa?</span>
+              <span className="text-rose-700 font-medium">
+                {totalSubtasksToDelete > 0
+                  ? `Excluir tarefa e suas ${totalSubtasksToDelete} subtarefas?`
+                  : "Excluir tarefa?"}
+              </span>
               <button
                 type="button"
                 disabled={isDeleting}
@@ -705,6 +975,8 @@ export function TaskModal({
   onClose,
   onTaskUpdated,
   onTaskDeleted,
+  onOpenTask,
+  onSubtaskCreated,
 }: TaskModalProps) {
   if (!isOpen || !task) return null;
 
@@ -715,6 +987,8 @@ export function TaskModal({
       onClose={onClose}
       onTaskUpdated={onTaskUpdated}
       onTaskDeleted={onTaskDeleted}
+      onOpenTask={onOpenTask}
+      onSubtaskCreated={onSubtaskCreated}
     />
   );
 }

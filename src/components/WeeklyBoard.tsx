@@ -13,6 +13,7 @@ import {
   getWeekTasksAction,
   createTaskAction,
   toggleTaskStatusAction,
+  getTaskByIdAction,
 } from "@/app/actions/tasks";
 import { logoutAction } from "@/app/actions/auth";
 import { updateUserPreferencesAction } from "@/app/actions/user";
@@ -29,6 +30,8 @@ import {
   LogOut,
   CalendarDays,
   SlidersHorizontal,
+  CornerDownRight,
+  ListTree,
 } from "lucide-react";
 
 // Client-side today subscription for zero SSR hydration mismatch
@@ -246,6 +249,8 @@ export function WeeklyBoard({
       id: tempId,
       userId: "",
       tagId: null,
+      parentId: null,
+      parent: null,
       tag: null,
       title,
       content: "",
@@ -255,6 +260,8 @@ export function WeeklyBoard({
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),
+      subtaskCount: 0,
+      completedSubtaskCount: 0,
     };
 
     setTasks((prev) => [...prev, optimisticTask]);
@@ -292,22 +299,93 @@ export function WeeklyBoard({
     await toggleTaskStatusAction(taskToToggle.id, newCompleted);
   };
 
-  // Open modal
-  const handleOpenTask = (task: TaskWithTag) => {
-    setSelectedTask(task);
-    setIsModalOpen(true);
+  // Open modal (supports passing TaskWithTag directly or taskId string for deep links)
+  const handleOpenTask = async (taskOrId: TaskWithTag | string) => {
+    if (typeof taskOrId === "string") {
+      const found = tasks.find((t) => t.id === taskOrId);
+      if (found) {
+        setSelectedTask(found);
+        setIsModalOpen(true);
+      } else {
+        const res = await getTaskByIdAction(taskOrId);
+        if (res.task) {
+          setSelectedTask(res.task);
+          setIsModalOpen(true);
+        }
+      }
+    } else {
+      setSelectedTask(taskOrId);
+      setIsModalOpen(true);
+    }
+  };
+
+  // When a subtask is created inside modal
+  const handleSubtaskCreated = (newSub: TaskWithTag) => {
+    setTasks((prev) => {
+      const exists = prev.some((t) => t.id === newSub.id);
+      const next = exists
+        ? prev.map((t) => (t.id === newSub.id ? newSub : t))
+        : [...prev, newSub];
+      return next.map((t) => {
+        if (t.id === newSub.parentId) {
+          return {
+            ...t,
+            subtaskCount: (t.subtaskCount || 0) + 1,
+          };
+        }
+        return t;
+      });
+    });
   };
 
   // Modal updates
   const handleTaskUpdated = (updatedTask: TaskWithTag) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
-    );
+    setTasks((prev) => {
+      const mapped = prev.map((t) =>
+        t.id === updatedTask.id ? updatedTask : t
+      );
+      if (updatedTask.parentId) {
+        const parentSubs = mapped.filter(
+          (t) => t.parentId === updatedTask.parentId
+        );
+        const completedCount = parentSubs.filter((t) => t.completed).length;
+        return mapped.map((t) =>
+          t.id === updatedTask.parentId
+            ? { ...t, completedSubtaskCount: completedCount }
+            : t
+        );
+      }
+      return mapped;
+    });
     setSelectedTask(updatedTask);
   };
 
   const handleTaskDeleted = (taskId: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setTasks((prev) => {
+      const filtered = prev.filter(
+        (t) => t.id !== taskId && t.parentId !== taskId
+      );
+      const deletedTask = prev.find((t) => t.id === taskId);
+      if (deletedTask?.parentId) {
+        const remainingParentSubs = filtered.filter(
+          (t) => t.parentId === deletedTask.parentId
+        );
+        const completedCount = remainingParentSubs.filter(
+          (t) => t.completed
+        ).length;
+        return filtered.map((t) =>
+          t.id === deletedTask.parentId
+            ? {
+                ...t,
+                subtaskCount: remainingParentSubs.length,
+                completedSubtaskCount: completedCount,
+              }
+            : t
+        );
+      }
+      return filtered;
+    });
+
     if (selectedTask?.id === taskId) {
       setIsModalOpen(false);
       setSelectedTask(null);
@@ -511,95 +589,198 @@ export function WeeklyBoard({
 
                 {/* Tasks List for the Day */}
                 <div className="flex-1 space-y-2 overflow-y-auto max-h-[560px] pr-0.5">
-                  {dayTasks.map((t) => {
-                    const tagStyles = t.tag ? getTagColorStyles(t.tag.color) : null;
+                  {(() => {
+                    // 1. Top-level tasks on this day (no parentId)
+                    const mainTasks = dayTasks.filter((t) => !t.parentId);
+
+                    // 2. Subtasks on this day whose parent is on a different day or not in dayTasks
+                    const diffDaySubtasks = dayTasks.filter(
+                      (t) => t.parentId && !dayTasks.some((p) => p.id === t.parentId)
+                    );
+
+                    // Helper to render an individual task card
+                    const renderTaskCard = (
+                      t: TaskWithTag,
+                      isSameDaySubtask = false,
+                      isDiffDaySubtask = false
+                    ) => {
+                      const tagStyles = t.tag ? getTagColorStyles(t.tag.color) : null;
+
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => handleOpenTask(t)}
+                          className={`group relative flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                            t.completed
+                              ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
+                              : isSameDaySubtask
+                              ? "bg-white/95 hover:bg-white border-slate-200/70 text-slate-800 hover:shadow-xs hover:border-indigo-300"
+                              : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
+                          }`}
+                        >
+                          {/* Checkbox */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleToggleCompleted(e, t)}
+                            className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
+                          >
+                            {t.completed ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            ) : (
+                              <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
+                            )}
+                          </button>
+
+                          {/* Title and details */}
+                          <div className="flex-1 min-w-0">
+                            {/* Diff day indicator (parent pill) */}
+                            {isDiffDaySubtask && t.parent && (
+                              <div className="flex items-center gap-1 mb-1">
+                                <span
+                                  className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-50/90 border border-indigo-100 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
+                                  title={`Subtarefa de: ${t.parent.title}`}
+                                >
+                                  <CornerDownRight className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+                                  <span className="truncate">{t.parent.title}</span>
+                                </span>
+                              </div>
+                            )}
+
+                            <p
+                              className={`text-xs font-medium leading-snug break-words ${
+                                t.completed
+                                  ? "line-through text-slate-400"
+                                  : "text-slate-700"
+                              }`}
+                            >
+                              {t.title}
+                            </p>
+
+                            {/* Tag, Time, Duration & Subtask Progress Badges row */}
+                            {(t.tag ||
+                              t.time ||
+                              (t.duration && t.duration > 0) ||
+                              (t.subtaskCount && t.subtaskCount > 0)) && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                {/* Subtask progress count badge for main tasks */}
+                                {t.subtaskCount && t.subtaskCount > 0 ? (
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
+                                      t.completed ||
+                                      t.completedSubtaskCount === t.subtaskCount
+                                        ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                                        : "bg-indigo-50/90 text-indigo-700 border-indigo-200/60"
+                                    }`}
+                                    title={`Subtarefas: ${
+                                      t.completedSubtaskCount || 0
+                                    } de ${t.subtaskCount} concluídas`}
+                                  >
+                                    <ListTree
+                                      className={`w-2.5 h-2.5 ${
+                                        t.completed
+                                          ? "text-slate-400"
+                                          : "text-indigo-500"
+                                      }`}
+                                    />
+                                    <span>
+                                      {t.completedSubtaskCount || 0}/
+                                      {t.subtaskCount}
+                                    </span>
+                                  </span>
+                                ) : null}
+
+                                {/* Tag badge */}
+                                {t.tag && tagStyles && (
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
+                                      t.completed
+                                        ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                                        : tagStyles.badgeClass
+                                    }`}
+                                  >
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        t.completed
+                                          ? "bg-slate-400"
+                                          : tagStyles.dotClass
+                                      }`}
+                                    />
+                                    <span className="truncate max-w-[110px]">
+                                      {t.tag.name}
+                                    </span>
+                                  </span>
+                                )}
+
+                                {/* Time badge */}
+                                {t.time && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                                    <Clock className="w-2.5 h-2.5 text-indigo-400" />
+                                    {t.time}
+                                  </span>
+                                )}
+
+                                {/* Duration badge */}
+                                {t.duration && t.duration > 0 ? (
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${
+                                      t.completed
+                                        ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                                        : "bg-amber-50/90 text-amber-700 border-amber-200/60"
+                                    }`}
+                                    title={`Duração estimada: ${formatDuration(
+                                      t.duration
+                                    )}`}
+                                  >
+                                    <Timer
+                                      className={`w-2.5 h-2.5 ${
+                                        t.completed
+                                          ? "text-slate-400"
+                                          : "text-amber-500"
+                                      }`}
+                                    />
+                                    {formatDuration(t.duration)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    };
 
                     return (
-                      <div
-                        key={t.id}
-                        onClick={() => handleOpenTask(t)}
-                        className={`group relative flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          t.completed
-                            ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
-                            : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
-                        }`}
-                      >
-                        {/* Checkbox */}
-                        <button
-                          type="button"
-                          onClick={(e) => handleToggleCompleted(e, t)}
-                          className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
-                        >
-                          {t.completed ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
-                          )}
-                        </button>
+                      <>
+                        {/* Render main tasks and their same-day subtasks immediately below with indentation & guide line */}
+                        {mainTasks.map((mainTask) => {
+                          const sameDaySubtasks = dayTasks.filter(
+                            (sub) => sub.parentId === mainTask.id
+                          );
 
-                        {/* Title and details */}
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className={`text-xs font-medium leading-snug break-words ${
-                              t.completed
-                                ? "line-through text-slate-400"
-                                : "text-slate-700"
-                            }`}
-                          >
-                            {t.title}
-                          </p>
+                          return (
+                            <div key={mainTask.id} className="space-y-1.5">
+                              {renderTaskCard(mainTask)}
 
-                          {/* Tag, Time & Duration Badges row */}
-                          {(t.tag || t.time || (t.duration && t.duration > 0)) && (
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                              {/* Tag badge */}
-                              {t.tag && tagStyles && (
-                                <span
-                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
-                                    t.completed
-                                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
-                                      : tagStyles.badgeClass
-                                  }`}
-                                >
-                                  <span
-                                    className={`w-1.5 h-1.5 rounded-full ${
-                                      t.completed ? "bg-slate-400" : tagStyles.dotClass
-                                    }`}
-                                  />
-                                  <span className="truncate max-w-[110px]">
-                                    {t.tag.name}
-                                  </span>
-                                </span>
+                              {/* Same day subtasks nested with left indent and connector guide line */}
+                              {sameDaySubtasks.length > 0 && (
+                                <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 space-y-1.5 my-1">
+                                  {sameDaySubtasks.map((sub) =>
+                                    renderTaskCard(sub, true, false)
+                                  )}
+                                </div>
                               )}
-
-                              {/* Time badge */}
-                              {t.time && (
-                                <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 font-medium">
-                                  <Clock className="w-2.5 h-2.5 text-indigo-400" />
-                                  {t.time}
-                                </span>
-                              )}
-
-                              {/* Duration badge */}
-                              {t.duration && t.duration > 0 ? (
-                                <span
-                                  className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${
-                                    t.completed
-                                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
-                                      : "bg-amber-50/90 text-amber-700 border-amber-200/60"
-                                  }`}
-                                  title={`Duração estimada: ${formatDuration(t.duration)}`}
-                                >
-                                  <Timer className={`w-2.5 h-2.5 ${t.completed ? "text-slate-400" : "text-amber-500"}`} />
-                                  {formatDuration(t.duration)}
-                                </span>
-                              ) : null}
                             </div>
-                          )}
-                        </div>
-                      </div>
+                          );
+                        })}
+
+                        {/* Render subtasks scheduled on this day whose parent is on a different day */}
+                        {diffDaySubtasks.map((sub) => (
+                          <div key={sub.id}>
+                            {renderTaskCard(sub, false, true)}
+                          </div>
+                        ))}
+                      </>
                     );
-                  })}
+                  })()}
 
                   {/* Inline Quick Add Input immediately below the last task (or at start if 0 tasks) */}
                   <div className="pt-0.5">
@@ -651,6 +832,8 @@ export function WeeklyBoard({
         }}
         onTaskUpdated={handleTaskUpdated}
         onTaskDeleted={handleTaskDeleted}
+        onOpenTask={handleOpenTask}
+        onSubtaskCreated={handleSubtaskCreated}
       />
     </div>
   );

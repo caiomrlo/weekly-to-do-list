@@ -29,6 +29,13 @@
       "when": 1788549299406,
       "tag": "0003_perpetual_spencer_smythe",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788575365863,
+      "tag": "0004_marvelous_rictor",
+      "breakpoints": true
     }
   ]
 }

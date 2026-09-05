@@ -3,7 +3,8 @@
 import { db } from "@/db";
 import { tasks, tags, TaskWithTag } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
-import { and, eq, gte, lte, asc } from "drizzle-orm";
+import { and, eq, gte, lte, asc, isNotNull, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
 
 export async function getWeekTasksAction(
@@ -16,18 +17,94 @@ export async function getWeekTasksAction(
   }
 
   try {
+    const parentTasks = alias(tasks, "parent_task");
+
+    const [rows, subtaskStats] = await Promise.all([
+      db
+        .select({
+          task: tasks,
+          tag: tags,
+          parent: {
+            id: parentTasks.id,
+            title: parentTasks.title,
+          },
+        })
+        .from(tasks)
+        .leftJoin(tags, eq(tasks.tagId, tags.id))
+        .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
+        .where(
+          and(
+            eq(tasks.userId, session.userId),
+            gte(tasks.date, startDate),
+            lte(tasks.date, endDate)
+          )
+        )
+        .orderBy(asc(tasks.createdAt)),
+      db
+        .select({
+          parentId: tasks.parentId,
+          total: sql<number>`count(*)::int`,
+          completed: sql<number>`count(*) filter (where ${tasks.completed} = true)::int`,
+        })
+        .from(tasks)
+        .where(and(eq(tasks.userId, session.userId), isNotNull(tasks.parentId)))
+        .groupBy(tasks.parentId),
+    ]);
+
+    const statsMap = new Map<string, { total: number; completed: number }>();
+    for (const s of subtaskStats) {
+      if (s.parentId) {
+        statsMap.set(s.parentId, {
+          total: Number(s.total) || 0,
+          completed: Number(s.completed) || 0,
+        });
+      }
+    }
+
+    const list: TaskWithTag[] = rows.map((r) => {
+      const stats = statsMap.get(r.task.id);
+      return {
+        ...r.task,
+        tag: r.tag || null,
+        parent: r.parent?.id ? r.parent : null,
+        subtaskCount: stats?.total || 0,
+        completedSubtaskCount: stats?.completed || 0,
+      };
+    });
+
+    return { tasks: list };
+  } catch (err: unknown) {
+    console.error("Erro ao buscar tarefas da semana:", err);
+    return { error: "Erro ao buscar tarefas." };
+  }
+}
+
+export async function getSubtasksAction(
+  parentTaskId: string
+): Promise<{ subtasks?: TaskWithTag[]; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Não autenticado." };
+  }
+
+  try {
+    const parentTasks = alias(tasks, "parent_task");
     const rows = await db
       .select({
         task: tasks,
         tag: tags,
+        parent: {
+          id: parentTasks.id,
+          title: parentTasks.title,
+        },
       })
       .from(tasks)
       .leftJoin(tags, eq(tasks.tagId, tags.id))
+      .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
       .where(
         and(
           eq(tasks.userId, session.userId),
-          gte(tasks.date, startDate),
-          lte(tasks.date, endDate)
+          eq(tasks.parentId, parentTaskId)
         )
       )
       .orderBy(asc(tasks.createdAt));
@@ -35,12 +112,67 @@ export async function getWeekTasksAction(
     const list: TaskWithTag[] = rows.map((r) => ({
       ...r.task,
       tag: r.tag || null,
+      parent: r.parent?.id ? r.parent : null,
+      subtaskCount: 0,
+      completedSubtaskCount: 0,
     }));
 
-    return { tasks: list };
+    return { subtasks: list };
   } catch (err: unknown) {
-    console.error("Erro ao buscar tarefas da semana:", err);
-    return { error: "Erro ao buscar tarefas." };
+    console.error("Erro ao buscar subtarefas:", err);
+    return { error: "Erro ao buscar subtarefas." };
+  }
+}
+
+export async function getTaskByIdAction(
+  taskId: string
+): Promise<{ task?: TaskWithTag; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Não autenticado." };
+  }
+
+  try {
+    const parentTasks = alias(tasks, "parent_task");
+    const [rows, [stats]] = await Promise.all([
+      db
+        .select({
+          task: tasks,
+          tag: tags,
+          parent: {
+            id: parentTasks.id,
+            title: parentTasks.title,
+          },
+        })
+        .from(tasks)
+        .leftJoin(tags, eq(tasks.tagId, tags.id))
+        .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
+        .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+          completed: sql<number>`count(*) filter (where ${tasks.completed} = true)::int`,
+        })
+        .from(tasks)
+        .where(and(eq(tasks.userId, session.userId), eq(tasks.parentId, taskId))),
+    ]);
+
+    if (!rows.length) {
+      return { error: "Tarefa não encontrada." };
+    }
+
+    const item: TaskWithTag = {
+      ...rows[0].task,
+      tag: rows[0].tag || null,
+      parent: rows[0].parent?.id ? rows[0].parent : null,
+      subtaskCount: stats?.total || 0,
+      completedSubtaskCount: stats?.completed || 0,
+    };
+
+    return { task: item };
+  } catch (err: unknown) {
+    console.error("Erro ao buscar tarefa por ID:", err);
+    return { error: "Erro ao carregar tarefa." };
   }
 }
 
@@ -50,6 +182,7 @@ export async function createTaskAction(data: {
   time?: string;
   duration?: number | null;
   tagId?: string | null;
+  parentId?: string | null;
 }): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
@@ -62,12 +195,29 @@ export async function createTaskAction(data: {
   }
 
   try {
+    let parentObj: { id: string; title: string } | null = null;
+    if (data.parentId) {
+      const [parent] = await db
+        .select()
+        .from(tasks)
+        .where(and(eq(tasks.id, data.parentId), eq(tasks.userId, session.userId)));
+
+      if (!parent) {
+        return { error: "Tarefa principal não encontrada." };
+      }
+      if (parent.parentId) {
+        return { error: "Não é permitido criar subtarefa de uma subtarefa (limite de 1 nível)." };
+      }
+      parentObj = { id: parent.id, title: parent.title };
+    }
+
     const now = new Date();
     const [inserted] = await db
       .insert(tasks)
       .values({
         userId: session.userId,
         tagId: data.tagId || null,
+        parentId: data.parentId || null,
         title,
         date: data.date,
         time: data.time?.trim() || null,
@@ -91,6 +241,9 @@ export async function createTaskAction(data: {
     const newTask: TaskWithTag = {
       ...inserted,
       tag: tagObj,
+      parent: parentObj,
+      subtaskCount: 0,
+      completedSubtaskCount: 0,
     };
 
     revalidatePath("/");
@@ -160,14 +313,29 @@ export async function updateTaskAction(
       .set(updateValues)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
 
-    const rows = await db
-      .select({
-        task: tasks,
-        tag: tags,
-      })
-      .from(tasks)
-      .leftJoin(tags, eq(tasks.tagId, tags.id))
-      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
+    const parentTasks = alias(tasks, "parent_task");
+    const [rows, [stats]] = await Promise.all([
+      db
+        .select({
+          task: tasks,
+          tag: tags,
+          parent: {
+            id: parentTasks.id,
+            title: parentTasks.title,
+          },
+        })
+        .from(tasks)
+        .leftJoin(tags, eq(tasks.tagId, tags.id))
+        .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
+        .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+          completed: sql<number>`count(*) filter (where ${tasks.completed} = true)::int`,
+        })
+        .from(tasks)
+        .where(and(eq(tasks.userId, session.userId), eq(tasks.parentId, taskId))),
+    ]);
 
     if (!rows.length) {
       return { error: "Tarefa não encontrada." };
@@ -176,6 +344,9 @@ export async function updateTaskAction(
     const updated: TaskWithTag = {
       ...rows[0].task,
       tag: rows[0].tag || null,
+      parent: rows[0].parent?.id ? rows[0].parent : null,
+      subtaskCount: stats?.total || 0,
+      completedSubtaskCount: stats?.completed || 0,
     };
 
     revalidatePath("/");
