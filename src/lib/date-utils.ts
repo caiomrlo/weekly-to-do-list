@@ -80,9 +80,11 @@ export function getMondayOfWeek(refDate: Date = new Date()): Date {
 
 /**
  * Retorna os 7 dias da semana (Segunda a Domingo) a partir de uma data de Segunda-feira.
+ * @param monday - Data da Segunda-feira
+ * @param todayStr - Opcional string 'YYYY-MM-DD' para definir o dia atual. Se null ou "", nenhum dia será marcado como hoje (ideal para SSR/hidratação limpa). Se undefined, calcula via new Date().
  */
-export function getWeekDays(monday: Date): DayInfo[] {
-  const todayStr = toDateString(new Date());
+export function getWeekDays(monday: Date, todayStr?: string | null): DayInfo[] {
+  const effectiveTodayStr = todayStr !== undefined ? todayStr : toDateString(new Date());
   const days: DayInfo[] = [];
 
   for (let i = 0; i < 7; i++) {
@@ -96,7 +98,7 @@ export function getWeekDays(monday: Date): DayInfo[] {
       dayNameShort: DAY_NAMES_SHORT[dayOfWeek],
       dayNumber: current.getDate(),
       monthNameShort: MONTH_NAMES_SHORT[current.getMonth()],
-      isToday: dateStr === todayStr,
+      isToday: Boolean(effectiveTodayStr && dateStr === effectiveTodayStr),
       dayOfWeek,
     });
   }

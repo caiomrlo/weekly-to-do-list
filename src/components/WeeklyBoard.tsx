@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef, useEffect } from "react";
+import { useState, useTransition, useMemo, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
 import { TaskWithTag, UserPreferences, DEFAULT_USER_PREFERENCES } from "@/db/schema";
 import {
   getMondayOfWeek,
@@ -30,6 +30,31 @@ import {
   CalendarDays,
   SlidersHorizontal,
 } from "lucide-react";
+
+// Client-side today subscription for zero SSR hydration mismatch
+let cachedToday = "";
+function getClientToday(): string {
+  const current = toDateString(new Date());
+  if (current !== cachedToday) {
+    cachedToday = current;
+  }
+  return cachedToday;
+}
+function getServerToday(): string {
+  return "";
+}
+function subscribeToday(callback: () => void) {
+  window.addEventListener("focus", callback);
+  const timer = setInterval(callback, 60000);
+  return () => {
+    window.removeEventListener("focus", callback);
+    clearInterval(timer);
+  };
+}
+
+function useTodayDateStr(): string {
+  return useSyncExternalStore(subscribeToday, getClientToday, getServerToday);
+}
 
 interface WeeklyBoardProps {
   initialTasks: TaskWithTag[];
@@ -96,8 +121,51 @@ export function WeeklyBoard({
     }
   };
 
-  // Calculate the 7 days of current week
-  const weekDays = useMemo(() => getWeekDays(currentMonday), [currentMonday]);
+  // Client-side today date string from synchronized store (returns "" on server, todayStr on client)
+  const todayStr = useTodayDateStr();
+
+  // Load tasks when week changes
+  const fetchWeekTasks = useCallback((monday: Date) => {
+    const start = toDateString(monday);
+    const end = toDateString(
+      new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
+    );
+
+    startNavTransition(async () => {
+      const res = await getWeekTasksAction(start, end);
+      if (res.tasks) {
+        setTasks(res.tasks);
+      }
+    });
+  }, []);
+
+  // Save client timezone in cookie and synchronize week boundary if client timezone differs from server
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) {
+        document.cookie = `user_tz=${encodeURIComponent(tz)}; path=/; max-age=31536000; SameSite=Lax`;
+      }
+    } catch {
+      // Ignore if Intl is unavailable
+    }
+
+    const clientMonday = getMondayOfWeek(new Date());
+    const clientMondayStr = toDateString(clientMonday);
+    if (clientMondayStr !== initialMondayStr) {
+      const timer = setTimeout(() => {
+        setCurrentMonday(clientMonday);
+        fetchWeekTasks(clientMonday);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [initialMondayStr, fetchWeekTasks]);
+
+  // Calculate the 7 days of current week (using todayStr to ensure SSR matches initial client hydration)
+  const weekDays = useMemo(
+    () => getWeekDays(currentMonday, todayStr),
+    [currentMonday, todayStr]
+  );
 
   // Filter visible days based on user preferences (Saturday and Sunday hidden by default)
   const visibleWeekDays = useMemo(() => {
@@ -120,21 +188,6 @@ export function WeeklyBoard({
         return "lg:grid-cols-7";
     }
   }, [visibleWeekDays.length]);
-
-  // Load tasks when week changes
-  const fetchWeekTasks = (monday: Date) => {
-    const start = toDateString(monday);
-    const end = toDateString(
-      new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
-    );
-
-    startNavTransition(async () => {
-      const res = await getWeekTasksAction(start, end);
-      if (res.tasks) {
-        setTasks(res.tasks);
-      }
-    });
-  };
 
   // Week navigation
   const handlePrevWeek = () => {
