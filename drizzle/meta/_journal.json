@@ -36,6 +36,13 @@
       "when": 1788575365863,
       "tag": "0004_marvelous_rictor",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788577011418,
+      "tag": "0005_windy_smasher",
+      "breakpoints": true
     }
   ]
 }

@@ -14,6 +14,7 @@ import {
   createTaskAction,
   toggleTaskStatusAction,
   getTaskByIdAction,
+  moveOrReorderTasksAction,
 } from "@/app/actions/tasks";
 import { logoutAction } from "@/app/actions/auth";
 import { updateUserPreferencesAction } from "@/app/actions/user";
@@ -32,6 +33,7 @@ import {
   SlidersHorizontal,
   CornerDownRight,
   ListTree,
+  GripVertical,
 } from "lucide-react";
 
 // Client-side today subscription for zero SSR hydration mismatch
@@ -91,6 +93,39 @@ export function WeeklyBoard({
   // New task inline input state per day: { [dateStr]: string }
   const [newTitles, setNewTitles] = useState<Record<string, string>>({});
   const [isNavigating, startNavTransition] = useTransition();
+
+  // Drag and Drop states
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{
+    dateStr: string;
+    targetTaskId?: string;
+    position: "before" | "after" | "nest" | "column";
+  } | null>(null);
+  const isDragCooldownRef = useRef(false);
+  const dragCooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerDragCooldown = useCallback(() => {
+    isDragCooldownRef.current = true;
+    if (dragCooldownTimerRef.current) {
+      clearTimeout(dragCooldownTimerRef.current);
+    }
+    dragCooldownTimerRef.current = setTimeout(() => {
+      isDragCooldownRef.current = false;
+    }, 180);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (dragCooldownTimerRef.current) {
+        clearTimeout(dragCooldownTimerRef.current);
+      }
+    };
+  }, []);
+
+  const draggedTask = useMemo(
+    () => (draggedTaskId ? tasks.find((t) => t.id === draggedTaskId) || null : null),
+    [tasks, draggedTaskId]
+  );
 
   // Close view menu on click outside
   useEffect(() => {
@@ -232,6 +267,15 @@ export function WeeklyBoard({
       }
     });
 
+    // Ordenar tarefas de cada dia pelo campo order ascendente, com fallback para createdAt
+    Object.keys(map).forEach((dateKey) => {
+      map[dateKey].sort((a, b) => {
+        const orderDiff = (a.order ?? 0) - (b.order ?? 0);
+        if (orderDiff !== 0) return orderDiff;
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+    });
+
     return map;
   }, [weekDays, tasks]);
 
@@ -258,6 +302,7 @@ export function WeeklyBoard({
       time: null,
       duration: null,
       completed: false,
+      order: tasks.filter((t) => t.date === dateStr && !t.parentId).length,
       createdAt: new Date(),
       updatedAt: new Date(),
       subtaskCount: 0,
@@ -301,6 +346,9 @@ export function WeeklyBoard({
 
   // Open modal (supports passing TaskWithTag directly or taskId string for deep links)
   const handleOpenTask = async (taskOrId: TaskWithTag | string) => {
+    // Ignora cliques residuais imediatos durante o cooldown de drop (180ms)
+    if (isDragCooldownRef.current) return;
+
     if (typeof taskOrId === "string") {
       const found = tasks.find((t) => t.id === taskOrId);
       if (found) {
@@ -316,6 +364,329 @@ export function WeeklyBoard({
     } else {
       setSelectedTask(taskOrId);
       setIsModalOpen(true);
+    }
+  };
+
+  // Drag and Drop Event Handlers
+  const handleDragStart = (e: React.DragEvent, task: TaskWithTag) => {
+    e.stopPropagation();
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", task.id);
+    requestAnimationFrame(() => {
+      setDraggedTaskId(task.id);
+    });
+  };
+
+  const handleDragEnd = () => {
+    triggerDragCooldown();
+    setDraggedTaskId(null);
+    setDropTarget(null);
+  };
+
+  const handleCardDragOver = (
+    e: React.DragEvent,
+    targetTask: TaskWithTag,
+    dateStr: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+
+    if (!draggedTaskId || draggedTaskId === targetTask.id) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const ratio = offsetY / rect.height;
+
+    const dragged = tasks.find((t) => t.id === draggedTaskId);
+    const draggedHasSubs = Boolean(
+      (dragged?.subtaskCount && dragged.subtaskCount > 0) ||
+        tasks.some((t) => t.parentId === draggedTaskId)
+    );
+
+    // Permite aninhar apenas se o alvo for tarefa principal (sem parentId) e o item arrastado não tiver subtarefas
+    const canNest = !targetTask.parentId && !draggedHasSubs;
+
+    let position: "before" | "after" | "nest";
+    if (canNest && ratio >= 0.28 && ratio <= 0.72) {
+      position = "nest";
+    } else if (ratio < 0.5) {
+      position = "before";
+    } else {
+      position = "after";
+    }
+
+    if (
+      !dropTarget ||
+      dropTarget.targetTaskId !== targetTask.id ||
+      dropTarget.position !== position ||
+      dropTarget.dateStr !== dateStr
+    ) {
+      setDropTarget({
+        dateStr,
+        targetTaskId: targetTask.id,
+        position,
+      });
+    }
+  };
+
+  const handleColumnDragOver = (e: React.DragEvent, dateStr: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+
+    if (!draggedTaskId) return;
+
+    if (
+      !dropTarget ||
+      dropTarget.targetTaskId !== undefined ||
+      dropTarget.dateStr !== dateStr
+    ) {
+      setDropTarget({
+        dateStr,
+        position: "column",
+      });
+    }
+  };
+
+  const handleColumnDragLeave = (e: React.DragEvent, dateStr: string) => {
+    e.preventDefault();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      if (dropTarget?.dateStr === dateStr && dropTarget.position === "column") {
+        setDropTarget(null);
+      }
+    }
+  };
+
+  const handleDrop = async (
+    e: React.DragEvent,
+    dateStr: string,
+    onTargetTask?: TaskWithTag
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const currentDrop = dropTarget;
+    const currentDraggedId = draggedTaskId;
+    triggerDragCooldown();
+    setDropTarget(null);
+    setDraggedTaskId(null);
+
+    if (!currentDraggedId) return;
+
+    const dragged = tasks.find((t) => t.id === currentDraggedId);
+    if (!dragged) return;
+
+    const targetId = currentDrop?.targetTaskId || onTargetTask?.id;
+    if (targetId && targetId === currentDraggedId) return;
+
+    const originalDate = dragged.date;
+    const originalParentId = dragged.parentId;
+    const targetTask = targetId ? tasks.find((t) => t.id === targetId) : null;
+    const targetPosition = currentDrop?.position || "column";
+
+    // Snapshot para rollback seguro em caso de falha de rede
+    const previousTasks = [...tasks];
+
+    // Determinar nova data e novo pai
+    let newDate = dateStr;
+    let newParentId: string | null = null;
+    let newParentObj: { id: string; title: string } | null = null;
+
+    const sameDaySubtasks = tasks.filter(
+      (t) => t.parentId === currentDraggedId && t.date === originalDate
+    );
+    const draggedHasSubs =
+      Boolean(dragged.subtaskCount && dragged.subtaskCount > 0) ||
+      sameDaySubtasks.length > 0;
+
+    if (targetPosition === "nest" && targetTask) {
+      // Aninhar dentro de uma tarefa principal
+      if (targetTask.parentId || draggedHasSubs) return;
+      newParentId = targetTask.id;
+      newParentObj = { id: targetTask.id, title: targetTask.title };
+      newDate = targetTask.date;
+    } else if (
+      (targetPosition === "before" || targetPosition === "after") &&
+      targetTask
+    ) {
+      newDate = targetTask.date;
+      if (targetTask.parentId) {
+        // Alvo é subtarefa -> arrastado vira subtarefa sob o mesmo pai se permitido
+        if (!draggedHasSubs) {
+          newParentId = targetTask.parentId;
+          newParentObj = targetTask.parent || null;
+        } else {
+          newParentId = null;
+          newParentObj = null;
+        }
+      } else {
+        // Alvo é tarefa principal -> arrastado vira tarefa independente
+        newParentId = null;
+        newParentObj = null;
+      }
+    } else {
+      // Solto no espaço da coluna
+      newDate = dateStr;
+      newParentId = null;
+      newParentObj = null;
+    }
+
+    // Regra do usuário: se a tarefa for arrastada para outro dia e contiver subtarefas no mesmo dia, todas vão para o novo dia
+    const movingParentToNewDate =
+      !newParentId && originalDate !== newDate && sameDaySubtasks.length > 0;
+
+    // Calcular IDs ordenados no container de destino
+    let targetOrderedIds: string[] = [];
+
+    if (newParentId) {
+      const currentSubs = tasks
+        .filter((t) => t.parentId === newParentId && t.id !== currentDraggedId)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+      if (targetTask && targetTask.parentId === newParentId) {
+        const targetIdx = currentSubs.findIndex((t) => t.id === targetTask.id);
+        const insertIdx =
+          targetPosition === "before" ? targetIdx : targetIdx + 1;
+        currentSubs.splice(insertIdx, 0, dragged);
+      } else {
+        currentSubs.push(dragged);
+      }
+      targetOrderedIds = currentSubs.map((t) => t.id);
+    } else {
+      const currentMains = tasks
+        .filter(
+          (t) =>
+            !t.parentId &&
+            t.date === newDate &&
+            t.id !== currentDraggedId
+        )
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+      if (targetTask && !targetTask.parentId && targetTask.date === newDate) {
+        const targetIdx = currentMains.findIndex((t) => t.id === targetTask.id);
+        const insertIdx =
+          targetPosition === "before" ? targetIdx : targetIdx + 1;
+        currentMains.splice(insertIdx, 0, dragged);
+      } else {
+        currentMains.push(dragged);
+      }
+      targetOrderedIds = currentMains.map((t) => t.id);
+    }
+
+    // Calcular IDs ordenados no container de origem caso a data ou pai tenham mudado
+    let sourceOrderedIds: string[] = [];
+    if (originalDate !== newDate || originalParentId !== newParentId) {
+      if (!originalParentId) {
+        sourceOrderedIds = tasks
+          .filter(
+            (t) =>
+              !t.parentId &&
+              t.date === originalDate &&
+              t.id !== currentDraggedId
+          )
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((t) => t.id);
+      } else {
+        sourceOrderedIds = tasks
+          .filter(
+            (t) =>
+              t.parentId === originalParentId &&
+              t.id !== currentDraggedId
+          )
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((t) => t.id);
+      }
+    }
+
+    // Atualização otimista e fluida da UI
+    setTasks((prev) => {
+      return prev.map((t) => {
+        if (t.id === currentDraggedId) {
+          const newOrderIdx = targetOrderedIds.indexOf(t.id);
+          return {
+            ...t,
+            date: newDate,
+            parentId: newParentId,
+            parent: newParentObj,
+            order: newOrderIdx !== -1 ? newOrderIdx : (t.order ?? 0),
+          };
+        }
+
+        // Subtarefas do mesmo dia que acompanham o pai para o novo dia
+        if (
+          movingParentToNewDate &&
+          t.parentId === currentDraggedId &&
+          t.date === originalDate
+        ) {
+          return {
+            ...t,
+            date: newDate,
+          };
+        }
+
+        const targetIdx = targetOrderedIds.indexOf(t.id);
+        if (targetIdx !== -1) {
+          return { ...t, order: targetIdx };
+        }
+
+        const sourceIdx = sourceOrderedIds.indexOf(t.id);
+        if (sourceIdx !== -1) {
+          return { ...t, order: sourceIdx };
+        }
+
+        // Atualizar contadores do pai anterior se mudou
+        if (
+          originalParentId &&
+          originalParentId !== newParentId &&
+          t.id === originalParentId
+        ) {
+          return {
+            ...t,
+            subtaskCount: Math.max(0, (t.subtaskCount || 1) - 1),
+            completedSubtaskCount: dragged.completed
+              ? Math.max(0, (t.completedSubtaskCount || 1) - 1)
+              : t.completedSubtaskCount,
+          };
+        }
+
+        // Atualizar contadores do novo pai se mudou
+        if (
+          newParentId &&
+          newParentId !== originalParentId &&
+          t.id === newParentId
+        ) {
+          return {
+            ...t,
+            subtaskCount: (t.subtaskCount || 0) + 1,
+            completedSubtaskCount: dragged.completed
+              ? (t.completedSubtaskCount || 0) + 1
+              : t.completedSubtaskCount,
+          };
+        }
+
+        return t;
+      });
+    });
+
+    // Sincronizar com o banco via Server Action em background
+    try {
+      const res = await moveOrReorderTasksAction({
+        taskId: currentDraggedId,
+        targetDate: newDate,
+        targetParentId: newParentId,
+        targetOrderedIds,
+        sourceOrderedIds,
+        originalDate,
+        moveSameDaySubtasks: movingParentToNewDate,
+      });
+
+      if (res?.error) {
+        console.error("Erro ao sincronizar ordenação:", res.error);
+        setTasks(previousTasks);
+      }
+    } catch (err) {
+      console.error("Erro de rede ao sincronizar drag and drop:", err);
+      setTasks(previousTasks);
     }
   };
 
@@ -559,8 +930,16 @@ export function WeeklyBoard({
             return (
               <div
                 key={day.dateStr}
+                onDragOver={(e) => handleColumnDragOver(e, day.dateStr)}
+                onDragLeave={(e) => handleColumnDragLeave(e, day.dateStr)}
+                onDrop={(e) => handleDrop(e, day.dateStr)}
                 className={`rounded-2xl flex flex-col min-h-[480px] p-3.5 transition-all duration-200 ${
-                  day.isToday ? "glass-card-today ring-1 ring-indigo-500/20" : "glass-card"
+                  dropTarget?.dateStr === day.dateStr &&
+                  (dropTarget.position === "column" || !dropTarget.targetTaskId)
+                    ? "ring-2 ring-indigo-400/50 bg-indigo-50/25"
+                    : day.isToday
+                    ? "glass-card-today ring-1 ring-indigo-500/20"
+                    : "glass-card"
                 }`}
               >
                 {/* Column Day Header */}
@@ -605,22 +984,69 @@ export function WeeklyBoard({
                       isDiffDaySubtask = false
                     ) => {
                       const tagStyles = t.tag ? getTagColorStyles(t.tag.color) : null;
+                      const isDragging = draggedTaskId === t.id;
+                      const isTarget = dropTarget?.targetTaskId === t.id;
+                      const isNestTarget = isTarget && dropTarget?.position === "nest";
+                      const isBeforeTarget = isTarget && dropTarget?.position === "before";
+                      const isAfterTarget = isTarget && dropTarget?.position === "after";
+
+                      // Se o pai desta subtarefa estiver sendo arrastado, destaca que a subtarefa o acompanha
+                      const isAttachedToDragged = Boolean(
+                        draggedTaskId &&
+                          t.parentId === draggedTaskId &&
+                          draggedTask &&
+                          t.date === draggedTask.date
+                      );
 
                       return (
                         <div
                           key={t.id}
+                          draggable={true}
+                          onDragStart={(e) => handleDragStart(e, t)}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => handleCardDragOver(e, t, t.date)}
+                          onDrop={(e) => handleDrop(e, t.date, t)}
                           onClick={() => handleOpenTask(t)}
-                          className={`group relative flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                            t.completed
+                          className={`group relative flex items-start gap-2 p-2.5 rounded-xl border transition-all select-none cursor-pointer ${
+                            isDragging
+                              ? "opacity-35 scale-[0.98] border-dashed border-indigo-400 bg-indigo-50/20 shadow-none cursor-grabbing"
+                              : isNestTarget
+                              ? "ring-2 ring-indigo-500 bg-indigo-50/85 border-indigo-400 shadow-md cursor-grabbing"
+                              : isAttachedToDragged
+                              ? "opacity-60 border-dashed border-indigo-300 bg-indigo-50/10"
+                              : t.completed
                               ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
                               : isSameDaySubtask
                               ? "bg-white/95 hover:bg-white border-slate-200/70 text-slate-800 hover:shadow-xs hover:border-indigo-300"
                               : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
                           }`}
                         >
+                          {/* Drop Indicator Line: Before */}
+                          {isBeforeTarget && (
+                            <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
+                              <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white shadow-xs" />
+                            </div>
+                          )}
+
+                          {/* Drop Indicator Line: After */}
+                          {isAfterTarget && (
+                            <div className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
+                              <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white shadow-xs" />
+                            </div>
+                          )}
+
+                          {/* Drag Grip Handle */}
+                          <div
+                            className="mt-0.5 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0 cursor-grab active:cursor-grabbing"
+                            title="Arraste para mover ou reordenar"
+                          >
+                            <GripVertical className="w-3.5 h-3.5" />
+                          </div>
+
                           {/* Checkbox */}
                           <button
                             type="button"
+                            draggable={false}
                             onClick={(e) => handleToggleCompleted(e, t)}
                             className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
                           >
@@ -632,7 +1058,7 @@ export function WeeklyBoard({
                           </button>
 
                           {/* Title and details */}
-                          <div className="flex-1 min-w-0">
+                          <div className={`flex-1 min-w-0 ${draggedTaskId ? "pointer-events-none" : ""}`}>
                             {/* Diff day indicator (parent pill) */}
                             {isDiffDaySubtask && t.parent && (
                               <div className="flex items-center gap-1 mb-1">
@@ -655,6 +1081,14 @@ export function WeeklyBoard({
                             >
                               {t.title}
                             </p>
+
+                            {/* Nest Target Indicator Pill */}
+                            {isNestTarget && (
+                              <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-100/90 px-1.5 py-0.5 rounded-md animate-pulse">
+                                <CornerDownRight className="w-2.5 h-2.5 text-indigo-600 flex-shrink-0" />
+                                <span>Soltar para virar subtarefa</span>
+                              </div>
+                            )}
 
                             {/* Tag, Time, Duration & Subtask Progress Badges row */}
                             {Boolean(
@@ -785,6 +1219,22 @@ export function WeeklyBoard({
                       </>
                     );
                   })()}
+
+                  {/* Drop zone dedicada exibida na coluna durante arraste */}
+                  {draggedTaskId && (
+                    <div
+                      onDragOver={(e) => handleColumnDragOver(e, day.dateStr)}
+                      onDrop={(e) => handleDrop(e, day.dateStr)}
+                      className={`h-10 border-2 border-dashed rounded-xl flex items-center justify-center text-[11px] font-medium transition-all ${
+                        dropTarget?.dateStr === day.dateStr &&
+                        (dropTarget.position === "column" || !dropTarget.targetTaskId)
+                          ? "border-indigo-400 bg-indigo-50/70 text-indigo-700 shadow-xs"
+                          : "border-slate-200/60 text-slate-400 hover:border-indigo-300 hover:text-indigo-500 bg-white/20"
+                      }`}
+                    >
+                      <span>Mover para {day.dayNameShort}</span>
+                    </div>
+                  )}
 
                   {/* Inline Quick Add Input immediately below the last task (or at start if 0 tasks) */}
                   <div className="pt-0.5">

@@ -39,7 +39,7 @@ export async function getWeekTasksAction(
             lte(tasks.date, endDate)
           )
         )
-        .orderBy(asc(tasks.createdAt)),
+        .orderBy(asc(tasks.order), asc(tasks.createdAt)),
       db
         .select({
           parentId: tasks.parentId,
@@ -107,7 +107,7 @@ export async function getSubtasksAction(
           eq(tasks.parentId, parentTaskId)
         )
       )
-      .orderBy(asc(tasks.createdAt));
+      .orderBy(asc(tasks.order), asc(tasks.createdAt));
 
     const list: TaskWithTag[] = rows.map((r) => ({
       ...r.task,
@@ -212,6 +212,12 @@ export async function createTaskAction(data: {
     }
 
     const now = new Date();
+    const [maxOrderRow] = await db
+      .select({ maxOrder: sql<number>`coalesce(max(${tasks.order}), -1)::int` })
+      .from(tasks)
+      .where(and(eq(tasks.userId, session.userId), eq(tasks.date, data.date)));
+    const nextOrder = (maxOrderRow?.maxOrder ?? -1) + 1;
+
     const [inserted] = await db
       .insert(tasks)
       .values({
@@ -224,6 +230,7 @@ export async function createTaskAction(data: {
         duration: data.duration ?? null,
         content: "",
         completed: false,
+        order: nextOrder,
         createdAt: now,
         updatedAt: now,
       })
@@ -377,4 +384,132 @@ export async function deleteTaskAction(
     return { error: "Erro ao excluir tarefa." };
   }
 }
+
+export async function moveOrReorderTasksAction(params: {
+  taskId: string;
+  targetDate: string;
+  targetParentId: string | null;
+  targetOrderedIds: string[];
+  sourceOrderedIds?: string[];
+  originalDate?: string;
+  moveSameDaySubtasks?: boolean;
+}): Promise<{ success?: boolean; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Não autenticado." };
+  }
+
+  try {
+    const {
+      taskId,
+      targetDate,
+      targetParentId,
+      targetOrderedIds,
+      sourceOrderedIds,
+      originalDate,
+      moveSameDaySubtasks,
+    } = params;
+
+    // 1. Verificar propriedade da tarefa
+    const [task] = await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
+
+    if (!task) {
+      return { error: "Tarefa não encontrada." };
+    }
+
+    // 2. Se for aninhar em um pai, validar regras de 1 nível de aninhamento
+    if (targetParentId) {
+      if (targetParentId === taskId) {
+        return { error: "Uma tarefa não pode ser subtarefa de si mesma." };
+      }
+
+      const [targetParent] = await db
+        .select()
+        .from(tasks)
+        .where(and(eq(tasks.id, targetParentId), eq(tasks.userId, session.userId)));
+
+      if (!targetParent) {
+        return { error: "Tarefa de destino não encontrada." };
+      }
+
+      if (targetParent.parentId) {
+        return { error: "Não é permitido criar subtarefa de uma subtarefa (limite de 1 nível)." };
+      }
+
+      // Garantir que a tarefa arrastada não possua subtarefas (pois criaria 2 níveis)
+      const [existingSubtask] = await db
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(and(eq(tasks.userId, session.userId), eq(tasks.parentId, taskId)))
+        .limit(1);
+
+      if (existingSubtask) {
+        return { error: "Uma tarefa que já possui subtarefas não pode ser transformada em subtarefa." };
+      }
+    }
+
+    const now = new Date();
+
+    // 3. Se a tarefa pai mudou de dia e solicitou mover subtarefas do mesmo dia
+    if (moveSameDaySubtasks && originalDate && originalDate !== targetDate) {
+      await db
+        .update(tasks)
+        .set({
+          date: targetDate,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(tasks.userId, session.userId),
+            eq(tasks.parentId, taskId),
+            eq(tasks.date, originalDate)
+          )
+        );
+    }
+
+    // 4. Atualizar a tarefa movida (data, parentId)
+    await db
+      .update(tasks)
+      .set({
+        date: targetDate,
+        parentId: targetParentId,
+        updatedAt: now,
+      })
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
+
+    // 5. Atualizar ordem no container de destino
+    if (targetOrderedIds && targetOrderedIds.length > 0) {
+      await Promise.all(
+        targetOrderedIds.map((id, index) =>
+          db
+            .update(tasks)
+            .set({ order: index, updatedAt: now })
+            .where(and(eq(tasks.id, id), eq(tasks.userId, session.userId)))
+        )
+      );
+    }
+
+    // 6. Atualizar ordem no container de origem (se houver)
+    if (sourceOrderedIds && sourceOrderedIds.length > 0) {
+      await Promise.all(
+        sourceOrderedIds.map((id, index) =>
+          db
+            .update(tasks)
+            .set({ order: index, updatedAt: now })
+            .where(and(eq(tasks.id, id), eq(tasks.userId, session.userId)))
+        )
+      );
+    }
+
+    revalidatePath("/");
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("Erro ao mover/reordenar tarefas:", err);
+    return { error: "Erro ao salvar ordenação das tarefas." };
+  }
+}
+
 
