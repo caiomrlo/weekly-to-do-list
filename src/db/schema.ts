@@ -3,12 +3,14 @@ import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb,
 export interface UserPreferences {
   showSaturday?: boolean;
   showSunday?: boolean;
+  theme?: "light" | "dark" | "system";
   [key: string]: unknown;
 }
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   showSaturday: false,
   showSunday: false,
+  theme: "light",
 };
 
 export const users = pgTable("users", {

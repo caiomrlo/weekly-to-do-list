@@ -37,6 +37,8 @@ import {
   GripVertical,
   CalendarOff,
   ChevronDown,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 // Client-side today subscription for zero SSR hydration mismatch
@@ -62,6 +64,27 @@ function subscribeToday(callback: () => void) {
 
 function useTodayDateStr(): string {
   return useSyncExternalStore(subscribeToday, getClientToday, getServerToday);
+}
+
+// Client-side dark mode subscription for zero SSR hydration mismatch
+function getClientDarkMode(): boolean {
+  return typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false;
+}
+function getServerDarkMode(): boolean {
+  return false;
+}
+function subscribeDarkMode(callback: () => void) {
+  if (typeof MutationObserver === "undefined") return () => {};
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => observer.disconnect();
+}
+
+function useDarkMode(): boolean {
+  return useSyncExternalStore(subscribeDarkMode, getClientDarkMode, getServerDarkMode);
 }
 
 interface WeeklyBoardProps {
@@ -160,6 +183,36 @@ export function WeeklyBoard({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isViewMenuOpen]);
+
+  // Theme mode state (synced with html.dark class and user preferences via useSyncExternalStore)
+  const isDarkMode = useDarkMode();
+
+  const handleToggleTheme = async () => {
+    const nextIsDark = !isDarkMode;
+
+    if (nextIsDark) {
+      document.documentElement.classList.add("dark");
+      try {
+        localStorage.setItem("theme", "dark");
+        document.cookie = "theme=dark; path=/; max-age=31536000; SameSite=Lax";
+      } catch {}
+    } else {
+      document.documentElement.classList.remove("dark");
+      try {
+        localStorage.setItem("theme", "light");
+        document.cookie = "theme=light; path=/; max-age=31536000; SameSite=Lax";
+      } catch {}
+    }
+
+    const nextTheme = nextIsDark ? "dark" : "light";
+    setPreferences((prev) => ({ ...prev, theme: nextTheme }));
+
+    try {
+      await updateUserPreferencesAction({ theme: nextTheme });
+    } catch (err) {
+      console.error("Erro ao salvar preferência de tema:", err);
+    }
+  };
 
   // Toggle visible day setting
   const handleToggleDay = async (dayKey: "showSaturday" | "showSunday") => {
@@ -824,35 +877,35 @@ export function WeeklyBoard({
         onDrop={(e) => handleDrop(e, cardDateStr, t)}
         onClick={() => handleOpenTask(t)}
         className={`group relative flex items-start gap-2 p-2.5 rounded-xl border transition-all select-none cursor-pointer ${isDragging
-          ? "opacity-35 scale-[0.98] border-dashed border-indigo-400 bg-indigo-50/20 shadow-none cursor-grabbing"
+          ? "opacity-35 scale-[0.98] border-dashed border-indigo-400 dark:border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/30 shadow-none cursor-grabbing"
           : isNestTarget
-            ? "ring-2 ring-indigo-500 bg-indigo-50/85 border-indigo-400 shadow-md cursor-grabbing"
+            ? "ring-2 ring-indigo-500 bg-indigo-50/85 dark:bg-indigo-950/85 border-indigo-400 dark:border-indigo-500 shadow-md cursor-grabbing"
             : isAttachedToDragged
-              ? "opacity-60 border-dashed border-indigo-300 bg-indigo-50/10"
+              ? "opacity-60 border-dashed border-indigo-300 dark:border-indigo-600 bg-indigo-50/10 dark:bg-indigo-950/20"
               : t.completed
-                ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
+                ? "bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 text-slate-400 dark:text-slate-500"
                 : isSameDaySubtask
-                  ? "bg-white/95 hover:bg-white border-slate-200/70 text-slate-800 hover:shadow-xs hover:border-indigo-300"
-                  : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
+                  ? "bg-white/95 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-indigo-300 dark:hover:border-indigo-500/50"
+                  : "bg-white/85 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200/60 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-indigo-200 dark:hover:border-indigo-500/40"
           }`}
       >
         {/* Drop Indicator Line: Before */}
         {isBeforeTarget && (
           <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white shadow-xs" />
+            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
           </div>
         )}
 
         {/* Drop Indicator Line: After */}
         {isAfterTarget && (
           <div className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white shadow-xs" />
+            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
           </div>
         )}
 
         {/* Drag Grip Handle */}
         <div
-          className="mt-0.5 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0 cursor-grab active:cursor-grabbing"
+          className="mt-0.5 text-slate-300 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400 transition-colors flex-shrink-0 cursor-grab active:cursor-grabbing"
           title="Arraste para mover ou reordenar"
         >
           <GripVertical className="w-3.5 h-3.5" />
@@ -863,12 +916,12 @@ export function WeeklyBoard({
           type="button"
           draggable={false}
           onClick={(e) => handleToggleCompleted(e, t)}
-          className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
+          className="mt-0.5 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors cursor-pointer flex-shrink-0"
         >
           {t.completed ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           ) : (
-            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
+            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500 dark:text-slate-600 dark:hover:text-indigo-400" />
           )}
         </button>
 
@@ -878,7 +931,7 @@ export function WeeklyBoard({
           {isDiffDaySubtask && t.parent && (
             <div className="flex items-center gap-1 mb-1">
               <span
-                className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-50/90 border border-indigo-100 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
+                className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900/60 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
                 title={`Subtarefa de: ${t.parent.title}`}
               >
                 <CornerDownRight className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
@@ -889,8 +942,8 @@ export function WeeklyBoard({
 
           <p
             className={`text-xs font-medium leading-snug break-words ${t.completed
-              ? "line-through text-slate-400"
-              : "text-slate-700"
+              ? "line-through text-slate-400 dark:text-slate-500"
+              : "text-slate-700 dark:text-slate-200"
               }`}
           >
             {t.title}
@@ -898,7 +951,7 @@ export function WeeklyBoard({
 
           {/* Nest Target Indicator Pill */}
           {isNestTarget && (
-            <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-100/90 px-1.5 py-0.5 rounded-md animate-pulse">
+            <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100/90 dark:bg-indigo-950/90 px-1.5 py-0.5 rounded-md animate-pulse">
               <CornerDownRight className="w-2.5 h-2.5 text-indigo-600 flex-shrink-0" />
               <span>Soltar para virar subtarefa</span>
             </div>
@@ -917,8 +970,8 @@ export function WeeklyBoard({
                 {scheduledDate && (
                   <span
                     className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold border shadow-2xs ${t.completed
-                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
-                      : "bg-amber-50/90 text-amber-700 border-amber-200/60"
+                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                      : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                       }`}
                     title={`Agendada para ${formatDayShort(scheduledDate)}`}
                   >
@@ -934,15 +987,15 @@ export function WeeklyBoard({
                     <span
                       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${t.completed ||
                         t.completedSubtaskCount === t.subtaskCount
-                        ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
-                        : "bg-indigo-50/90 text-indigo-700 border-indigo-200/60"
+                        ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                        : "bg-indigo-50/90 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/60"
                         }`}
                       title={`Subtarefas: ${t.completedSubtaskCount || 0
                         } de ${t.subtaskCount} concluídas`}
                     >
                       <ListTree
                         className={`w-2.5 h-2.5 ${t.completed
-                          ? "text-slate-400"
+                          ? "text-slate-400 dark:text-slate-500"
                           : "text-indigo-500"
                           }`}
                       />
@@ -957,7 +1010,7 @@ export function WeeklyBoard({
                 {t.tag && tagStyles && (
                   <span
                     className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${t.completed
-                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
                       : tagStyles.badgeClass
                       }`}
                   >
@@ -975,7 +1028,7 @@ export function WeeklyBoard({
 
                 {/* Time badge */}
                 {t.time && (
-                  <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                  <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                     <Clock className="w-2.5 h-2.5 text-indigo-400" />
                     {t.time}
                   </span>
@@ -985,8 +1038,8 @@ export function WeeklyBoard({
                 {Boolean(t.duration != null && t.duration > 0) && (
                   <span
                     className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${t.completed
-                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
-                      : "bg-amber-50/90 text-amber-700 border-amber-200/60"
+                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                      : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                       }`}
                     title={`Duração estimada: ${formatDuration(
                       t.duration!
@@ -994,7 +1047,7 @@ export function WeeklyBoard({
                   >
                     <Timer
                       className={`w-2.5 h-2.5 ${t.completed
-                        ? "text-slate-400"
+                        ? "text-slate-400 dark:text-slate-500"
                         : "text-amber-500"
                         }`}
                     />
@@ -1011,7 +1064,7 @@ export function WeeklyBoard({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Glassmorphic Navigation Bar */}
-      <header className="sticky top-0 z-30 px-4 sm:px-8 py-3.5 glass-panel border-b border-white/60 mb-6">
+      <header className="sticky top-0 z-30 px-4 sm:px-8 py-3.5 glass-panel border-b border-white/60 dark:border-slate-800/80 mb-6">
         <div className="w-full flex items-center justify-between gap-4">
           {/* Month & Year Title (Left) */}
           <div className="flex items-center gap-3">
@@ -1019,13 +1072,13 @@ export function WeeklyBoard({
               <CalendarDays className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+              <h1 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                 {formatMonthYear(currentMonday)}
               </h1>
             </div>
           </div>
 
-          {/* Right Controls: Week Navigation + User Avatar Circle + Logout */}
+          {/* Right Controls: Week Navigation + Theme Toggle + User Avatar Circle + Logout */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Week Navigation Controls */}
             <div className="flex items-center gap-1 sm:gap-1.5">
@@ -1033,7 +1086,7 @@ export function WeeklyBoard({
                 type="button"
                 onClick={handlePrevWeek}
                 disabled={isNavigating}
-                className="p-2 rounded-xl bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border border-slate-200/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 title="Semana anterior"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -1043,7 +1096,7 @@ export function WeeklyBoard({
                 type="button"
                 onClick={handleGoToday}
                 disabled={isNavigating}
-                className="px-3.5 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 text-indigo-700 font-semibold text-xs border border-indigo-200/60 shadow-xs transition-all cursor-pointer"
+                className="px-3.5 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/60 shadow-xs transition-all cursor-pointer"
               >
                 Hoje
               </button>
@@ -1052,7 +1105,7 @@ export function WeeklyBoard({
                 type="button"
                 onClick={handleNextWeek}
                 disabled={isNavigating}
-                className="p-2 rounded-xl bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border border-slate-200/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 title="Próxima semana"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -1065,8 +1118,8 @@ export function WeeklyBoard({
                 type="button"
                 onClick={() => setIsViewMenuOpen((prev) => !prev)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium shadow-xs transition-all cursor-pointer ${isViewMenuOpen || preferences.showSaturday || preferences.showSunday
-                  ? "bg-indigo-50/90 text-indigo-700 border-indigo-200/80"
-                  : "bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/70"
+                  ? "bg-indigo-50/90 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/80"
+                  : "bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-slate-200/70 dark:border-slate-700/70"
                   }`}
                 title="Ajustes de visualização dos dias"
                 aria-label="Ajustes de visualização dos dias"
@@ -1074,35 +1127,35 @@ export function WeeklyBoard({
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Visualização</span>
                 {(preferences.showSaturday || preferences.showSunday) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
                 )}
               </button>
 
               {isViewMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 p-3 rounded-2xl glass-panel shadow-xl border border-white/80 bg-white/95 backdrop-blur-md z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="pb-2 mb-2 border-b border-slate-200/60 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-800">Dias da Semana</p>
-                    <span className="text-[10px] text-slate-500 font-medium">
+                <div className="absolute right-0 mt-2 w-56 p-3 rounded-2xl glass-panel shadow-xl border border-white/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="pb-2 mb-2 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">Dias da Semana</p>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                       {visibleWeekDays.length} de 7 dias
                     </span>
                   </div>
 
                   <div className="space-y-1.5">
                     {/* Seg a Sex indicator */}
-                    <div className="px-2 py-1.5 text-[11px] text-slate-500 bg-slate-100/60 rounded-lg flex items-center justify-between">
+                    <div className="px-2 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-slate-800/60 rounded-lg flex items-center justify-between">
                       <span>Segunda – Sexta</span>
-                      <span className="font-semibold text-slate-400 text-[10px]">Padrão</span>
+                      <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px]">Padrão</span>
                     </div>
 
                     {/* Sábado Switch */}
                     <button
                       type="button"
                       onClick={() => handleToggleDay("showSaturday")}
-                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 cursor-pointer transition-colors text-left"
+                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
                     >
-                      <span className="text-xs font-medium text-slate-700">Sábado</span>
+                      <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Sábado</span>
                       <div
-                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${preferences.showSaturday ? "bg-indigo-600" : "bg-slate-300"
+                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${preferences.showSaturday ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
                           }`}
                       >
                         <div
@@ -1116,11 +1169,11 @@ export function WeeklyBoard({
                     <button
                       type="button"
                       onClick={() => handleToggleDay("showSunday")}
-                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 cursor-pointer transition-colors text-left"
+                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
                     >
-                      <span className="text-xs font-medium text-slate-700">Domingo</span>
+                      <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Domingo</span>
                       <div
-                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${preferences.showSunday ? "bg-indigo-600" : "bg-slate-300"
+                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${preferences.showSunday ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
                           }`}
                       >
                         <div
@@ -1134,8 +1187,23 @@ export function WeeklyBoard({
               )}
             </div>
 
+            {/* Quick Dark Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={handleToggleTheme}
+              className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer flex items-center justify-center group"
+              title={isDarkMode ? "Mudar para modo claro" : "Mudar para modo escuro"}
+              aria-label={isDarkMode ? "Mudar para modo claro" : "Mudar para modo escuro"}
+            >
+              {isDarkMode ? (
+                <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
+              ) : (
+                <Moon className="w-4 h-4 text-slate-600 group-hover:-rotate-12 transition-transform duration-300" />
+              )}
+            </button>
+
             {/* Separator */}
-            <div className="h-5 w-px bg-slate-200/80 mx-1 hidden sm:block" />
+            <div className="h-5 w-px bg-slate-200/80 dark:bg-slate-700/80 mx-1 hidden sm:block" />
 
             {/* User Avatar Circle */}
             <div
@@ -1149,7 +1217,7 @@ export function WeeklyBoard({
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="p-2 text-slate-500 hover:text-rose-600 bg-white/60 hover:bg-rose-50/80 rounded-xl border border-slate-200/70 transition-colors cursor-pointer flex items-center justify-center"
+                className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 bg-white/60 hover:bg-rose-50/80 dark:bg-slate-800/60 dark:hover:bg-rose-950/50 rounded-xl border border-slate-200/70 dark:border-slate-700/70 transition-colors cursor-pointer flex items-center justify-center"
                 title="Encerrar sessão"
                 aria-label="Encerrar sessão"
               >
@@ -1175,29 +1243,29 @@ export function WeeklyBoard({
                 onDrop={(e) => handleDrop(e, day.dateStr)}
                 className={`rounded-2xl flex flex-col min-h-[420px] p-3.5 transition-all duration-200 ${dropTarget?.dateStr === day.dateStr &&
                   (dropTarget.position === "column" || !dropTarget.targetTaskId)
-                  ? "ring-2 ring-indigo-400/50 bg-indigo-50/25"
+                  ? "ring-2 ring-indigo-400/50 bg-indigo-50/25 dark:bg-indigo-950/30"
                   : day.isToday
                     ? "glass-card-today ring-1 ring-indigo-500/20"
                     : "glass-card"
                   }`}
               >
                 {/* Column Day Header */}
-                <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/40">
+                <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/40 dark:border-slate-800/60">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-sm font-bold ${day.isToday ? "text-indigo-600" : "text-slate-800"
+                      className={`text-sm font-bold ${day.isToday ? "text-indigo-600 dark:text-indigo-400" : "text-slate-800 dark:text-slate-200"
                         }`}
                     >
                       {day.dayNameShort}
                     </span>
-                    <span className="text-xs font-medium text-slate-500">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                       {day.dayNumber} {day.monthNameShort}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-1.5">
                     {dayTasks.length > 0 && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                         {completedCount}/{dayTasks.length}
                       </span>
                     )}
@@ -1229,7 +1297,7 @@ export function WeeklyBoard({
 
                               {/* Same day subtasks nested with left indent and connector guide line */}
                               {sameDaySubtasks.length > 0 && (
-                                <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 space-y-1.5 my-1">
+                                <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 dark:border-indigo-800/60 space-y-1.5 my-1">
                                   {sameDaySubtasks.map((sub) =>
                                     renderTaskCard(sub, true, false)
                                   )}
@@ -1256,8 +1324,8 @@ export function WeeklyBoard({
                       onDrop={(e) => handleDrop(e, day.dateStr)}
                       className={`h-10 border-2 border-dashed rounded-xl flex items-center justify-center text-[11px] font-medium transition-all ${dropTarget?.dateStr === day.dateStr &&
                         (dropTarget.position === "column" || !dropTarget.targetTaskId)
-                        ? "border-indigo-400 bg-indigo-50/70 text-indigo-700 shadow-xs"
-                        : "border-slate-200/60 text-slate-400 hover:border-indigo-300 hover:text-indigo-500 bg-white/20"
+                        ? "border-indigo-400 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 shadow-xs"
+                        : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-indigo-300 hover:text-indigo-500 bg-white/20 dark:bg-slate-800/20"
                         }`}
                     >
                       <span>Mover para {day.dayNameShort}</span>
@@ -1283,13 +1351,13 @@ export function WeeklyBoard({
                           }
                         }}
                         placeholder="+ Nova tarefa"
-                        className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white border border-slate-200/60 rounded-xl pl-3 pr-8 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-2xs"
+                        className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
                       />
                       {Boolean((newTitles[day.dateStr] || "").trim()) && (
                         <button
                           type="button"
                           onClick={() => handleQuickAdd(day.dateStr)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 p-0.5 cursor-pointer"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
                           title="Adicionar"
                         >
                           <Plus className="w-4 h-4" />
@@ -1304,18 +1372,18 @@ export function WeeklyBoard({
         </div>
 
         {/* Seção Tarefas sem data (Backlog contínuo) */}
-        <section className="mt-6 glass-panel rounded-3xl p-5 sm:p-6 border border-white/80 shadow-sm transition-all">
+        <section className="mt-6 glass-panel rounded-3xl p-5 sm:p-6 border border-white/80 dark:border-slate-800 shadow-sm transition-all">
           {/* Header da Seção */}
-          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200/50">
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200/50 dark:border-slate-800/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-2xs">
                 <CalendarOff className="w-4 h-4" />
               </div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-semibold text-slate-800 tracking-tight">
+                <h2 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 tracking-tight">
                   Tarefas sem data
                 </h2>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200/60 shadow-2xs">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
                   {pendingUnscheduledCount} {pendingUnscheduledCount === 1 ? "pendente" : "pendentes"}
                 </span>
               </div>
@@ -1324,10 +1392,10 @@ export function WeeklyBoard({
             <button
               type="button"
               onClick={() => setIsUnscheduledOpen((prev) => !prev)}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 transition-all cursor-pointer flex items-center gap-1 text-xs font-medium"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 dark:hover:text-slate-200 dark:hover:bg-slate-800/80 transition-all cursor-pointer flex items-center gap-1 text-xs font-medium"
               title={isUnscheduledOpen ? "Recolher seção" : "Expandir seção"}
             >
-              <span className="text-[11px] hidden sm:inline text-slate-500">
+              <span className="text-[11px] hidden sm:inline text-slate-500 dark:text-slate-400">
                 {isUnscheduledOpen ? "Recolher" : "Expandir"}
               </span>
               <ChevronDown
@@ -1347,8 +1415,8 @@ export function WeeklyBoard({
                   onDrop={(e) => handleDrop(e, "unscheduled")}
                   className={`h-12 border-2 border-dashed rounded-2xl flex items-center justify-center text-xs font-medium transition-all ${dropTarget?.dateStr === "unscheduled" &&
                     (dropTarget.position === "column" || !dropTarget.targetTaskId)
-                    ? "border-indigo-400 bg-indigo-50/70 text-indigo-700 shadow-xs"
-                    : "border-slate-200/60 text-slate-400 hover:border-indigo-300 hover:text-indigo-500 bg-white/30"
+                    ? "border-indigo-400 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 shadow-xs"
+                    : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-indigo-300 hover:text-indigo-500 bg-white/30 dark:bg-slate-800/30"
                     }`}
                 >
                   <span>Mover para Tarefas sem data</span>
@@ -1369,7 +1437,7 @@ export function WeeklyBoard({
 
                         {/* Subtarefas da tarefa sem data */}
                         {subtasksOfMain.length > 0 && (
-                          <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 space-y-1.5 my-1">
+                          <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 dark:border-indigo-800/60 space-y-1.5 my-1">
                             {subtasksOfMain.map((sub) =>
                               renderTaskCard(sub, true, false, sub.date)
                             )}
@@ -1380,7 +1448,7 @@ export function WeeklyBoard({
                   })}
                 </div>
               ) : (
-                <div className="py-6 text-center text-xs text-slate-400 font-medium">
+                <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
                   Nenhuma tarefa sem data no momento. Arraste tarefas de qualquer dia para cá ou use o campo abaixo.
                 </div>
               )}
@@ -1404,13 +1472,13 @@ export function WeeklyBoard({
                       }
                     }}
                     placeholder="+ Nova tarefa sem data... (Enter para adicionar)"
-                    className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white border border-slate-200/70 rounded-xl pl-3 pr-8 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-2xs"
+                    className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/70 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
                   />
                   {Boolean((newTitles["unscheduled"] || "").trim()) && (
                     <button
                       type="button"
                       onClick={() => handleQuickAdd("unscheduled")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 p-0.5 cursor-pointer"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
                       title="Adicionar"
                     >
                       <Plus className="w-4 h-4" />

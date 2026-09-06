@@ -394,12 +394,12 @@ function TaskModalDialog({
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative w-full max-w-xl glass-panel rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col max-h-[90vh] overflow-hidden z-10 border border-white/80">
+      <div className="relative w-full max-w-xl glass-panel rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col max-h-[90vh] overflow-hidden z-10 border border-white/80 dark:border-slate-800">
         {/* Header Bar */}
-        <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-200/50">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 min-h-[20px]">
+        <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-200/50 dark:border-slate-800/60">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 min-h-[20px]">
             {isSaving && (
-              <span className="flex items-center gap-1.5 text-indigo-600 font-medium animate-in fade-in duration-150">
+              <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-medium animate-in fade-in duration-150">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Salvando...
               </span>
@@ -410,7 +410,7 @@ function TaskModalDialog({
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               title="Fechar (Esc)"
             >
               <X className="w-4 h-4" />
@@ -422,11 +422,11 @@ function TaskModalDialog({
         <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1">
           {/* Parent Task Banner if this is a subtask */}
           {task.parentId && (
-            <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-indigo-50/80 border border-indigo-100/90 rounded-2xl text-xs">
+            <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-100/90 dark:border-indigo-900/60 rounded-2xl text-xs">
               <div className="flex items-center gap-2 min-w-0">
                 <CornerDownRight className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                <span className="text-slate-500 font-medium flex-shrink-0">Subtarefa de:</span>
-                <span className="font-semibold text-indigo-700 truncate">
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex-shrink-0">Subtarefa de:</span>
+                <span className="font-semibold text-indigo-700 dark:text-indigo-300 truncate">
                   {task.parent?.title || "Tarefa Principal"}
                 </span>
               </div>
@@ -434,7 +434,7 @@ function TaskModalDialog({
                 <button
                   type="button"
                   onClick={() => onOpenTask(task.parentId!)}
-                  className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-800 hover:underline flex-shrink-0 cursor-pointer text-xs"
+                  className="inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline flex-shrink-0 cursor-pointer text-xs"
                 >
                   <span>Ver tarefa principal</span>
                   <ArrowRight className="w-3 h-3" />
@@ -448,13 +448,13 @@ function TaskModalDialog({
             <button
               type="button"
               onClick={handleToggleCompleted}
-              className="mt-1 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
+              className="mt-1 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors cursor-pointer flex-shrink-0"
               title={completed ? "Marcar como pendente" : "Marcar como concluída"}
             >
               {completed ? (
                 <CheckCircle2 className="w-6 h-6 text-emerald-500" />
               ) : (
-                <Circle className="w-6 h-6 text-slate-400 hover:text-indigo-500" />
+                <Circle className="w-6 h-6 text-slate-400 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400" />
               )}
             </button>
 
@@ -463,8 +463,8 @@ function TaskModalDialog({
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Título da tarefa..."
-              className={`w-full text-lg sm:text-xl font-semibold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none transition-colors px-1 py-0.5 text-slate-800 ${
-                completed ? "line-through text-slate-400" : ""
+              className={`w-full text-lg sm:text-xl font-semibold bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 focus:outline-none transition-colors px-1 py-0.5 text-slate-800 dark:text-slate-100 ${
+                completed ? "line-through text-slate-400 dark:text-slate-500" : ""
               }`}
             />
           </div>
@@ -472,7 +472,7 @@ function TaskModalDialog({
           {/* Date, Time & Duration clean single row */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {/* Date Pill */}
-            <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 border border-slate-200/70 text-slate-700 transition-all cursor-pointer group">
+            <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
               <Calendar className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
               <span className="pointer-events-none">
                 {date ? date.split("-").reverse().join("/") : "Sem data (Fixa)"}
@@ -507,7 +507,7 @@ function TaskModalDialog({
             </div>
 
             {/* Time Pill */}
-            <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 border border-slate-200/70 text-slate-700 transition-all cursor-pointer group">
+            <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
               <Clock className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
               {time ? (
                 <>
@@ -525,7 +525,7 @@ function TaskModalDialog({
                   </button>
                 </>
               ) : (
-                <span className="text-slate-400 group-hover:text-slate-600 transition-colors pointer-events-none">
+                <span className="text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 transition-colors pointer-events-none">
                   Adicionar horário
                 </span>
               )}
@@ -544,7 +544,7 @@ function TaskModalDialog({
             </div>
 
             {/* Duration Pill */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 border border-slate-200/70 text-slate-700 focus-within:bg-white focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/20 transition-all">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/20 transition-all">
               <Timer className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
               <input
                 type="text"
@@ -557,7 +557,7 @@ function TaskModalDialog({
                   }
                 }}
                 placeholder="Duração"
-                className="bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none w-14 focus:w-20 transition-all"
+                className="bg-transparent text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none w-14 focus:w-20 transition-all"
               />
               {durationText && (
                 <button
@@ -587,7 +587,7 @@ function TaskModalDialog({
                       setTagError("");
                     }}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border shadow-2xs hover:opacity-90 transition-all cursor-pointer ${
-                      selectedTagStyles?.badgeClass || "bg-indigo-50 text-indigo-700 border-indigo-200"
+                      selectedTagStyles?.badgeClass || "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800/60"
                     }`}
                   >
                     <span
@@ -615,7 +615,7 @@ function TaskModalDialog({
                     setIsCreatingTag(false);
                     setTagError("");
                   }}
-                  className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-600 font-medium py-1 px-1.5 rounded-lg hover:bg-slate-100/70 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium py-1 px-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Adicionar tag</span>
@@ -625,15 +625,15 @@ function TaskModalDialog({
 
             {/* Tag Dropdown Popover */}
             {isTagDropdownOpen && (
-              <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
                 {!isCreatingTag ? (
                   <div>
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 text-xs font-semibold text-slate-600">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
                       <span>Selecionar Tag</span>
                       <button
                         type="button"
                         onClick={() => setIsCreatingTag(true)}
-                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
+                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         Nova Tag
@@ -646,7 +646,7 @@ function TaskModalDialog({
                         <button
                           type="button"
                           onClick={() => handleSelectTag(null)}
-                          className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center justify-between transition-colors cursor-pointer"
+                          className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-between transition-colors cursor-pointer"
                         >
                           <span>Nenhuma (Remover tag)</span>
                           <X className="w-3.5 h-3.5" />
@@ -654,7 +654,7 @@ function TaskModalDialog({
                       )}
 
                       {userTags.length === 0 ? (
-                        <div className="py-4 text-center text-xs text-slate-400">
+                        <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
                           Nenhuma tag criada ainda.
                         </div>
                       ) : (
@@ -670,7 +670,7 @@ function TaskModalDialog({
                               className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-all cursor-pointer ${
                                 isSelected
                                   ? `${styles.badgeClass} ring-1 ring-indigo-400/40 font-semibold`
-                                  : "hover:bg-slate-100/80 text-slate-700"
+                                  : "hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200"
                               }`}
                             >
                               <span className="flex items-center gap-2">
@@ -680,7 +680,7 @@ function TaskModalDialog({
                                 <span>{tag.name}</span>
                               </span>
                               {isSelected && (
-                                <Check className="w-3.5 h-3.5 text-indigo-600" />
+                                <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                               )}
                             </button>
                           );
@@ -691,7 +691,7 @@ function TaskModalDialog({
                 ) : (
                   /* Inline Tag Creation Form */
                   <form onSubmit={handleCreateNewTag} className="space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 text-xs font-semibold text-slate-700">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
                       <span>Criar Nova Tag</span>
                       <button
                         type="button"
@@ -699,20 +699,20 @@ function TaskModalDialog({
                           setIsCreatingTag(false);
                           setTagError("");
                         }}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
                     {tagError && (
-                      <div className="text-[11px] text-rose-600 font-medium bg-rose-50 p-2 rounded-lg">
+                      <div className="text-[11px] text-rose-600 dark:text-rose-400 font-medium bg-rose-50 dark:bg-rose-950/60 p-2 rounded-lg">
                         {tagError}
                       </div>
                     )}
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                      <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
                         Nome da Tag
                       </label>
                       <input
@@ -722,12 +722,12 @@ function TaskModalDialog({
                         onChange={(e) => setNewTagName(e.target.value)}
                         placeholder="Ex: Trabalho, Estudos, Pessoal..."
                         maxLength={50}
-                        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                      <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                         Cor da Tag
                       </label>
                       <div className="grid grid-cols-4 gap-2">
@@ -739,7 +739,7 @@ function TaskModalDialog({
                             className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-[10px] font-medium transition-all cursor-pointer ${
                               newTagColor === colorOpt.key
                                 ? `${colorOpt.badgeClass} ring-2 ring-indigo-500/30 font-bold border-indigo-400`
-                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                             }`}
                           >
                             <span
@@ -751,14 +751,14 @@ function TaskModalDialog({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <button
                         type="button"
                         onClick={() => {
                           setIsCreatingTag(false);
                           setTagError("");
                         }}
-                        className="px-2.5 py-1 text-slate-500 hover:bg-slate-100 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                        className="px-2.5 py-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                       >
                         Voltar
                       </button>
@@ -781,7 +781,7 @@ function TaskModalDialog({
 
           {/* Description / Content Rich Text Editor (WYSIWYG Tiptap) */}
           <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
               Descrição
             </label>
             <TaskDescriptionEditor
@@ -792,13 +792,13 @@ function TaskModalDialog({
 
           {/* Subtasks Section (Visible only for main tasks, i.e., !task.parentId) - Placed AFTER Descrição */}
           {!task.parentId && (
-            <div className="space-y-3 p-4 bg-slate-50/70 rounded-2xl border border-slate-200/60">
+            <div className="space-y-3 p-4 bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl border border-slate-200/60 dark:border-slate-800">
               <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <ListTree className="w-3.5 h-3.5 text-indigo-500" />
                   Subtarefas
                   {subtasks.length > 0 && (
-                    <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/60 shadow-2xs">
+                    <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60 shadow-2xs">
                       {subtasks.filter((s) => s.completed).length} de {subtasks.length} concluídas
                     </span>
                   )}
@@ -808,7 +808,7 @@ function TaskModalDialog({
               {/* Subtasks List */}
               <div className="space-y-1.5">
                 {isLoadingSubtasks && subtasks.length === 0 ? (
-                  <div className="flex items-center gap-2 py-2 text-xs text-slate-400">
+                  <div className="flex items-center gap-2 py-2 text-xs text-slate-400 dark:text-slate-500">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Carregando subtarefas...</span>
                   </div>
@@ -821,27 +821,27 @@ function TaskModalDialog({
                       key={sub.id}
                       className={`group flex items-center justify-between gap-2.5 p-2 rounded-xl border transition-all text-xs ${
                         sub.completed
-                          ? "bg-slate-100/60 border-slate-200/40 text-slate-400"
-                          : "bg-white/90 hover:bg-white border-slate-200/80 text-slate-700 shadow-2xs"
+                          ? "bg-slate-100/60 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 text-slate-400 dark:text-slate-500"
+                          : "bg-white/90 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs"
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <button
                           type="button"
                           onClick={() => handleToggleSubtask(sub)}
-                          className="text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
+                          className="text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors cursor-pointer flex-shrink-0"
                           title={sub.completed ? "Marcar como pendente" : "Marcar como concluída"}
                         >
                           {sub.completed ? (
                             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                           ) : (
-                            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
+                            <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400" />
                           )}
                         </button>
 
                         <span
                           className={`truncate flex-1 font-medium ${
-                            sub.completed ? "line-through text-slate-400" : "text-slate-700"
+                            sub.completed ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-200"
                           }`}
                         >
                           {sub.title}
@@ -849,7 +849,7 @@ function TaskModalDialog({
 
                         {/* Tag pill if subtask has a tag */}
                         {sub.tag && (
-                          <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md flex-shrink-0">
+                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md flex-shrink-0">
                             {sub.tag.name}
                           </span>
                         )}
@@ -857,7 +857,7 @@ function TaskModalDialog({
                         {/* Date pill if subtask is scheduled on another day */}
                         {isDiffDate && sub.date && (
                           <span
-                            className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-md flex-shrink-0"
+                            className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md flex-shrink-0"
                             title={`Agendada para ${sub.date}`}
                           >
                             {sub.date.split("-").reverse().slice(0, 2).join("/")}
@@ -865,7 +865,7 @@ function TaskModalDialog({
                         )}
                         {isDiffDate && !sub.date && (
                           <span
-                            className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md flex-shrink-0"
+                            className="text-[10px] font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md flex-shrink-0"
                             title="Sem data definida"
                           >
                             Sem data
@@ -878,7 +878,7 @@ function TaskModalDialog({
                           <button
                             type="button"
                             onClick={() => onOpenTask(sub)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                            className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors cursor-pointer"
                             title="Abrir detalhes completos da subtarefa"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
@@ -887,7 +887,7 @@ function TaskModalDialog({
                         <button
                           type="button"
                           onClick={() => handleDeleteSubtask(sub.id)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
                           title="Excluir subtarefa"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -906,13 +906,13 @@ function TaskModalDialog({
                       onChange={(e) => setNewSubtaskTitle(e.target.value)}
                       placeholder="+ Adicionar subtarefa... (Enter para salvar)"
                       disabled={isAddingSubtask}
-                      className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white border border-slate-200/80 rounded-xl pl-3 pr-8 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-2xs"
+                      className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
                     />
                     {newSubtaskTitle.trim() && (
                       <button
                         type="submit"
                         disabled={isAddingSubtask}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 p-0.5 cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
                         title="Adicionar subtarefa"
                       >
                         {isAddingSubtask ? (
@@ -930,20 +930,20 @@ function TaskModalDialog({
         </div>
 
         {/* Footer Bar with Delete Button */}
-        <div className="pt-4 mt-2 border-t border-slate-200/50 flex items-center justify-between">
+        <div className="pt-4 mt-2 border-t border-slate-200/50 dark:border-slate-800/60 flex items-center justify-between">
           {!showDeleteConfirm ? (
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-rose-500 hover:text-rose-700 hover:bg-rose-50/80 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
               Excluir tarefa
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-rose-50/90 border border-rose-200 p-2 rounded-xl text-xs sm:text-sm">
-              <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              <span className="text-rose-700 font-medium">
+            <div className="flex items-center gap-2 bg-rose-50/90 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 p-2 rounded-xl text-xs sm:text-sm">
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+              <span className="text-rose-700 dark:text-rose-300 font-medium">
                 {totalSubtasksToDelete > 0
                   ? `Excluir tarefa e suas ${totalSubtasksToDelete} subtarefas?`
                   : "Excluir tarefa?"}
@@ -959,7 +959,7 @@ function TaskModalDialog({
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-2 py-1 text-slate-600 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer text-xs"
+                className="px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 rounded-lg transition-colors cursor-pointer text-xs"
               >
                 Cancelar
               </button>
@@ -969,7 +969,7 @@ function TaskModalDialog({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-medium text-xs sm:text-sm rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs sm:text-sm rounded-xl transition-colors cursor-pointer"
           >
             Concluir
           </button>

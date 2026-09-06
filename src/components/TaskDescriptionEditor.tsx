@@ -50,7 +50,7 @@ export function TaskDescriptionEditor({
     editorProps: {
       attributes: {
         class:
-          "focus:outline-none min-h-[120px] max-h-[300px] overflow-y-auto px-4 py-3 text-sm text-slate-700 leading-relaxed select-text",
+          "focus:outline-none min-h-[120px] max-h-[300px] overflow-y-auto px-4 py-3 text-sm text-slate-700 dark:text-slate-200 leading-relaxed select-text",
       },
     },
     onUpdate: ({ editor: activeEditor }) => {
@@ -70,7 +70,7 @@ export function TaskDescriptionEditor({
 
   if (!editor) {
     return (
-      <div className="w-full h-36 rounded-2xl bg-white/80 border border-slate-200/80 animate-pulse flex items-center justify-center text-xs text-slate-400">
+      <div className="w-full h-36 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 animate-pulse flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
         Carregando editor...
       </div>
     );
@@ -78,13 +78,13 @@ export function TaskDescriptionEditor({
 
   const btnBase =
     "p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center";
-  const btnActive = "bg-indigo-100/90 text-indigo-700 font-semibold shadow-2xs";
-  const btnInactive = "text-slate-500 hover:text-slate-800 hover:bg-slate-200/60";
+  const btnActive = "bg-indigo-100/90 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-semibold shadow-2xs";
+  const btnInactive = "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60";
 
   return (
-    <div className="w-full rounded-2xl bg-white/80 border border-slate-200/80 transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 overflow-hidden shadow-2xs">
+    <div className="w-full rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 overflow-hidden shadow-2xs">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 px-2.5 py-1.5 border-b border-slate-200/60 bg-slate-50/70 text-xs">
+      <div className="flex flex-wrap items-center gap-0.5 px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800/60 bg-slate-50/70 dark:bg-slate-800/50 text-xs">
         {/* Paragraph & Headings */}
         <button
           type="button"
@@ -131,7 +131,7 @@ export function TaskDescriptionEditor({
         </button>
 
         {/* Divider */}
-        <div className="w-px h-4 bg-slate-200 mx-1" />
+        <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
 
         {/* Inline formatting */}
         <button
@@ -183,7 +183,7 @@ export function TaskDescriptionEditor({
         </button>
 
         {/* Divider */}
-        <div className="w-px h-4 bg-slate-200 mx-1" />
+        <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
 
         {/* Lists & Blocks */}
         <button
@@ -229,7 +229,7 @@ export function TaskDescriptionEditor({
         </button>
 
         {/* Divider */}
-        <div className="w-px h-4 bg-slate-200 mx-1" />
+        <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
 
         {/* Clear formatting */}
         <button

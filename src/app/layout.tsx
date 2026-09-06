@@ -17,6 +17,20 @@ export const metadata: Metadata = {
   description: "Gerenciador semanal de tarefas simples, elegante e produtivo com design moderno glassmorphism.",
 };
 
+const themeScript = `
+(function() {
+  try {
+    var storedTheme = localStorage.getItem('theme');
+    var isDark = storedTheme === 'dark' || (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: {
@@ -25,9 +39,13 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col selection:bg-indigo-100 selection:text-indigo-900">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-full flex flex-col selection:bg-indigo-100 selection:text-indigo-900 dark:selection:bg-indigo-900/60 dark:selection:text-indigo-200">
         {children}
       </body>
     </html>

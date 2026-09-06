@@ -55,18 +55,18 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-lg shadow-indigo-500/25 mb-4">
             <CalendarDays className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-800">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
             Weekly To-Do
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Organize sua semana com clareza e elegância
           </p>
         </div>
 
         {/* Card Glassmorphism */}
-        <div className="glass-panel rounded-3xl p-7 sm:p-9">
+        <div className="glass-panel rounded-3xl p-7 sm:p-9 border border-white/80 dark:border-slate-800">
           {/* Tab Switcher */}
-          <div className="grid grid-cols-2 p-1 bg-slate-100/70 rounded-xl mb-6 text-sm font-medium text-slate-600">
+          <div className="grid grid-cols-2 p-1 bg-slate-100/70 dark:bg-slate-800/70 rounded-xl mb-6 text-sm font-medium text-slate-600 dark:text-slate-400">
             <button
               type="button"
               onClick={() => {
@@ -75,8 +75,8 @@ export default function LoginPage() {
               }}
               className={`py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                 tab === "login"
-                  ? "bg-white text-indigo-600 shadow-sm font-semibold"
-                  : "hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold"
+                  : "hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               Entrar
@@ -89,8 +89,8 @@ export default function LoginPage() {
               }}
               className={`py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                 tab === "register"
-                  ? "bg-white text-indigo-600 shadow-sm font-semibold"
-                  : "hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold"
+                  : "hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               Criar Conta
@@ -100,7 +100,7 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 text-xs sm:text-sm bg-rose-50/80 border border-rose-200/70 text-rose-600 rounded-xl flex items-center gap-2">
+              <div className="p-3 text-xs sm:text-sm bg-rose-50/80 dark:bg-rose-950/60 border border-rose-200/70 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 rounded-xl flex items-center gap-2">
                 <span>⚠️</span>
                 <span>{error}</span>
               </div>
@@ -110,7 +110,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5"
+                className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5"
               >
                 E-mail
               </label>
@@ -124,7 +124,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                  className="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5"
+                className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5"
               >
                 Senha
               </label>
@@ -149,12 +149,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="glass-input w-full pl-10 pr-10 py-2.5 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                  className="glass-input w-full pl-10 pr-10 py-2.5 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-1"
                   tabIndex={-1}
                 >
                   {showPassword ? (
