@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ALTER COLUMN "date" DROP NOT NULL;

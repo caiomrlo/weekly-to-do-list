@@ -40,7 +40,7 @@ export const tasks = pgTable("tasks", {
   parentId: uuid("parent_id").references((): AnyPgColumn => tasks.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 500 }).notNull(),
   content: text("content").default("").notNull(),
-  date: date("date").notNull(), // Formato 'YYYY-MM-DD' - imune a timezone
+  date: date("date"), // Formato 'YYYY-MM-DD' opcional (nulo para tarefas sem data fixa)
   time: varchar("time", { length: 5 }), // Formato opcional 'HH:mm'
   duration: integer("duration"), // Duração estimada em minutos (ex: 30, 60, 90)
   completed: boolean("completed").default(false).notNull(),

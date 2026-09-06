@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { tasks, tags, TaskWithTag } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
-import { and, eq, gte, lte, asc, isNotNull, sql } from "drizzle-orm";
+import { and, eq, gte, lte, asc, isNotNull, sql, or, isNull, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
 
@@ -35,8 +35,17 @@ export async function getWeekTasksAction(
         .where(
           and(
             eq(tasks.userId, session.userId),
-            gte(tasks.date, startDate),
-            lte(tasks.date, endDate)
+            or(
+              and(gte(tasks.date, startDate), lte(tasks.date, endDate)),
+              isNull(tasks.date),
+              inArray(
+                tasks.parentId,
+                db
+                  .select({ id: tasks.id })
+                  .from(tasks)
+                  .where(and(eq(tasks.userId, session.userId), isNull(tasks.date)))
+              )
+            )
           )
         )
         .orderBy(asc(tasks.order), asc(tasks.createdAt)),
@@ -178,7 +187,7 @@ export async function getTaskByIdAction(
 
 export async function createTaskAction(data: {
   title: string;
-  date: string;
+  date?: string | null;
   time?: string;
   duration?: number | null;
   tagId?: string | null;
@@ -211,11 +220,14 @@ export async function createTaskAction(data: {
       parentObj = { id: parent.id, title: parent.title };
     }
 
+    const targetDate = data.date && data.date.trim() ? data.date.trim() : null;
+    const dateCondition = targetDate ? eq(tasks.date, targetDate) : isNull(tasks.date);
+
     const now = new Date();
     const [maxOrderRow] = await db
       .select({ maxOrder: sql<number>`coalesce(max(${tasks.order}), -1)::int` })
       .from(tasks)
-      .where(and(eq(tasks.userId, session.userId), eq(tasks.date, data.date)));
+      .where(and(eq(tasks.userId, session.userId), dateCondition));
     const nextOrder = (maxOrderRow?.maxOrder ?? -1) + 1;
 
     const [inserted] = await db
@@ -225,8 +237,8 @@ export async function createTaskAction(data: {
         tagId: data.tagId || null,
         parentId: data.parentId || null,
         title,
-        date: data.date,
-        time: data.time?.trim() || null,
+        date: targetDate,
+        time: targetDate ? (data.time?.trim() || null) : null,
         duration: data.duration ?? null,
         content: "",
         completed: false,
@@ -292,7 +304,7 @@ export async function updateTaskAction(
   data: {
     title?: string;
     content?: string;
-    date?: string;
+    date?: string | null;
     time?: string | null;
     duration?: number | null;
     tagId?: string | null;
@@ -310,7 +322,7 @@ export async function updateTaskAction(
 
     if (data.title !== undefined) updateValues.title = data.title.trim();
     if (data.content !== undefined) updateValues.content = data.content;
-    if (data.date !== undefined) updateValues.date = data.date;
+    if (data.date !== undefined) updateValues.date = data.date && data.date.trim() ? data.date.trim() : null;
     if (data.time !== undefined) updateValues.time = data.time ? data.time.trim() : null;
     if (data.duration !== undefined) updateValues.duration = data.duration && data.duration > 0 ? data.duration : null;
     if (data.tagId !== undefined) updateValues.tagId = data.tagId ? data.tagId : null;
@@ -387,11 +399,11 @@ export async function deleteTaskAction(
 
 export async function moveOrReorderTasksAction(params: {
   taskId: string;
-  targetDate: string;
+  targetDate?: string | null;
   targetParentId: string | null;
   targetOrderedIds: string[];
   sourceOrderedIds?: string[];
-  originalDate?: string;
+  originalDate?: string | null;
   moveSameDaySubtasks?: boolean;
 }): Promise<{ success?: boolean; error?: string }> {
   const session = await getSessionUser();
@@ -409,6 +421,9 @@ export async function moveOrReorderTasksAction(params: {
       originalDate,
       moveSameDaySubtasks,
     } = params;
+
+    const resolvedTargetDate = targetDate && targetDate.trim() ? targetDate.trim() : null;
+    const resolvedOriginalDate = originalDate && originalDate.trim() ? originalDate.trim() : null;
 
     // 1. Verificar propriedade da tarefa
     const [task] = await db
@@ -454,18 +469,18 @@ export async function moveOrReorderTasksAction(params: {
     const now = new Date();
 
     // 3. Se a tarefa pai mudou de dia e solicitou mover subtarefas do mesmo dia
-    if (moveSameDaySubtasks && originalDate && originalDate !== targetDate) {
+    if (moveSameDaySubtasks && resolvedOriginalDate && resolvedOriginalDate !== resolvedTargetDate && resolvedTargetDate) {
       await db
         .update(tasks)
         .set({
-          date: targetDate,
+          date: resolvedTargetDate,
           updatedAt: now,
         })
         .where(
           and(
             eq(tasks.userId, session.userId),
             eq(tasks.parentId, taskId),
-            eq(tasks.date, originalDate)
+            eq(tasks.date, resolvedOriginalDate)
           )
         );
     }
@@ -474,7 +489,7 @@ export async function moveOrReorderTasksAction(params: {
     await db
       .update(tasks)
       .set({
-        date: targetDate,
+        date: resolvedTargetDate,
         parentId: targetParentId,
         updatedAt: now,
       })

@@ -307,4 +307,18 @@ export function parseNaturalDuration(input: string | null | undefined): number |
   return null;
 }
 
+/**
+ * Formata uma data ISO 'YYYY-MM-DD' para formato abreviado legível.
+ * Ex: "2026-09-08" -> "Ter, 08/09"
+ */
+export function formatDayShort(dateStr: string | null | undefined): string {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return dateStr;
+  const [year, month, day] = parts;
+  const d = new Date(year, month - 1, day);
+  const dayOfWeek = d.getDay();
+  return `${DAY_NAMES_SHORT[dayOfWeek]}, ${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}`;
+}
+
 

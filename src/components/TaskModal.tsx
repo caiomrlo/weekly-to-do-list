@@ -65,7 +65,7 @@ function TaskModalDialog({
 }: TaskModalDialogProps) {
   const [title, setTitle] = useState(task.title);
   const [content, setContent] = useState(task.content || "");
-  const [date, setDate] = useState(task.date);
+  const [date, setDate] = useState<string>(task.date || "");
   const [time, setTime] = useState(task.time || "");
   const [duration, setDuration] = useState<number | null>(task.duration ?? null);
   const [durationText, setDurationText] = useState<string>(
@@ -161,7 +161,7 @@ function TaskModalDialog({
   const triggerAutoSave = (updates: {
     title?: string;
     content?: string;
-    date?: string;
+    date?: string | null;
     time?: string | null;
     duration?: number | null;
     tagId?: string | null;
@@ -196,8 +196,10 @@ function TaskModalDialog({
   };
 
   const handleDateChange = (val: string) => {
-    setDate(val);
-    triggerAutoSave({ date: val });
+    const formatted = val.trim() || null;
+    setDate(formatted || "");
+    triggerAutoSave({ date: formatted });
+    onTaskUpdated({ ...task, date: formatted });
   };
 
   const handleTimeChange = (val: string) => {
@@ -307,7 +309,7 @@ function TaskModalDialog({
     try {
       const res = await createTaskAction({
         title: trimmed,
-        date: date,
+        date: date ? date : null,
         parentId: task.id,
       });
 
@@ -473,8 +475,21 @@ function TaskModalDialog({
             <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 border border-slate-200/70 text-slate-700 transition-all cursor-pointer group">
               <Calendar className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
               <span className="pointer-events-none">
-                {date ? date.split("-").reverse().join("/") : "Definir data"}
+                {date ? date.split("-").reverse().join("/") : "Sem data (Fixa)"}
               </span>
+              {date ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDateChange("");
+                  }}
+                  className="relative z-10 text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
+                  title="Remover data (mover para Tarefas sem data)"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              ) : null}
               <input
                 type="date"
                 value={date}
@@ -487,7 +502,7 @@ function TaskModalDialog({
                   } catch {}
                 }}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-0"
-                title="Alterar data"
+                title={date ? "Alterar data" : "Definir data"}
               />
             </div>
 
@@ -800,7 +815,7 @@ function TaskModalDialog({
                 ) : null}
 
                 {subtasks.map((sub) => {
-                  const isDiffDate = sub.date !== date;
+                  const isDiffDate = (sub.date || null) !== (date || null);
                   return (
                     <div
                       key={sub.id}
@@ -840,12 +855,20 @@ function TaskModalDialog({
                         )}
 
                         {/* Date pill if subtask is scheduled on another day */}
-                        {isDiffDate && (
+                        {isDiffDate && sub.date && (
                           <span
                             className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-md flex-shrink-0"
                             title={`Agendada para ${sub.date}`}
                           >
                             {sub.date.split("-").reverse().slice(0, 2).join("/")}
+                          </span>
+                        )}
+                        {isDiffDate && !sub.date && (
+                          <span
+                            className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md flex-shrink-0"
+                            title="Sem data definida"
+                          >
+                            Sem data
                           </span>
                         )}
                       </div>

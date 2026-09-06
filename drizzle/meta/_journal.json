@@ -43,6 +43,13 @@
       "when": 1788577011418,
       "tag": "0005_windy_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788727373621,
+      "tag": "0006_rapid_pandemic",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,7 @@ import {
   formatMonthYear,
   toDateString,
   formatDuration,
+  formatDayShort,
 } from "@/lib/date-utils";
 import {
   getWeekTasksAction,
@@ -34,6 +35,8 @@ import {
   CornerDownRight,
   ListTree,
   GripVertical,
+  CalendarOff,
+  ChevronDown,
 } from "lucide-react";
 
 // Client-side today subscription for zero SSR hydration mismatch
@@ -126,6 +129,18 @@ export function WeeklyBoard({
     () => (draggedTaskId ? tasks.find((t) => t.id === draggedTaskId) || null : null),
     [tasks, draggedTaskId]
   );
+
+  const [isUnscheduledOpen, setIsUnscheduledOpen] = useState(true);
+
+  const unscheduledTasks = useMemo(() => {
+    return tasks
+      .filter((t) => !t.date && !t.parentId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }, [tasks]);
+
+  const pendingUnscheduledCount = useMemo(() => {
+    return unscheduledTasks.filter((t) => !t.completed).length;
+  }, [unscheduledTasks]);
 
   // Close view menu on click outside
   useEffect(() => {
@@ -262,7 +277,7 @@ export function WeeklyBoard({
     });
 
     tasks.forEach((t) => {
-      if (map[t.date]) {
+      if (t.date && map[t.date]) {
         map[t.date].push(t);
       }
     });
@@ -287,8 +302,11 @@ export function WeeklyBoard({
     // Reset input
     setNewTitles((prev) => ({ ...prev, [dateStr]: "" }));
 
+    const isUnscheduled = !dateStr || dateStr === "unscheduled";
+    const targetDate = isUnscheduled ? null : dateStr;
+
     // Optimistic temporary task
-    const tempId = `temp-${crypto.randomUUID()}`;
+    const tempId = `temp-${Date.now()}`;
     const optimisticTask: TaskWithTag = {
       id: tempId,
       userId: "",
@@ -298,11 +316,11 @@ export function WeeklyBoard({
       tag: null,
       title,
       content: "",
-      date: dateStr,
+      date: targetDate,
       time: null,
       duration: null,
       completed: false,
-      order: tasks.filter((t) => t.date === dateStr && !t.parentId).length,
+      order: tasks.filter((t) => (targetDate ? t.date === targetDate : !t.date) && !t.parentId).length,
       createdAt: new Date(),
       updatedAt: new Date(),
       subtaskCount: 0,
@@ -311,7 +329,7 @@ export function WeeklyBoard({
 
     setTasks((prev) => [...prev, optimisticTask]);
 
-    const res = await createTaskAction({ title, date: dateStr });
+    const res = await createTaskAction({ title, date: targetDate });
     if (res.task) {
       setTasks((prev) =>
         prev.map((t) => (t.id === tempId ? res.task! : t))
@@ -386,7 +404,7 @@ export function WeeklyBoard({
   const handleCardDragOver = (
     e: React.DragEvent,
     targetTask: TaskWithTag,
-    dateStr: string
+    dateStr?: string | null
   ) => {
     e.preventDefault();
     e.stopPropagation();
@@ -394,6 +412,7 @@ export function WeeklyBoard({
 
     if (!draggedTaskId || draggedTaskId === targetTask.id) return;
 
+    const effectiveDateStr = dateStr || "unscheduled";
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
     const ratio = offsetY / rect.height;
@@ -401,7 +420,7 @@ export function WeeklyBoard({
     const dragged = tasks.find((t) => t.id === draggedTaskId);
     const draggedHasSubs = Boolean(
       (dragged?.subtaskCount && dragged.subtaskCount > 0) ||
-        tasks.some((t) => t.parentId === draggedTaskId)
+      tasks.some((t) => t.parentId === draggedTaskId)
     );
 
     // Permite aninhar apenas se o alvo for tarefa principal (sem parentId) e o item arrastado não tiver subtarefas
@@ -420,38 +439,41 @@ export function WeeklyBoard({
       !dropTarget ||
       dropTarget.targetTaskId !== targetTask.id ||
       dropTarget.position !== position ||
-      dropTarget.dateStr !== dateStr
+      dropTarget.dateStr !== effectiveDateStr
     ) {
       setDropTarget({
-        dateStr,
+        dateStr: effectiveDateStr,
         targetTaskId: targetTask.id,
         position,
       });
     }
   };
 
-  const handleColumnDragOver = (e: React.DragEvent, dateStr: string) => {
+  const handleColumnDragOver = (e: React.DragEvent, dateStr?: string | null) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
 
     if (!draggedTaskId) return;
 
+    const effectiveDateStr = dateStr || "unscheduled";
+
     if (
       !dropTarget ||
       dropTarget.targetTaskId !== undefined ||
-      dropTarget.dateStr !== dateStr
+      dropTarget.dateStr !== effectiveDateStr
     ) {
       setDropTarget({
-        dateStr,
+        dateStr: effectiveDateStr,
         position: "column",
       });
     }
   };
 
-  const handleColumnDragLeave = (e: React.DragEvent, dateStr: string) => {
+  const handleColumnDragLeave = (e: React.DragEvent, dateStr?: string | null) => {
     e.preventDefault();
+    const effectiveDateStr = dateStr || "unscheduled";
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      if (dropTarget?.dateStr === dateStr && dropTarget.position === "column") {
+      if (dropTarget?.dateStr === effectiveDateStr && dropTarget.position === "column") {
         setDropTarget(null);
       }
     }
@@ -459,7 +481,7 @@ export function WeeklyBoard({
 
   const handleDrop = async (
     e: React.DragEvent,
-    dateStr: string,
+    dateStr?: string | null,
     onTargetTask?: TaskWithTag
   ) => {
     e.preventDefault();
@@ -488,7 +510,8 @@ export function WeeklyBoard({
     const previousTasks = [...tasks];
 
     // Determinar nova data e novo pai
-    let newDate = dateStr;
+    const incomingResolvedDate = (!dateStr || dateStr === "unscheduled") ? null : dateStr;
+    let newDate: string | null = incomingResolvedDate;
     let newParentId: string | null = null;
     let newParentObj: { id: string; title: string } | null = null;
 
@@ -504,12 +527,12 @@ export function WeeklyBoard({
       if (targetTask.parentId || draggedHasSubs) return;
       newParentId = targetTask.id;
       newParentObj = { id: targetTask.id, title: targetTask.title };
-      newDate = targetTask.date;
+      newDate = targetTask.date || null;
     } else if (
       (targetPosition === "before" || targetPosition === "after") &&
       targetTask
     ) {
-      newDate = targetTask.date;
+      newDate = targetTask.date || null;
       if (targetTask.parentId) {
         // Alvo é subtarefa -> arrastado vira subtarefa sob o mesmo pai se permitido
         if (!draggedHasSubs) {
@@ -526,14 +549,14 @@ export function WeeklyBoard({
       }
     } else {
       // Solto no espaço da coluna
-      newDate = dateStr;
+      newDate = incomingResolvedDate;
       newParentId = null;
       newParentObj = null;
     }
 
     // Regra do usuário: se a tarefa for arrastada para outro dia e contiver subtarefas no mesmo dia, todas vão para o novo dia
     const movingParentToNewDate =
-      !newParentId && originalDate !== newDate && sameDaySubtasks.length > 0;
+      !newParentId && originalDate !== newDate && Boolean(originalDate && newDate && sameDaySubtasks.length > 0);
 
     // Calcular IDs ordenados no container de destino
     let targetOrderedIds: string[] = [];
@@ -557,12 +580,16 @@ export function WeeklyBoard({
         .filter(
           (t) =>
             !t.parentId &&
-            t.date === newDate &&
+            (newDate ? t.date === newDate : !t.date) &&
             t.id !== currentDraggedId
         )
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-      if (targetTask && !targetTask.parentId && targetTask.date === newDate) {
+      if (
+        targetTask &&
+        !targetTask.parentId &&
+        ((newDate && targetTask.date === newDate) || (!newDate && !targetTask.date))
+      ) {
         const targetIdx = currentMains.findIndex((t) => t.id === targetTask.id);
         const insertIdx =
           targetPosition === "before" ? targetIdx : targetIdx + 1;
@@ -581,7 +608,7 @@ export function WeeklyBoard({
           .filter(
             (t) =>
               !t.parentId &&
-              t.date === originalDate &&
+              (originalDate ? t.date === originalDate : !t.date) &&
               t.id !== currentDraggedId
           )
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -747,10 +774,10 @@ export function WeeklyBoard({
         return filtered.map((t) =>
           t.id === deletedTask.parentId
             ? {
-                ...t,
-                subtaskCount: remainingParentSubs.length,
-                completedSubtaskCount: completedCount,
-              }
+              ...t,
+              subtaskCount: remainingParentSubs.length,
+              completedSubtaskCount: completedCount,
+            }
             : t
         );
       }
@@ -761,6 +788,224 @@ export function WeeklyBoard({
       setIsModalOpen(false);
       setSelectedTask(null);
     }
+  };
+
+  // Helper to render an individual task card (shared between days and unscheduled section)
+  const renderTaskCard = (
+    t: TaskWithTag,
+    isSameDaySubtask = false,
+    isDiffDaySubtask = false,
+    scheduledDate?: string | null
+  ) => {
+    const tagStyles = t.tag ? getTagColorStyles(t.tag.color) : null;
+    const isDragging = draggedTaskId === t.id;
+    const isTarget = dropTarget?.targetTaskId === t.id;
+    const isNestTarget = isTarget && dropTarget?.position === "nest";
+    const isBeforeTarget = isTarget && dropTarget?.position === "before";
+    const isAfterTarget = isTarget && dropTarget?.position === "after";
+
+    // Se o pai desta subtarefa estiver sendo arrastado, destaca que a subtarefa o acompanha
+    const isAttachedToDragged = Boolean(
+      draggedTaskId &&
+      t.parentId === draggedTaskId &&
+      draggedTask &&
+      t.date === draggedTask.date
+    );
+
+    const cardDateStr = t.date || "unscheduled";
+
+    return (
+      <div
+        key={t.id}
+        draggable={true}
+        onDragStart={(e) => handleDragStart(e, t)}
+        onDragEnd={handleDragEnd}
+        onDragOver={(e) => handleCardDragOver(e, t, cardDateStr)}
+        onDrop={(e) => handleDrop(e, cardDateStr, t)}
+        onClick={() => handleOpenTask(t)}
+        className={`group relative flex items-start gap-2 p-2.5 rounded-xl border transition-all select-none cursor-pointer ${isDragging
+          ? "opacity-35 scale-[0.98] border-dashed border-indigo-400 bg-indigo-50/20 shadow-none cursor-grabbing"
+          : isNestTarget
+            ? "ring-2 ring-indigo-500 bg-indigo-50/85 border-indigo-400 shadow-md cursor-grabbing"
+            : isAttachedToDragged
+              ? "opacity-60 border-dashed border-indigo-300 bg-indigo-50/10"
+              : t.completed
+                ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
+                : isSameDaySubtask
+                  ? "bg-white/95 hover:bg-white border-slate-200/70 text-slate-800 hover:shadow-xs hover:border-indigo-300"
+                  : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
+          }`}
+      >
+        {/* Drop Indicator Line: Before */}
+        {isBeforeTarget && (
+          <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
+            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white shadow-xs" />
+          </div>
+        )}
+
+        {/* Drop Indicator Line: After */}
+        {isAfterTarget && (
+          <div className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
+            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white shadow-xs" />
+          </div>
+        )}
+
+        {/* Drag Grip Handle */}
+        <div
+          className="mt-0.5 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0 cursor-grab active:cursor-grabbing"
+          title="Arraste para mover ou reordenar"
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </div>
+
+        {/* Checkbox */}
+        <button
+          type="button"
+          draggable={false}
+          onClick={(e) => handleToggleCompleted(e, t)}
+          className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
+        >
+          {t.completed ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          ) : (
+            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
+          )}
+        </button>
+
+        {/* Title and details */}
+        <div className={`flex-1 min-w-0 ${draggedTaskId ? "pointer-events-none" : ""}`}>
+          {/* Diff day indicator (parent pill) */}
+          {isDiffDaySubtask && t.parent && (
+            <div className="flex items-center gap-1 mb-1">
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-50/90 border border-indigo-100 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
+                title={`Subtarefa de: ${t.parent.title}`}
+              >
+                <CornerDownRight className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+                <span className="truncate">{t.parent.title}</span>
+              </span>
+            </div>
+          )}
+
+          <p
+            className={`text-xs font-medium leading-snug break-words ${t.completed
+              ? "line-through text-slate-400"
+              : "text-slate-700"
+              }`}
+          >
+            {t.title}
+          </p>
+
+          {/* Nest Target Indicator Pill */}
+          {isNestTarget && (
+            <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-100/90 px-1.5 py-0.5 rounded-md animate-pulse">
+              <CornerDownRight className="w-2.5 h-2.5 text-indigo-600 flex-shrink-0" />
+              <span>Soltar para virar subtarefa</span>
+            </div>
+          )}
+
+          {/* Tag, Time, Duration, Scheduled Date & Subtask Progress Badges row */}
+          {Boolean(
+            t.tag ||
+            t.time ||
+            scheduledDate ||
+            (t.duration != null && t.duration > 0) ||
+            (t.subtaskCount != null && t.subtaskCount > 0)
+          ) && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                {/* Scheduled Date Badge (when displayed in unscheduled card) */}
+                {scheduledDate && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold border shadow-2xs ${t.completed
+                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                      : "bg-amber-50/90 text-amber-700 border-amber-200/60"
+                      }`}
+                    title={`Agendada para ${formatDayShort(scheduledDate)}`}
+                  >
+                    <CalendarDays className="w-2.5 h-2.5 text-amber-500" />
+                    <span>{formatDayShort(scheduledDate)}</span>
+                  </span>
+                )}
+
+                {/* Subtask progress count badge for main tasks */}
+                {Boolean(
+                  t.subtaskCount != null && t.subtaskCount > 0
+                ) && (
+                    <span
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${t.completed ||
+                        t.completedSubtaskCount === t.subtaskCount
+                        ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                        : "bg-indigo-50/90 text-indigo-700 border-indigo-200/60"
+                        }`}
+                      title={`Subtarefas: ${t.completedSubtaskCount || 0
+                        } de ${t.subtaskCount} concluídas`}
+                    >
+                      <ListTree
+                        className={`w-2.5 h-2.5 ${t.completed
+                          ? "text-slate-400"
+                          : "text-indigo-500"
+                          }`}
+                      />
+                      <span>
+                        {t.completedSubtaskCount || 0}/
+                        {t.subtaskCount}
+                      </span>
+                    </span>
+                  )}
+
+                {/* Tag badge */}
+                {t.tag && tagStyles && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${t.completed
+                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                      : tagStyles.badgeClass
+                      }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${t.completed
+                        ? "bg-slate-400"
+                        : tagStyles.dotClass
+                        }`}
+                    />
+                    <span className="truncate max-w-[110px]">
+                      {t.tag.name}
+                    </span>
+                  </span>
+                )}
+
+                {/* Time badge */}
+                {t.time && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                    <Clock className="w-2.5 h-2.5 text-indigo-400" />
+                    {t.time}
+                  </span>
+                )}
+
+                {/* Duration badge */}
+                {Boolean(t.duration != null && t.duration > 0) && (
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${t.completed
+                      ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
+                      : "bg-amber-50/90 text-amber-700 border-amber-200/60"
+                      }`}
+                    title={`Duração estimada: ${formatDuration(
+                      t.duration!
+                    )}`}
+                  >
+                    <Timer
+                      className={`w-2.5 h-2.5 ${t.completed
+                        ? "text-slate-400"
+                        : "text-amber-500"
+                        }`}
+                    />
+                    {formatDuration(t.duration!)}
+                  </span>
+                )}
+              </div>
+            )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -819,11 +1064,10 @@ export function WeeklyBoard({
               <button
                 type="button"
                 onClick={() => setIsViewMenuOpen((prev) => !prev)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium shadow-xs transition-all cursor-pointer ${
-                  isViewMenuOpen || preferences.showSaturday || preferences.showSunday
-                    ? "bg-indigo-50/90 text-indigo-700 border-indigo-200/80"
-                    : "bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/70"
-                }`}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium shadow-xs transition-all cursor-pointer ${isViewMenuOpen || preferences.showSaturday || preferences.showSunday
+                  ? "bg-indigo-50/90 text-indigo-700 border-indigo-200/80"
+                  : "bg-white/70 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200/70"
+                  }`}
                 title="Ajustes de visualização dos dias"
                 aria-label="Ajustes de visualização dos dias"
               >
@@ -858,14 +1102,12 @@ export function WeeklyBoard({
                     >
                       <span className="text-xs font-medium text-slate-700">Sábado</span>
                       <div
-                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
-                          preferences.showSaturday ? "bg-indigo-600" : "bg-slate-300"
-                        }`}
+                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${preferences.showSaturday ? "bg-indigo-600" : "bg-slate-300"
+                          }`}
                       >
                         <div
-                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                            preferences.showSaturday ? "translate-x-3.5" : "translate-x-0"
-                          }`}
+                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${preferences.showSaturday ? "translate-x-3.5" : "translate-x-0"
+                            }`}
                         />
                       </div>
                     </button>
@@ -878,14 +1120,12 @@ export function WeeklyBoard({
                     >
                       <span className="text-xs font-medium text-slate-700">Domingo</span>
                       <div
-                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
-                          preferences.showSunday ? "bg-indigo-600" : "bg-slate-300"
-                        }`}
+                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${preferences.showSunday ? "bg-indigo-600" : "bg-slate-300"
+                          }`}
                       >
                         <div
-                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                            preferences.showSunday ? "translate-x-3.5" : "translate-x-0"
-                          }`}
+                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${preferences.showSunday ? "translate-x-3.5" : "translate-x-0"
+                            }`}
                         />
                       </div>
                     </button>
@@ -933,22 +1173,20 @@ export function WeeklyBoard({
                 onDragOver={(e) => handleColumnDragOver(e, day.dateStr)}
                 onDragLeave={(e) => handleColumnDragLeave(e, day.dateStr)}
                 onDrop={(e) => handleDrop(e, day.dateStr)}
-                className={`rounded-2xl flex flex-col min-h-[480px] p-3.5 transition-all duration-200 ${
-                  dropTarget?.dateStr === day.dateStr &&
+                className={`rounded-2xl flex flex-col min-h-[420px] p-3.5 transition-all duration-200 ${dropTarget?.dateStr === day.dateStr &&
                   (dropTarget.position === "column" || !dropTarget.targetTaskId)
-                    ? "ring-2 ring-indigo-400/50 bg-indigo-50/25"
-                    : day.isToday
+                  ? "ring-2 ring-indigo-400/50 bg-indigo-50/25"
+                  : day.isToday
                     ? "glass-card-today ring-1 ring-indigo-500/20"
                     : "glass-card"
-                }`}
+                  }`}
               >
                 {/* Column Day Header */}
                 <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/40">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-sm font-bold ${
-                        day.isToday ? "text-indigo-600" : "text-slate-800"
-                      }`}
+                      className={`text-sm font-bold ${day.isToday ? "text-indigo-600" : "text-slate-800"
+                        }`}
                     >
                       {day.dayNameShort}
                     </span>
@@ -976,215 +1214,6 @@ export function WeeklyBoard({
                     const diffDaySubtasks = dayTasks.filter(
                       (t) => t.parentId && !dayTasks.some((p) => p.id === t.parentId)
                     );
-
-                    // Helper to render an individual task card
-                    const renderTaskCard = (
-                      t: TaskWithTag,
-                      isSameDaySubtask = false,
-                      isDiffDaySubtask = false
-                    ) => {
-                      const tagStyles = t.tag ? getTagColorStyles(t.tag.color) : null;
-                      const isDragging = draggedTaskId === t.id;
-                      const isTarget = dropTarget?.targetTaskId === t.id;
-                      const isNestTarget = isTarget && dropTarget?.position === "nest";
-                      const isBeforeTarget = isTarget && dropTarget?.position === "before";
-                      const isAfterTarget = isTarget && dropTarget?.position === "after";
-
-                      // Se o pai desta subtarefa estiver sendo arrastado, destaca que a subtarefa o acompanha
-                      const isAttachedToDragged = Boolean(
-                        draggedTaskId &&
-                          t.parentId === draggedTaskId &&
-                          draggedTask &&
-                          t.date === draggedTask.date
-                      );
-
-                      return (
-                        <div
-                          key={t.id}
-                          draggable={true}
-                          onDragStart={(e) => handleDragStart(e, t)}
-                          onDragEnd={handleDragEnd}
-                          onDragOver={(e) => handleCardDragOver(e, t, t.date)}
-                          onDrop={(e) => handleDrop(e, t.date, t)}
-                          onClick={() => handleOpenTask(t)}
-                          className={`group relative flex items-start gap-2 p-2.5 rounded-xl border transition-all select-none cursor-pointer ${
-                            isDragging
-                              ? "opacity-35 scale-[0.98] border-dashed border-indigo-400 bg-indigo-50/20 shadow-none cursor-grabbing"
-                              : isNestTarget
-                              ? "ring-2 ring-indigo-500 bg-indigo-50/85 border-indigo-400 shadow-md cursor-grabbing"
-                              : isAttachedToDragged
-                              ? "opacity-60 border-dashed border-indigo-300 bg-indigo-50/10"
-                              : t.completed
-                              ? "bg-slate-50/50 border-slate-200/40 text-slate-400"
-                              : isSameDaySubtask
-                              ? "bg-white/95 hover:bg-white border-slate-200/70 text-slate-800 hover:shadow-xs hover:border-indigo-300"
-                              : "bg-white/85 hover:bg-white border-slate-200/60 text-slate-800 hover:shadow-xs hover:border-indigo-200"
-                          }`}
-                        >
-                          {/* Drop Indicator Line: Before */}
-                          {isBeforeTarget && (
-                            <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
-                              <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white shadow-xs" />
-                            </div>
-                          )}
-
-                          {/* Drop Indicator Line: After */}
-                          {isAfterTarget && (
-                            <div className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
-                              <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white shadow-xs" />
-                            </div>
-                          )}
-
-                          {/* Drag Grip Handle */}
-                          <div
-                            className="mt-0.5 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0 cursor-grab active:cursor-grabbing"
-                            title="Arraste para mover ou reordenar"
-                          >
-                            <GripVertical className="w-3.5 h-3.5" />
-                          </div>
-
-                          {/* Checkbox */}
-                          <button
-                            type="button"
-                            draggable={false}
-                            onClick={(e) => handleToggleCompleted(e, t)}
-                            className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer flex-shrink-0"
-                          >
-                            {t.completed ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                            ) : (
-                              <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500" />
-                            )}
-                          </button>
-
-                          {/* Title and details */}
-                          <div className={`flex-1 min-w-0 ${draggedTaskId ? "pointer-events-none" : ""}`}>
-                            {/* Diff day indicator (parent pill) */}
-                            {isDiffDaySubtask && t.parent && (
-                              <div className="flex items-center gap-1 mb-1">
-                                <span
-                                  className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-50/90 border border-indigo-100 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
-                                  title={`Subtarefa de: ${t.parent.title}`}
-                                >
-                                  <CornerDownRight className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
-                                  <span className="truncate">{t.parent.title}</span>
-                                </span>
-                              </div>
-                            )}
-
-                            <p
-                              className={`text-xs font-medium leading-snug break-words ${
-                                t.completed
-                                  ? "line-through text-slate-400"
-                                  : "text-slate-700"
-                              }`}
-                            >
-                              {t.title}
-                            </p>
-
-                            {/* Nest Target Indicator Pill */}
-                            {isNestTarget && (
-                              <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-100/90 px-1.5 py-0.5 rounded-md animate-pulse">
-                                <CornerDownRight className="w-2.5 h-2.5 text-indigo-600 flex-shrink-0" />
-                                <span>Soltar para virar subtarefa</span>
-                              </div>
-                            )}
-
-                            {/* Tag, Time, Duration & Subtask Progress Badges row */}
-                            {Boolean(
-                              t.tag ||
-                                t.time ||
-                                (t.duration != null && t.duration > 0) ||
-                                (t.subtaskCount != null && t.subtaskCount > 0)
-                            ) && (
-                              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                                {/* Subtask progress count badge for main tasks */}
-                                {Boolean(
-                                  t.subtaskCount != null && t.subtaskCount > 0
-                                ) && (
-                                  <span
-                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
-                                      t.completed ||
-                                      t.completedSubtaskCount === t.subtaskCount
-                                        ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
-                                        : "bg-indigo-50/90 text-indigo-700 border-indigo-200/60"
-                                    }`}
-                                    title={`Subtarefas: ${
-                                      t.completedSubtaskCount || 0
-                                    } de ${t.subtaskCount} concluídas`}
-                                  >
-                                    <ListTree
-                                      className={`w-2.5 h-2.5 ${
-                                        t.completed
-                                          ? "text-slate-400"
-                                          : "text-indigo-500"
-                                      }`}
-                                    />
-                                    <span>
-                                      {t.completedSubtaskCount || 0}/
-                                      {t.subtaskCount}
-                                    </span>
-                                  </span>
-                                )}
-
-                                {/* Tag badge */}
-                                {t.tag && tagStyles && (
-                                  <span
-                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
-                                      t.completed
-                                        ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
-                                        : tagStyles.badgeClass
-                                    }`}
-                                  >
-                                    <span
-                                      className={`w-1.5 h-1.5 rounded-full ${
-                                        t.completed
-                                          ? "bg-slate-400"
-                                          : tagStyles.dotClass
-                                      }`}
-                                    />
-                                    <span className="truncate max-w-[110px]">
-                                      {t.tag.name}
-                                    </span>
-                                  </span>
-                                )}
-
-                                {/* Time badge */}
-                                {t.time && (
-                                  <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 font-medium">
-                                    <Clock className="w-2.5 h-2.5 text-indigo-400" />
-                                    {t.time}
-                                  </span>
-                                )}
-
-                                {/* Duration badge */}
-                                {Boolean(t.duration != null && t.duration > 0) && (
-                                  <span
-                                    className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${
-                                      t.completed
-                                        ? "bg-slate-100/80 text-slate-400 border-slate-200/50"
-                                        : "bg-amber-50/90 text-amber-700 border-amber-200/60"
-                                    }`}
-                                    title={`Duração estimada: ${formatDuration(
-                                      t.duration!
-                                    )}`}
-                                  >
-                                    <Timer
-                                      className={`w-2.5 h-2.5 ${
-                                        t.completed
-                                          ? "text-slate-400"
-                                          : "text-amber-500"
-                                      }`}
-                                    />
-                                    {formatDuration(t.duration!)}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    };
 
                     return (
                       <>
@@ -1225,12 +1254,11 @@ export function WeeklyBoard({
                     <div
                       onDragOver={(e) => handleColumnDragOver(e, day.dateStr)}
                       onDrop={(e) => handleDrop(e, day.dateStr)}
-                      className={`h-10 border-2 border-dashed rounded-xl flex items-center justify-center text-[11px] font-medium transition-all ${
-                        dropTarget?.dateStr === day.dateStr &&
+                      className={`h-10 border-2 border-dashed rounded-xl flex items-center justify-center text-[11px] font-medium transition-all ${dropTarget?.dateStr === day.dateStr &&
                         (dropTarget.position === "column" || !dropTarget.targetTaskId)
-                          ? "border-indigo-400 bg-indigo-50/70 text-indigo-700 shadow-xs"
-                          : "border-slate-200/60 text-slate-400 hover:border-indigo-300 hover:text-indigo-500 bg-white/20"
-                      }`}
+                        ? "border-indigo-400 bg-indigo-50/70 text-indigo-700 shadow-xs"
+                        : "border-slate-200/60 text-slate-400 hover:border-indigo-300 hover:text-indigo-500 bg-white/20"
+                        }`}
                     >
                       <span>Mover para {day.dayNameShort}</span>
                     </div>
@@ -1274,6 +1302,125 @@ export function WeeklyBoard({
             );
           })}
         </div>
+
+        {/* Seção Tarefas sem data (Backlog contínuo) */}
+        <section className="mt-6 glass-panel rounded-3xl p-5 sm:p-6 border border-white/80 shadow-sm transition-all">
+          {/* Header da Seção */}
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200/50">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs">
+                <CalendarOff className="w-4 h-4" />
+              </div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-semibold text-slate-800 tracking-tight">
+                  Tarefas sem data
+                </h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200/60 shadow-2xs">
+                  {pendingUnscheduledCount} {pendingUnscheduledCount === 1 ? "pendente" : "pendentes"}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsUnscheduledOpen((prev) => !prev)}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 transition-all cursor-pointer flex items-center gap-1 text-xs font-medium"
+              title={isUnscheduledOpen ? "Recolher seção" : "Expandir seção"}
+            >
+              <span className="text-[11px] hidden sm:inline text-slate-500">
+                {isUnscheduledOpen ? "Recolher" : "Expandir"}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${isUnscheduledOpen ? "rotate-180" : ""
+                  }`}
+              />
+            </button>
+          </div>
+
+          {/* Conteúdo Expansível */}
+          {isUnscheduledOpen && (
+            <div className="pt-4 space-y-4">
+              {/* Dropzone dedicada para a seção durante arrastes */}
+              {draggedTaskId && (
+                <div
+                  onDragOver={(e) => handleColumnDragOver(e, "unscheduled")}
+                  onDrop={(e) => handleDrop(e, "unscheduled")}
+                  className={`h-12 border-2 border-dashed rounded-2xl flex items-center justify-center text-xs font-medium transition-all ${dropTarget?.dateStr === "unscheduled" &&
+                    (dropTarget.position === "column" || !dropTarget.targetTaskId)
+                    ? "border-indigo-400 bg-indigo-50/70 text-indigo-700 shadow-xs"
+                    : "border-slate-200/60 text-slate-400 hover:border-indigo-300 hover:text-indigo-500 bg-white/30"
+                    }`}
+                >
+                  <span>Mover para Tarefas sem data</span>
+                </div>
+              )}
+
+              {/* Grid Responsivo de Cards */}
+              {unscheduledTasks.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {unscheduledTasks.map((mainTask) => {
+                    const subtasksOfMain = tasks.filter(
+                      (sub) => sub.parentId === mainTask.id
+                    );
+
+                    return (
+                      <div key={mainTask.id} className="space-y-1.5">
+                        {renderTaskCard(mainTask)}
+
+                        {/* Subtarefas da tarefa sem data */}
+                        {subtasksOfMain.length > 0 && (
+                          <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 space-y-1.5 my-1">
+                            {subtasksOfMain.map((sub) =>
+                              renderTaskCard(sub, true, false, sub.date)
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-xs text-slate-400 font-medium">
+                  Nenhuma tarefa sem data no momento. Arraste tarefas de qualquer dia para cá ou use o campo abaixo.
+                </div>
+              )}
+
+              {/* Input Quick Add Dedicado */}
+              <div className="max-w-md pt-1">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={newTitles["unscheduled"] || ""}
+                    onChange={(e) =>
+                      setNewTitles((prev) => ({
+                        ...prev,
+                        unscheduled: e.target.value,
+                      }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleQuickAdd("unscheduled");
+                      }
+                    }}
+                    placeholder="+ Nova tarefa sem data... (Enter para adicionar)"
+                    className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white border border-slate-200/70 rounded-xl pl-3 pr-8 py-2 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all shadow-2xs"
+                  />
+                  {Boolean((newTitles["unscheduled"] || "").trim()) && (
+                    <button
+                      type="button"
+                      onClick={() => handleQuickAdd("unscheduled")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 p-0.5 cursor-pointer"
+                      title="Adicionar"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
       </main>
 
       {/* Task Details Modal */}
