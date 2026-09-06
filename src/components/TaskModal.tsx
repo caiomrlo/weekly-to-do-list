@@ -9,34 +9,17 @@ import {
   getSubtasksAction,
   toggleTaskStatusAction,
 } from "@/app/actions/tasks";
-import { getUserTagsAction, createTagAction } from "@/app/actions/tags";
-import { TAG_COLORS, getTagColorStyles } from "@/lib/tag-utils";
-import {
-  formatDuration,
-  parseNaturalDuration,
-} from "@/lib/date-utils";
+import { getUserTagsAction } from "@/app/actions/tags";
+import { formatDuration, parseNaturalDuration } from "@/lib/date-utils";
 import { TaskDescriptionEditor } from "./TaskDescriptionEditor";
-import {
-  X,
-  Trash2,
-  Calendar,
-  Clock,
-  Timer,
-  CheckCircle2,
-  Circle,
-  Loader2,
-  Check,
-  AlertTriangle,
-  Tag as TagIcon,
-  Plus,
-  ChevronDown,
-  CornerDownRight,
-  ListTree,
-  ArrowRight,
-  ExternalLink,
-} from "lucide-react";
+import { TaskParentBanner } from "./task-modal/TaskParentBanner";
+import { TaskScheduleInputs } from "./task-modal/TaskScheduleInputs";
+import { TaskTagSelector } from "./task-modal/TaskTagSelector";
+import { TaskSubtasksSection } from "./task-modal/TaskSubtasksSection";
+import { TaskModalFooter } from "./task-modal/TaskModalFooter";
+import { X, CheckCircle2, Circle, Loader2 } from "lucide-react";
 
-interface TaskModalProps {
+export interface TaskModalProps {
   task: TaskWithTag | null;
   isOpen: boolean;
   onClose: () => void;
@@ -77,24 +60,13 @@ function TaskModalDialog({
   // Subtasks state
   const [subtasks, setSubtasks] = useState<TaskWithTag[]>([]);
   const [isLoadingSubtasks, setIsLoadingSubtasks] = useState(!task.parentId);
-  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
-  const [isAddingSubtask, setIsAddingSubtask] = useState(false);
 
-  // Tags list & creation state
+  // User tags state
   const [userTags, setUserTags] = useState<Tag[]>([]);
-  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
-  const [isCreatingTag, setIsCreatingTag] = useState(false);
-  const [newTagName, setNewTagName] = useState("");
-  const [newTagColor, setNewTagColor] = useState("indigo");
-  const [isCreatingTagLoading, setIsCreatingTagLoading] = useState(false);
-  const [tagError, setTagError] = useState("");
-
   const [isSaving, setIsSaving] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const tagDropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch subtasks if task is a main task
   useEffect(() => {
@@ -125,37 +97,16 @@ function TaskModalDialog({
     loadTags();
   }, []);
 
-  // Close tag dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        tagDropdownRef.current &&
-        !tagDropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsTagDropdownOpen(false);
-        setIsCreatingTag(false);
-        setTagError("");
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   // Handle escape key to close modal
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        if (isTagDropdownOpen) {
-          setIsTagDropdownOpen(false);
-          setIsCreatingTag(false);
-        } else {
-          onClose();
-        }
+        onClose();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, isTagDropdownOpen]);
+  }, [onClose]);
 
   // Debounced auto-save function
   const triggerAutoSave = (updates: {
@@ -244,44 +195,11 @@ function TaskModalDialog({
 
   const handleSelectTag = (tag: Tag | null) => {
     setSelectedTag(tag);
-    setIsTagDropdownOpen(false);
-    setIsCreatingTag(false);
     triggerAutoSave({ tagId: tag ? tag.id : null });
   };
 
-  const handleCreateNewTag = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = newTagName.trim();
-    if (!trimmed) {
-      setTagError("O nome da tag é obrigatório.");
-      return;
-    }
-
-    setIsCreatingTagLoading(true);
-    setTagError("");
-
-    try {
-      const res = await createTagAction({
-        name: trimmed,
-        color: newTagColor,
-      });
-
-      if (res.tag) {
-        setUserTags((prev) => [...prev, res.tag!]);
-        setSelectedTag(res.tag);
-        setNewTagName("");
-        setIsCreatingTag(false);
-        setIsTagDropdownOpen(false);
-        triggerAutoSave({ tagId: res.tag.id });
-      } else if (res.error) {
-        setTagError(res.error);
-      }
-    } catch (err) {
-      console.error(err);
-      setTagError("Erro ao criar a tag.");
-    } finally {
-      setIsCreatingTagLoading(false);
-    }
+  const handleTagCreated = (newTag: Tag) => {
+    setUserTags((prev) => [...prev, newTag]);
   };
 
   const handleToggleCompleted = async () => {
@@ -298,17 +216,10 @@ function TaskModalDialog({
     }
   };
 
-  const handleCreateSubtask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = newSubtaskTitle.trim();
-    if (!trimmed || isAddingSubtask) return;
-
-    setIsAddingSubtask(true);
-    setNewSubtaskTitle("");
-
+  const handleCreateSubtask = async (subtaskTitle: string) => {
     try {
       const res = await createTaskAction({
-        title: trimmed,
+        title: subtaskTitle,
         date: date ? date : null,
         parentId: task.id,
       });
@@ -327,8 +238,6 @@ function TaskModalDialog({
       }
     } catch (err) {
       console.error("Erro ao criar subtarefa:", err);
-    } finally {
-      setIsAddingSubtask(false);
     }
   };
 
@@ -379,10 +288,6 @@ function TaskModalDialog({
     });
   };
 
-  const selectedTagStyles = selectedTag
-    ? getTagColorStyles(selectedTag.color)
-    : null;
-
   const totalSubtasksToDelete = subtasks.length || task.subtaskCount || 0;
 
   return (
@@ -422,25 +327,11 @@ function TaskModalDialog({
         <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1">
           {/* Parent Task Banner if this is a subtask */}
           {task.parentId && (
-            <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-100/90 dark:border-indigo-900/60 rounded-2xl text-xs">
-              <div className="flex items-center gap-2 min-w-0">
-                <CornerDownRight className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                <span className="text-slate-500 dark:text-slate-400 font-medium flex-shrink-0">Subtarefa de:</span>
-                <span className="font-semibold text-indigo-700 dark:text-indigo-300 truncate">
-                  {task.parent?.title || "Tarefa Principal"}
-                </span>
-              </div>
-              {onOpenTask && task.parentId && (
-                <button
-                  type="button"
-                  onClick={() => onOpenTask(task.parentId!)}
-                  className="inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline flex-shrink-0 cursor-pointer text-xs"
-                >
-                  <span>Ver tarefa principal</span>
-                  <ArrowRight className="w-3 h-3" />
-                </button>
-              )}
-            </div>
+            <TaskParentBanner
+              parentId={task.parentId}
+              parentTitle={task.parent?.title}
+              onOpenTask={onOpenTask}
+            />
           )}
 
           {/* Title and Complete Button */}
@@ -469,317 +360,27 @@ function TaskModalDialog({
             />
           </div>
 
-          {/* Date, Time & Duration clean single row */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* Date Pill */}
-            <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
-              <Calendar className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
-              <span className="pointer-events-none">
-                {date ? date.split("-").reverse().join("/") : "Sem data (Fixa)"}
-              </span>
-              {date ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDateChange("");
-                  }}
-                  className="relative z-10 text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
-                  title="Remover data (mover para Tarefas sem data)"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              ) : null}
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => {
-                  if (e.target.value) handleDateChange(e.target.value);
-                }}
-                onClick={(e) => {
-                  try {
-                    (e.target as HTMLInputElement).showPicker?.();
-                  } catch {}
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-0"
-                title={date ? "Alterar data" : "Definir data"}
-              />
-            </div>
+          {/* Date, Time & Duration Pills */}
+          <TaskScheduleInputs
+            date={date}
+            time={time}
+            durationText={durationText}
+            onDateChange={handleDateChange}
+            onTimeChange={handleTimeChange}
+            onDurationInputChange={handleDurationInputChange}
+            onDurationBlur={handleDurationBlur}
+            onClearDuration={handleClearDuration}
+          />
 
-            {/* Time Pill */}
-            <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
-              <Clock className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
-              {time ? (
-                <>
-                  <span className="pointer-events-none">{time}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleTimeChange("");
-                    }}
-                    className="relative z-10 text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
-                    title="Remover horário"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </>
-              ) : (
-                <span className="text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 transition-colors pointer-events-none">
-                  Adicionar horário
-                </span>
-              )}
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => handleTimeChange(e.target.value)}
-                onClick={(e) => {
-                  try {
-                    (e.target as HTMLInputElement).showPicker?.();
-                  } catch {}
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-0"
-                title={time ? `Horário: ${time}` : "Adicionar horário"}
-              />
-            </div>
+          {/* Tag Selector */}
+          <TaskTagSelector
+            selectedTag={selectedTag}
+            userTags={userTags}
+            onSelectTag={handleSelectTag}
+            onTagCreated={handleTagCreated}
+          />
 
-            {/* Duration Pill */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/20 transition-all">
-              <Timer className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-              <input
-                type="text"
-                value={durationText}
-                onChange={(e) => handleDurationInputChange(e.target.value)}
-                onBlur={handleDurationBlur}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    (e.target as HTMLInputElement).blur();
-                  }
-                }}
-                placeholder="Duração"
-                className="bg-transparent text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none w-14 focus:w-20 transition-all"
-              />
-              {durationText && (
-                <button
-                  type="button"
-                  onClick={handleClearDuration}
-                  className="text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
-                  title="Limpar duração"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Compact Tag Line */}
-          <div className="relative" ref={tagDropdownRef}>
-            <div className="flex items-center gap-2">
-              <TagIcon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-
-              {selectedTag ? (
-                <div className="inline-flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsTagDropdownOpen((prev) => !prev);
-                      setIsCreatingTag(false);
-                      setTagError("");
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border shadow-2xs hover:opacity-90 transition-all cursor-pointer ${
-                      selectedTagStyles?.badgeClass || "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800/60"
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        selectedTagStyles?.dotClass || "bg-indigo-500"
-                      }`}
-                    />
-                    <span>{selectedTag.name}</span>
-                    <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectTag(null)}
-                    className="text-slate-400 hover:text-rose-500 p-0.5 rounded-md transition-colors cursor-pointer"
-                    title="Remover tag"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsTagDropdownOpen((prev) => !prev);
-                    setIsCreatingTag(false);
-                    setTagError("");
-                  }}
-                  className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium py-1 px-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Adicionar tag</span>
-                </button>
-              )}
-            </div>
-
-            {/* Tag Dropdown Popover */}
-            {isTagDropdownOpen && (
-              <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
-                {!isCreatingTag ? (
-                  <div>
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      <span>Selecionar Tag</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsCreatingTag(true)}
-                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        Nova Tag
-                      </button>
-                    </div>
-
-                    {/* Tag list */}
-                    <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
-                      {selectedTag && (
-                        <button
-                          type="button"
-                          onClick={() => handleSelectTag(null)}
-                          className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-between transition-colors cursor-pointer"
-                        >
-                          <span>Nenhuma (Remover tag)</span>
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-
-                      {userTags.length === 0 ? (
-                        <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
-                          Nenhuma tag criada ainda.
-                        </div>
-                      ) : (
-                        userTags.map((tag) => {
-                          const styles = getTagColorStyles(tag.color);
-                          const isSelected = selectedTag?.id === tag.id;
-
-                          return (
-                            <button
-                              key={tag.id}
-                              type="button"
-                              onClick={() => handleSelectTag(tag)}
-                              className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-all cursor-pointer ${
-                                isSelected
-                                  ? `${styles.badgeClass} ring-1 ring-indigo-400/40 font-semibold`
-                                  : "hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200"
-                              }`}
-                            >
-                              <span className="flex items-center gap-2">
-                                <span
-                                  className={`w-2 h-2 rounded-full ${styles.dotClass}`}
-                                />
-                                <span>{tag.name}</span>
-                              </span>
-                              {isSelected && (
-                                <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                              )}
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  /* Inline Tag Creation Form */
-                  <form onSubmit={handleCreateNewTag} className="space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
-                      <span>Criar Nova Tag</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCreatingTag(false);
-                          setTagError("");
-                        }}
-                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {tagError && (
-                      <div className="text-[11px] text-rose-600 dark:text-rose-400 font-medium bg-rose-50 dark:bg-rose-950/60 p-2 rounded-lg">
-                        {tagError}
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
-                        Nome da Tag
-                      </label>
-                      <input
-                        type="text"
-                        autoFocus
-                        value={newTagName}
-                        onChange={(e) => setNewTagName(e.target.value)}
-                        placeholder="Ex: Trabalho, Estudos, Pessoal..."
-                        maxLength={50}
-                        className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
-                        Cor da Tag
-                      </label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {Object.values(TAG_COLORS).map((colorOpt) => (
-                          <button
-                            key={colorOpt.key}
-                            type="button"
-                            onClick={() => setNewTagColor(colorOpt.key)}
-                            className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-[10px] font-medium transition-all cursor-pointer ${
-                              newTagColor === colorOpt.key
-                                ? `${colorOpt.badgeClass} ring-2 ring-indigo-500/30 font-bold border-indigo-400`
-                                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                            }`}
-                          >
-                            <span
-                              className={`w-2 h-2 rounded-full ${colorOpt.dotClass}`}
-                            />
-                            <span className="truncate">{colorOpt.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCreatingTag(false);
-                          setTagError("");
-                        }}
-                        className="px-2.5 py-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                      >
-                        Voltar
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isCreatingTagLoading || !newTagName.trim()}
-                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-                      >
-                        {isCreatingTagLoading && (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        )}
-                        Salvar Tag
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Description / Content Rich Text Editor (WYSIWYG Tiptap) */}
+          {/* Description WYSIWYG Editor */}
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
               Descrição
@@ -790,190 +391,27 @@ function TaskModalDialog({
             />
           </div>
 
-          {/* Subtasks Section (Visible only for main tasks, i.e., !task.parentId) - Placed AFTER Descrição */}
+          {/* Subtasks Section (Main tasks only) */}
           {!task.parentId && (
-            <div className="space-y-3 p-4 bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl border border-slate-200/60 dark:border-slate-800">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <ListTree className="w-3.5 h-3.5 text-indigo-500" />
-                  Subtarefas
-                  {subtasks.length > 0 && (
-                    <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60 shadow-2xs">
-                      {subtasks.filter((s) => s.completed).length} de {subtasks.length} concluídas
-                    </span>
-                  )}
-                </label>
-              </div>
-
-              {/* Subtasks List */}
-              <div className="space-y-1.5">
-                {isLoadingSubtasks && subtasks.length === 0 ? (
-                  <div className="flex items-center gap-2 py-2 text-xs text-slate-400 dark:text-slate-500">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Carregando subtarefas...</span>
-                  </div>
-                ) : null}
-
-                {subtasks.map((sub) => {
-                  const isDiffDate = (sub.date || null) !== (date || null);
-                  return (
-                    <div
-                      key={sub.id}
-                      className={`group flex items-center justify-between gap-2.5 p-2 rounded-xl border transition-all text-xs ${
-                        sub.completed
-                          ? "bg-slate-100/60 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 text-slate-400 dark:text-slate-500"
-                          : "bg-white/90 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSubtask(sub)}
-                          className="text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors cursor-pointer flex-shrink-0"
-                          title={sub.completed ? "Marcar como pendente" : "Marcar como concluída"}
-                        >
-                          {sub.completed ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400" />
-                          )}
-                        </button>
-
-                        <span
-                          className={`truncate flex-1 font-medium ${
-                            sub.completed ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-200"
-                          }`}
-                        >
-                          {sub.title}
-                        </span>
-
-                        {/* Tag pill if subtask has a tag */}
-                        {sub.tag && (
-                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md flex-shrink-0">
-                            {sub.tag.name}
-                          </span>
-                        )}
-
-                        {/* Date pill if subtask is scheduled on another day */}
-                        {isDiffDate && sub.date && (
-                          <span
-                            className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md flex-shrink-0"
-                            title={`Agendada para ${sub.date}`}
-                          >
-                            {sub.date.split("-").reverse().slice(0, 2).join("/")}
-                          </span>
-                        )}
-                        {isDiffDate && !sub.date && (
-                          <span
-                            className="text-[10px] font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md flex-shrink-0"
-                            title="Sem data definida"
-                          >
-                            Sem data
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {onOpenTask && (
-                          <button
-                            type="button"
-                            onClick={() => onOpenTask(sub)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors cursor-pointer"
-                            title="Abrir detalhes completos da subtarefa"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSubtask(sub.id)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
-                          title="Excluir subtarefa"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Quick Add Subtask Input */}
-                <form onSubmit={handleCreateSubtask} className="pt-1">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={newSubtaskTitle}
-                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                      placeholder="+ Adicionar subtarefa... (Enter para salvar)"
-                      disabled={isAddingSubtask}
-                      className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
-                    />
-                    {newSubtaskTitle.trim() && (
-                      <button
-                        type="submit"
-                        disabled={isAddingSubtask}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
-                        title="Adicionar subtarefa"
-                      >
-                        {isAddingSubtask ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Plus className="w-4 h-4" />
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </div>
-            </div>
+            <TaskSubtasksSection
+              subtasks={subtasks}
+              isLoading={isLoadingSubtasks}
+              parentDate={date}
+              onToggleSubtask={handleToggleSubtask}
+              onDeleteSubtask={handleDeleteSubtask}
+              onCreateSubtask={handleCreateSubtask}
+              onOpenTask={onOpenTask}
+            />
           )}
         </div>
 
         {/* Footer Bar with Delete Button */}
-        <div className="pt-4 mt-2 border-t border-slate-200/50 dark:border-slate-800/60 flex items-center justify-between">
-          {!showDeleteConfirm ? (
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-              Excluir tarefa
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 bg-rose-50/90 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 p-2 rounded-xl text-xs sm:text-sm">
-              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
-              <span className="text-rose-700 dark:text-rose-300 font-medium">
-                {totalSubtasksToDelete > 0
-                  ? `Excluir tarefa e suas ${totalSubtasksToDelete} subtarefas?`
-                  : "Excluir tarefa?"}
-              </span>
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={handleDelete}
-                className="px-2.5 py-1 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 cursor-pointer text-xs"
-              >
-                {isDeleting ? "Excluindo..." : "Confirmar"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 rounded-lg transition-colors cursor-pointer text-xs"
-              >
-                Cancelar
-              </button>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-xs sm:text-sm rounded-xl transition-colors cursor-pointer"
-          >
-            Concluir
-          </button>
-        </div>
+        <TaskModalFooter
+          totalSubtasksToDelete={totalSubtasksToDelete}
+          isDeleting={isDeleting}
+          onDelete={handleDelete}
+          onClose={onClose}
+        />
       </div>
     </div>
   );
@@ -1002,4 +440,3 @@ export function TaskModal({
     />
   );
 }
-

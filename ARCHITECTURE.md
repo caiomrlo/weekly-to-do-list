@@ -22,13 +22,29 @@ weekly-to-do-list/
 │   │   ├── layout.tsx            # Root HTML layout with Geist font configuration
 │   │   └── page.tsx              # Protected root page (/) rendering the WeeklyBoard
 │   ├── components/               # Reusable client and server UI components
+│   │   ├── board/                # Weekly board modular subcomponents and drag-and-drop hook
+│   │   │   ├── hooks/useBoardDnD.ts # Complete HTML5 drag and drop state and calculations
+│   │   │   ├── DayColumn.tsx     # Column component for each day with dropzones and quick add
+│   │   │   ├── TaskCard.tsx      # Reusable task card with badges, drag handles and subtask hierarchy
+│   │   │   ├── UnscheduledSection.tsx # Collapsible backlog panel for unscheduled tasks
+│   │   │   ├── ViewSettingsMenu.tsx # Popover menu for toggling Saturday/Sunday visibility
+│   │   │   └── WeeklyHeader.tsx  # Board navigation header, date display, theme and logout
+│   │   ├── task-modal/           # Task details modal specialized subcomponents
+│   │   │   ├── TaskModalFooter.tsx # Modal footer with cascade delete confirmation
+│   │   │   ├── TaskParentBanner.tsx # Visual banner for subtask parent linkage
+│   │   │   ├── TaskScheduleInputs.tsx # Inline date, time, and natural duration inputs
+│   │   │   ├── TaskSubtasksSection.tsx # Subtasks list, toggles, inline creation and deep links
+│   │   │   └── TaskTagSelector.tsx # Tag picker dropdown and inline tag creator with color palette
 │   │   ├── TaskDescriptionEditor.tsx # WYSIWYG rich text editor powered by Tiptap with formatting toolbar
-│   │   ├── TaskModal.tsx         # Task details modal with tag selection/creation, Tiptap WYSIWYG description & auto-save
-│   │   └── WeeklyBoard.tsx       # Interactive weekly board with configurable day visibility and tag badges
+│   │   ├── TaskModal.tsx         # Task details modal orchestrator (< 500 lines)
+│   │   └── WeeklyBoard.tsx       # Interactive weekly board orchestrator (< 500 lines)
 │   ├── db/                       # Database connection and schema definitions
 │   │   ├── index.ts              # PostgreSQL connection pool with Drizzle ORM client
 │   │   └── schema.ts             # Drizzle table schemas (users, tags, tasks) and TypeScript types
 │   ├── lib/                      # Core business logic, utilities, and helper functions
+│   │   ├── hooks/                # Shared custom React hooks
+│   │   │   ├── useDarkMode.ts    # useSyncExternalStore hook for zero-flicker dark mode sync
+│   │   │   └── useTodayDateStr.ts # useSyncExternalStore hook for zero-mismatch today date string
 │   │   ├── auth.ts               # JWT token signing/verification (jose) and bcryptjs password hashing
 │   │   ├── date-utils.ts         # Timezone-immune date arithmetic and week interval formatters
 │   │   └── tag-utils.ts          # Tag color tokens and visual badge style helpers

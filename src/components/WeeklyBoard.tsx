@@ -1,93 +1,32 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
-import { TaskWithTag, UserPreferences, DEFAULT_USER_PREFERENCES } from "@/db/schema";
+import { useState, useTransition, useMemo, useEffect, useCallback } from "react";
+import {
+  TaskWithTag,
+  UserPreferences,
+  DEFAULT_USER_PREFERENCES,
+} from "@/db/schema";
 import {
   getMondayOfWeek,
   getWeekDays,
-  formatMonthYear,
   toDateString,
-  formatDuration,
-  formatDayShort,
 } from "@/lib/date-utils";
 import {
   getWeekTasksAction,
   createTaskAction,
   toggleTaskStatusAction,
   getTaskByIdAction,
-  moveOrReorderTasksAction,
 } from "@/app/actions/tasks";
-import { logoutAction } from "@/app/actions/auth";
 import { updateUserPreferencesAction } from "@/app/actions/user";
-import { getTagColorStyles } from "@/lib/tag-utils";
+import { useTodayDateStr } from "@/lib/hooks/useTodayDateStr";
+import { useDarkMode } from "@/lib/hooks/useDarkMode";
+import { useBoardDnD } from "./board/hooks/useBoardDnD";
+import { WeeklyHeader } from "./board/WeeklyHeader";
+import { DayColumn } from "./board/DayColumn";
+import { UnscheduledSection } from "./board/UnscheduledSection";
 import { TaskModal } from "./TaskModal";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle2,
-  Circle,
-  Clock,
-  Timer,
-  Plus,
-  LogOut,
-  CalendarDays,
-  SlidersHorizontal,
-  CornerDownRight,
-  ListTree,
-  GripVertical,
-  CalendarOff,
-  ChevronDown,
-  Sun,
-  Moon,
-} from "lucide-react";
 
-// Client-side today subscription for zero SSR hydration mismatch
-let cachedToday = "";
-function getClientToday(): string {
-  const current = toDateString(new Date());
-  if (current !== cachedToday) {
-    cachedToday = current;
-  }
-  return cachedToday;
-}
-function getServerToday(): string {
-  return "";
-}
-function subscribeToday(callback: () => void) {
-  window.addEventListener("focus", callback);
-  const timer = setInterval(callback, 60000);
-  return () => {
-    window.removeEventListener("focus", callback);
-    clearInterval(timer);
-  };
-}
-
-function useTodayDateStr(): string {
-  return useSyncExternalStore(subscribeToday, getClientToday, getServerToday);
-}
-
-// Client-side dark mode subscription for zero SSR hydration mismatch
-function getClientDarkMode(): boolean {
-  return typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false;
-}
-function getServerDarkMode(): boolean {
-  return false;
-}
-function subscribeDarkMode(callback: () => void) {
-  if (typeof MutationObserver === "undefined") return () => {};
-  const observer = new MutationObserver(callback);
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
-  return () => observer.disconnect();
-}
-
-function useDarkMode(): boolean {
-  return useSyncExternalStore(subscribeDarkMode, getClientDarkMode, getServerDarkMode);
-}
-
-interface WeeklyBoardProps {
+export interface WeeklyBoardProps {
   initialTasks: TaskWithTag[];
   userEmail: string;
   initialMondayStr: string; // 'YYYY-MM-DD'
@@ -109,8 +48,6 @@ export function WeeklyBoard({
   const [preferences, setPreferences] = useState<UserPreferences>(
     initialPreferences || DEFAULT_USER_PREFERENCES
   );
-  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
-  const viewMenuRef = useRef<HTMLDivElement>(null);
 
   const [tasks, setTasks] = useState<TaskWithTag[]>(initialTasks);
   const [selectedTask, setSelectedTask] = useState<TaskWithTag | null>(null);
@@ -119,72 +56,12 @@ export function WeeklyBoard({
   // New task inline input state per day: { [dateStr]: string }
   const [newTitles, setNewTitles] = useState<Record<string, string>>({});
   const [isNavigating, startNavTransition] = useTransition();
-
-  // Drag and Drop states
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<{
-    dateStr: string;
-    targetTaskId?: string;
-    position: "before" | "after" | "nest" | "column";
-  } | null>(null);
-  const isDragCooldownRef = useRef(false);
-  const dragCooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerDragCooldown = useCallback(() => {
-    isDragCooldownRef.current = true;
-    if (dragCooldownTimerRef.current) {
-      clearTimeout(dragCooldownTimerRef.current);
-    }
-    dragCooldownTimerRef.current = setTimeout(() => {
-      isDragCooldownRef.current = false;
-    }, 180);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (dragCooldownTimerRef.current) {
-        clearTimeout(dragCooldownTimerRef.current);
-      }
-    };
-  }, []);
-
-  const draggedTask = useMemo(
-    () => (draggedTaskId ? tasks.find((t) => t.id === draggedTaskId) || null : null),
-    [tasks, draggedTaskId]
-  );
-
   const [isUnscheduledOpen, setIsUnscheduledOpen] = useState(true);
 
-  const unscheduledTasks = useMemo(() => {
-    return tasks
-      .filter((t) => !t.date && !t.parentId)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [tasks]);
+  // Drag and drop engine
+  const dnd = useBoardDnD({ tasks, setTasks });
 
-  const pendingUnscheduledCount = useMemo(() => {
-    return unscheduledTasks.filter((t) => !t.completed).length;
-  }, [unscheduledTasks]);
-
-  // Close view menu on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        viewMenuRef.current &&
-        !viewMenuRef.current.contains(event.target as Node)
-      ) {
-        setIsViewMenuOpen(false);
-      }
-    }
-
-    if (isViewMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isViewMenuOpen]);
-
-  // Theme mode state (synced with html.dark class and user preferences via useSyncExternalStore)
+  // Theme mode state synced with DOM and server
   const isDarkMode = useDarkMode();
 
   const handleToggleTheme = async () => {
@@ -227,7 +104,7 @@ export function WeeklyBoard({
     }
   };
 
-  // Client-side today date string from synchronized store (returns "" on server, todayStr on client)
+  // Client-side today date string from synchronized store
   const todayStr = useTodayDateStr();
 
   // Load tasks when week changes
@@ -245,16 +122,14 @@ export function WeeklyBoard({
     });
   }, []);
 
-  // Save client timezone in cookie and synchronize week boundary if client timezone differs from server
+  // Save client timezone in cookie and synchronize week boundary if client timezone differs
   useEffect(() => {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (tz) {
         document.cookie = `user_tz=${encodeURIComponent(tz)}; path=/; max-age=31536000; SameSite=Lax`;
       }
-    } catch {
-      // Ignore if Intl is unavailable
-    }
+    } catch {}
 
     const clientMonday = getMondayOfWeek(new Date());
     const clientMondayStr = toDateString(clientMonday);
@@ -267,13 +142,13 @@ export function WeeklyBoard({
     }
   }, [initialMondayStr, fetchWeekTasks]);
 
-  // Calculate the 7 days of current week (using todayStr to ensure SSR matches initial client hydration)
+  // Calculate the 7 days of current week
   const weekDays = useMemo(
     () => getWeekDays(currentMonday, todayStr),
     [currentMonday, todayStr]
   );
 
-  // Filter visible days based on user preferences (Saturday and Sunday hidden by default)
+  // Filter visible days based on user preferences
   const visibleWeekDays = useMemo(() => {
     return weekDays.filter((day) => {
       if (day.dayOfWeek === 6 && !preferences.showSaturday) return false;
@@ -335,7 +210,6 @@ export function WeeklyBoard({
       }
     });
 
-    // Ordenar tarefas de cada dia pelo campo order ascendente, com fallback para createdAt
     Object.keys(map).forEach((dateKey) => {
       map[dateKey].sort((a, b) => {
         const orderDiff = (a.order ?? 0) - (b.order ?? 0);
@@ -347,18 +221,27 @@ export function WeeklyBoard({
     return map;
   }, [weekDays, tasks]);
 
+  // Unscheduled backlog tasks
+  const unscheduledTasks = useMemo(() => {
+    return tasks
+      .filter((t) => !t.date && !t.parentId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }, [tasks]);
+
+  const pendingUnscheduledCount = useMemo(() => {
+    return unscheduledTasks.filter((t) => !t.completed).length;
+  }, [unscheduledTasks]);
+
   // Handle inline quick add task
-  const handleQuickAdd = async (dateStr: string) => {
+  const handleQuickAdd = useCallback(async (dateStr: string) => {
     const title = (newTitles[dateStr] || "").trim();
     if (!title) return;
 
-    // Reset input
     setNewTitles((prev) => ({ ...prev, [dateStr]: "" }));
 
     const isUnscheduled = !dateStr || dateStr === "unscheduled";
     const targetDate = isUnscheduled ? null : dateStr;
 
-    // Optimistic temporary task
     const tempId = `temp-${Date.now()}`;
     const optimisticTask: TaskWithTag = {
       id: tempId,
@@ -373,7 +256,9 @@ export function WeeklyBoard({
       time: null,
       duration: null,
       completed: false,
-      order: tasks.filter((t) => (targetDate ? t.date === targetDate : !t.date) && !t.parentId).length,
+      order: tasks.filter(
+        (t) => (targetDate ? t.date === targetDate : !t.date) && !t.parentId
+      ).length,
       createdAt: new Date(),
       updatedAt: new Date(),
       subtaskCount: 0,
@@ -388,12 +273,11 @@ export function WeeklyBoard({
         prev.map((t) => (t.id === tempId ? res.task! : t))
       );
     } else {
-      // Revert if error
       setTasks((prev) => prev.filter((t) => t.id !== tempId));
     }
-  };
+  }, [newTitles, tasks]);
 
-  // Toggle completed status (maintaining order as decided)
+  // Toggle completed status
   const handleToggleCompleted = async (
     e: React.MouseEvent,
     taskToToggle: TaskWithTag
@@ -401,7 +285,6 @@ export function WeeklyBoard({
     e.stopPropagation();
     const newCompleted = !taskToToggle.completed;
 
-    // Optimistic update
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskToToggle.id ? { ...t, completed: newCompleted } : t
@@ -409,16 +292,17 @@ export function WeeklyBoard({
     );
 
     if (selectedTask && selectedTask.id === taskToToggle.id) {
-      setSelectedTask((prev) => (prev ? { ...prev, completed: newCompleted } : null));
+      setSelectedTask((prev) =>
+        prev ? { ...prev, completed: newCompleted } : null
+      );
     }
 
     await toggleTaskStatusAction(taskToToggle.id, newCompleted);
   };
 
-  // Open modal (supports passing TaskWithTag directly or taskId string for deep links)
+  // Open modal (supports passing TaskWithTag or taskId string for deep links)
   const handleOpenTask = async (taskOrId: TaskWithTag | string) => {
-    // Ignora cliques residuais imediatos durante o cooldown de drop (180ms)
-    if (isDragCooldownRef.current) return;
+    if (dnd.isDragCooldownRef.current) return;
 
     if (typeof taskOrId === "string") {
       const found = tasks.find((t) => t.id === taskOrId);
@@ -438,339 +322,7 @@ export function WeeklyBoard({
     }
   };
 
-  // Drag and Drop Event Handlers
-  const handleDragStart = (e: React.DragEvent, task: TaskWithTag) => {
-    e.stopPropagation();
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", task.id);
-    requestAnimationFrame(() => {
-      setDraggedTaskId(task.id);
-    });
-  };
-
-  const handleDragEnd = () => {
-    triggerDragCooldown();
-    setDraggedTaskId(null);
-    setDropTarget(null);
-  };
-
-  const handleCardDragOver = (
-    e: React.DragEvent,
-    targetTask: TaskWithTag,
-    dateStr?: string | null
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = "move";
-
-    if (!draggedTaskId || draggedTaskId === targetTask.id) return;
-
-    const effectiveDateStr = dateStr || "unscheduled";
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetY = e.clientY - rect.top;
-    const ratio = offsetY / rect.height;
-
-    const dragged = tasks.find((t) => t.id === draggedTaskId);
-    const draggedHasSubs = Boolean(
-      (dragged?.subtaskCount && dragged.subtaskCount > 0) ||
-      tasks.some((t) => t.parentId === draggedTaskId)
-    );
-
-    // Permite aninhar apenas se o alvo for tarefa principal (sem parentId) e o item arrastado não tiver subtarefas
-    const canNest = !targetTask.parentId && !draggedHasSubs;
-
-    let position: "before" | "after" | "nest";
-    if (canNest && ratio >= 0.28 && ratio <= 0.72) {
-      position = "nest";
-    } else if (ratio < 0.5) {
-      position = "before";
-    } else {
-      position = "after";
-    }
-
-    if (
-      !dropTarget ||
-      dropTarget.targetTaskId !== targetTask.id ||
-      dropTarget.position !== position ||
-      dropTarget.dateStr !== effectiveDateStr
-    ) {
-      setDropTarget({
-        dateStr: effectiveDateStr,
-        targetTaskId: targetTask.id,
-        position,
-      });
-    }
-  };
-
-  const handleColumnDragOver = (e: React.DragEvent, dateStr?: string | null) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-
-    if (!draggedTaskId) return;
-
-    const effectiveDateStr = dateStr || "unscheduled";
-
-    if (
-      !dropTarget ||
-      dropTarget.targetTaskId !== undefined ||
-      dropTarget.dateStr !== effectiveDateStr
-    ) {
-      setDropTarget({
-        dateStr: effectiveDateStr,
-        position: "column",
-      });
-    }
-  };
-
-  const handleColumnDragLeave = (e: React.DragEvent, dateStr?: string | null) => {
-    e.preventDefault();
-    const effectiveDateStr = dateStr || "unscheduled";
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      if (dropTarget?.dateStr === effectiveDateStr && dropTarget.position === "column") {
-        setDropTarget(null);
-      }
-    }
-  };
-
-  const handleDrop = async (
-    e: React.DragEvent,
-    dateStr?: string | null,
-    onTargetTask?: TaskWithTag
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const currentDrop = dropTarget;
-    const currentDraggedId = draggedTaskId;
-    triggerDragCooldown();
-    setDropTarget(null);
-    setDraggedTaskId(null);
-
-    if (!currentDraggedId) return;
-
-    const dragged = tasks.find((t) => t.id === currentDraggedId);
-    if (!dragged) return;
-
-    const targetId = currentDrop?.targetTaskId || onTargetTask?.id;
-    if (targetId && targetId === currentDraggedId) return;
-
-    const originalDate = dragged.date;
-    const originalParentId = dragged.parentId;
-    const targetTask = targetId ? tasks.find((t) => t.id === targetId) : null;
-    const targetPosition = currentDrop?.position || "column";
-
-    // Snapshot para rollback seguro em caso de falha de rede
-    const previousTasks = [...tasks];
-
-    // Determinar nova data e novo pai
-    const incomingResolvedDate = (!dateStr || dateStr === "unscheduled") ? null : dateStr;
-    let newDate: string | null = incomingResolvedDate;
-    let newParentId: string | null = null;
-    let newParentObj: { id: string; title: string } | null = null;
-
-    const sameDaySubtasks = tasks.filter(
-      (t) => t.parentId === currentDraggedId && t.date === originalDate
-    );
-    const draggedHasSubs =
-      Boolean(dragged.subtaskCount && dragged.subtaskCount > 0) ||
-      sameDaySubtasks.length > 0;
-
-    if (targetPosition === "nest" && targetTask) {
-      // Aninhar dentro de uma tarefa principal
-      if (targetTask.parentId || draggedHasSubs) return;
-      newParentId = targetTask.id;
-      newParentObj = { id: targetTask.id, title: targetTask.title };
-      newDate = targetTask.date || null;
-    } else if (
-      (targetPosition === "before" || targetPosition === "after") &&
-      targetTask
-    ) {
-      newDate = targetTask.date || null;
-      if (targetTask.parentId) {
-        // Alvo é subtarefa -> arrastado vira subtarefa sob o mesmo pai se permitido
-        if (!draggedHasSubs) {
-          newParentId = targetTask.parentId;
-          newParentObj = targetTask.parent || null;
-        } else {
-          newParentId = null;
-          newParentObj = null;
-        }
-      } else {
-        // Alvo é tarefa principal -> arrastado vira tarefa independente
-        newParentId = null;
-        newParentObj = null;
-      }
-    } else {
-      // Solto no espaço da coluna
-      newDate = incomingResolvedDate;
-      newParentId = null;
-      newParentObj = null;
-    }
-
-    // Regra do usuário: se a tarefa for arrastada para outro dia e contiver subtarefas no mesmo dia, todas vão para o novo dia
-    const movingParentToNewDate =
-      !newParentId && originalDate !== newDate && Boolean(originalDate && newDate && sameDaySubtasks.length > 0);
-
-    // Calcular IDs ordenados no container de destino
-    let targetOrderedIds: string[] = [];
-
-    if (newParentId) {
-      const currentSubs = tasks
-        .filter((t) => t.parentId === newParentId && t.id !== currentDraggedId)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-      if (targetTask && targetTask.parentId === newParentId) {
-        const targetIdx = currentSubs.findIndex((t) => t.id === targetTask.id);
-        const insertIdx =
-          targetPosition === "before" ? targetIdx : targetIdx + 1;
-        currentSubs.splice(insertIdx, 0, dragged);
-      } else {
-        currentSubs.push(dragged);
-      }
-      targetOrderedIds = currentSubs.map((t) => t.id);
-    } else {
-      const currentMains = tasks
-        .filter(
-          (t) =>
-            !t.parentId &&
-            (newDate ? t.date === newDate : !t.date) &&
-            t.id !== currentDraggedId
-        )
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-      if (
-        targetTask &&
-        !targetTask.parentId &&
-        ((newDate && targetTask.date === newDate) || (!newDate && !targetTask.date))
-      ) {
-        const targetIdx = currentMains.findIndex((t) => t.id === targetTask.id);
-        const insertIdx =
-          targetPosition === "before" ? targetIdx : targetIdx + 1;
-        currentMains.splice(insertIdx, 0, dragged);
-      } else {
-        currentMains.push(dragged);
-      }
-      targetOrderedIds = currentMains.map((t) => t.id);
-    }
-
-    // Calcular IDs ordenados no container de origem caso a data ou pai tenham mudado
-    let sourceOrderedIds: string[] = [];
-    if (originalDate !== newDate || originalParentId !== newParentId) {
-      if (!originalParentId) {
-        sourceOrderedIds = tasks
-          .filter(
-            (t) =>
-              !t.parentId &&
-              (originalDate ? t.date === originalDate : !t.date) &&
-              t.id !== currentDraggedId
-          )
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-          .map((t) => t.id);
-      } else {
-        sourceOrderedIds = tasks
-          .filter(
-            (t) =>
-              t.parentId === originalParentId &&
-              t.id !== currentDraggedId
-          )
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-          .map((t) => t.id);
-      }
-    }
-
-    // Atualização otimista e fluida da UI
-    setTasks((prev) => {
-      return prev.map((t) => {
-        if (t.id === currentDraggedId) {
-          const newOrderIdx = targetOrderedIds.indexOf(t.id);
-          return {
-            ...t,
-            date: newDate,
-            parentId: newParentId,
-            parent: newParentObj,
-            order: newOrderIdx !== -1 ? newOrderIdx : (t.order ?? 0),
-          };
-        }
-
-        // Subtarefas do mesmo dia que acompanham o pai para o novo dia
-        if (
-          movingParentToNewDate &&
-          t.parentId === currentDraggedId &&
-          t.date === originalDate
-        ) {
-          return {
-            ...t,
-            date: newDate,
-          };
-        }
-
-        const targetIdx = targetOrderedIds.indexOf(t.id);
-        if (targetIdx !== -1) {
-          return { ...t, order: targetIdx };
-        }
-
-        const sourceIdx = sourceOrderedIds.indexOf(t.id);
-        if (sourceIdx !== -1) {
-          return { ...t, order: sourceIdx };
-        }
-
-        // Atualizar contadores do pai anterior se mudou
-        if (
-          originalParentId &&
-          originalParentId !== newParentId &&
-          t.id === originalParentId
-        ) {
-          return {
-            ...t,
-            subtaskCount: Math.max(0, (t.subtaskCount || 1) - 1),
-            completedSubtaskCount: dragged.completed
-              ? Math.max(0, (t.completedSubtaskCount || 1) - 1)
-              : t.completedSubtaskCount,
-          };
-        }
-
-        // Atualizar contadores do novo pai se mudou
-        if (
-          newParentId &&
-          newParentId !== originalParentId &&
-          t.id === newParentId
-        ) {
-          return {
-            ...t,
-            subtaskCount: (t.subtaskCount || 0) + 1,
-            completedSubtaskCount: dragged.completed
-              ? (t.completedSubtaskCount || 0) + 1
-              : t.completedSubtaskCount,
-          };
-        }
-
-        return t;
-      });
-    });
-
-    // Sincronizar com o banco via Server Action em background
-    try {
-      const res = await moveOrReorderTasksAction({
-        taskId: currentDraggedId,
-        targetDate: newDate,
-        targetParentId: newParentId,
-        targetOrderedIds,
-        sourceOrderedIds,
-        originalDate,
-        moveSameDaySubtasks: movingParentToNewDate,
-      });
-
-      if (res?.error) {
-        console.error("Erro ao sincronizar ordenação:", res.error);
-        setTasks(previousTasks);
-      }
-    } catch (err) {
-      console.error("Erro de rede ao sincronizar drag and drop:", err);
-      setTasks(previousTasks);
-    }
-  };
-
-  // When a subtask is created inside modal
+  // Subtask created inside modal
   const handleSubtaskCreated = (newSub: TaskWithTag) => {
     setTasks((prev) => {
       const exists = prev.some((t) => t.id === newSub.id);
@@ -789,7 +341,7 @@ export function WeeklyBoard({
     });
   };
 
-  // Modal updates
+  // Task updated inside modal
   const handleTaskUpdated = (updatedTask: TaskWithTag) => {
     setTasks((prev) => {
       const mapped = prev.map((t) =>
@@ -811,6 +363,7 @@ export function WeeklyBoard({
     setSelectedTask(updatedTask);
   };
 
+  // Task deleted inside modal
   const handleTaskDeleted = (taskId: string) => {
     setTasks((prev) => {
       const filtered = prev.filter(
@@ -827,10 +380,10 @@ export function WeeklyBoard({
         return filtered.map((t) =>
           t.id === deletedTask.parentId
             ? {
-              ...t,
-              subtaskCount: remainingParentSubs.length,
-              completedSubtaskCount: completedCount,
-            }
+                ...t,
+                subtaskCount: remainingParentSubs.length,
+                completedSubtaskCount: completedCount,
+              }
             : t
         );
       }
@@ -843,652 +396,61 @@ export function WeeklyBoard({
     }
   };
 
-  // Helper to render an individual task card (shared between days and unscheduled section)
-  const renderTaskCard = (
-    t: TaskWithTag,
-    isSameDaySubtask = false,
-    isDiffDaySubtask = false,
-    scheduledDate?: string | null
-  ) => {
-    const tagStyles = t.tag ? getTagColorStyles(t.tag.color) : null;
-    const isDragging = draggedTaskId === t.id;
-    const isTarget = dropTarget?.targetTaskId === t.id;
-    const isNestTarget = isTarget && dropTarget?.position === "nest";
-    const isBeforeTarget = isTarget && dropTarget?.position === "before";
-    const isAfterTarget = isTarget && dropTarget?.position === "after";
-
-    // Se o pai desta subtarefa estiver sendo arrastado, destaca que a subtarefa o acompanha
-    const isAttachedToDragged = Boolean(
-      draggedTaskId &&
-      t.parentId === draggedTaskId &&
-      draggedTask &&
-      t.date === draggedTask.date
-    );
-
-    const cardDateStr = t.date || "unscheduled";
-
-    return (
-      <div
-        key={t.id}
-        draggable={true}
-        onDragStart={(e) => handleDragStart(e, t)}
-        onDragEnd={handleDragEnd}
-        onDragOver={(e) => handleCardDragOver(e, t, cardDateStr)}
-        onDrop={(e) => handleDrop(e, cardDateStr, t)}
-        onClick={() => handleOpenTask(t)}
-        className={`group relative flex items-start gap-2 p-2.5 rounded-xl border transition-all select-none cursor-pointer ${isDragging
-          ? "opacity-35 scale-[0.98] border-dashed border-indigo-400 dark:border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/30 shadow-none cursor-grabbing"
-          : isNestTarget
-            ? "ring-2 ring-indigo-500 bg-indigo-50/85 dark:bg-indigo-950/85 border-indigo-400 dark:border-indigo-500 shadow-md cursor-grabbing"
-            : isAttachedToDragged
-              ? "opacity-60 border-dashed border-indigo-300 dark:border-indigo-600 bg-indigo-50/10 dark:bg-indigo-950/20"
-              : t.completed
-                ? "bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 text-slate-400 dark:text-slate-500"
-                : isSameDaySubtask
-                  ? "bg-white/95 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-indigo-300 dark:hover:border-indigo-500/50"
-                  : "bg-white/85 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200/60 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-indigo-200 dark:hover:border-indigo-500/40"
-          }`}
-      >
-        {/* Drop Indicator Line: Before */}
-        {isBeforeTarget && (
-          <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
-          </div>
-        )}
-
-        {/* Drop Indicator Line: After */}
-        {isAfterTarget && (
-          <div className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
-          </div>
-        )}
-
-        {/* Drag Grip Handle */}
-        <div
-          className="mt-0.5 text-slate-300 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400 transition-colors flex-shrink-0 cursor-grab active:cursor-grabbing"
-          title="Arraste para mover ou reordenar"
-        >
-          <GripVertical className="w-3.5 h-3.5" />
-        </div>
-
-        {/* Checkbox */}
-        <button
-          type="button"
-          draggable={false}
-          onClick={(e) => handleToggleCompleted(e, t)}
-          className="mt-0.5 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors cursor-pointer flex-shrink-0"
-        >
-          {t.completed ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          ) : (
-            <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500 dark:text-slate-600 dark:hover:text-indigo-400" />
-          )}
-        </button>
-
-        {/* Title and details */}
-        <div className={`flex-1 min-w-0 ${draggedTaskId ? "pointer-events-none" : ""}`}>
-          {/* Diff day indicator (parent pill) */}
-          {isDiffDaySubtask && t.parent && (
-            <div className="flex items-center gap-1 mb-1">
-              <span
-                className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900/60 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
-                title={`Subtarefa de: ${t.parent.title}`}
-              >
-                <CornerDownRight className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
-                <span className="truncate">{t.parent.title}</span>
-              </span>
-            </div>
-          )}
-
-          <p
-            className={`text-xs font-medium leading-snug break-words ${t.completed
-              ? "line-through text-slate-400 dark:text-slate-500"
-              : "text-slate-700 dark:text-slate-200"
-              }`}
-          >
-            {t.title}
-          </p>
-
-          {/* Nest Target Indicator Pill */}
-          {isNestTarget && (
-            <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100/90 dark:bg-indigo-950/90 px-1.5 py-0.5 rounded-md animate-pulse">
-              <CornerDownRight className="w-2.5 h-2.5 text-indigo-600 flex-shrink-0" />
-              <span>Soltar para virar subtarefa</span>
-            </div>
-          )}
-
-          {/* Tag, Time, Duration, Scheduled Date & Subtask Progress Badges row */}
-          {Boolean(
-            t.tag ||
-            t.time ||
-            scheduledDate ||
-            (t.duration != null && t.duration > 0) ||
-            (t.subtaskCount != null && t.subtaskCount > 0)
-          ) && (
-              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                {/* Scheduled Date Badge (when displayed in unscheduled card) */}
-                {scheduledDate && (
-                  <span
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold border shadow-2xs ${t.completed
-                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                      : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
-                      }`}
-                    title={`Agendada para ${formatDayShort(scheduledDate)}`}
-                  >
-                    <CalendarDays className="w-2.5 h-2.5 text-amber-500" />
-                    <span>{formatDayShort(scheduledDate)}</span>
-                  </span>
-                )}
-
-                {/* Subtask progress count badge for main tasks */}
-                {Boolean(
-                  t.subtaskCount != null && t.subtaskCount > 0
-                ) && (
-                    <span
-                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${t.completed ||
-                        t.completedSubtaskCount === t.subtaskCount
-                        ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                        : "bg-indigo-50/90 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/60"
-                        }`}
-                      title={`Subtarefas: ${t.completedSubtaskCount || 0
-                        } de ${t.subtaskCount} concluídas`}
-                    >
-                      <ListTree
-                        className={`w-2.5 h-2.5 ${t.completed
-                          ? "text-slate-400 dark:text-slate-500"
-                          : "text-indigo-500"
-                          }`}
-                      />
-                      <span>
-                        {t.completedSubtaskCount || 0}/
-                        {t.subtaskCount}
-                      </span>
-                    </span>
-                  )}
-
-                {/* Tag badge */}
-                {t.tag && tagStyles && (
-                  <span
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${t.completed
-                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                      : tagStyles.badgeClass
-                      }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${t.completed
-                        ? "bg-slate-400"
-                        : tagStyles.dotClass
-                        }`}
-                    />
-                    <span className="truncate max-w-[110px]">
-                      {t.tag.name}
-                    </span>
-                  </span>
-                )}
-
-                {/* Time badge */}
-                {t.time && (
-                  <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                    <Clock className="w-2.5 h-2.5 text-indigo-400" />
-                    {t.time}
-                  </span>
-                )}
-
-                {/* Duration badge */}
-                {Boolean(t.duration != null && t.duration > 0) && (
-                  <span
-                    className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${t.completed
-                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                      : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
-                      }`}
-                    title={`Duração estimada: ${formatDuration(
-                      t.duration!
-                    )}`}
-                  >
-                    <Timer
-                      className={`w-2.5 h-2.5 ${t.completed
-                        ? "text-slate-400 dark:text-slate-500"
-                        : "text-amber-500"
-                        }`}
-                    />
-                    {formatDuration(t.duration!)}
-                  </span>
-                )}
-              </div>
-            )}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Glassmorphic Navigation Bar */}
-      <header className="sticky top-0 z-30 px-4 sm:px-8 py-3.5 glass-panel border-b border-white/60 dark:border-slate-800/80 mb-6">
-        <div className="w-full flex items-center justify-between gap-4">
-          {/* Month & Year Title (Left) */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 flex-shrink-0">
-              <CalendarDays className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                {formatMonthYear(currentMonday)}
-              </h1>
-            </div>
-          </div>
-
-          {/* Right Controls: Week Navigation + Theme Toggle + User Avatar Circle + Logout */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Week Navigation Controls */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <button
-                type="button"
-                onClick={handlePrevWeek}
-                disabled={isNavigating}
-                className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                title="Semana anterior"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleGoToday}
-                disabled={isNavigating}
-                className="px-3.5 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/60 shadow-xs transition-all cursor-pointer"
-              >
-                Hoje
-              </button>
-
-              <button
-                type="button"
-                onClick={handleNextWeek}
-                disabled={isNavigating}
-                className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                title="Próxima semana"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* View Settings Popover */}
-            <div className="relative" ref={viewMenuRef}>
-              <button
-                type="button"
-                onClick={() => setIsViewMenuOpen((prev) => !prev)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium shadow-xs transition-all cursor-pointer ${isViewMenuOpen || preferences.showSaturday || preferences.showSunday
-                  ? "bg-indigo-50/90 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/80"
-                  : "bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-slate-200/70 dark:border-slate-700/70"
-                  }`}
-                title="Ajustes de visualização dos dias"
-                aria-label="Ajustes de visualização dos dias"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Visualização</span>
-                {(preferences.showSaturday || preferences.showSunday) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
-                )}
-              </button>
-
-              {isViewMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 p-3 rounded-2xl glass-panel shadow-xl border border-white/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="pb-2 mb-2 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">Dias da Semana</p>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                      {visibleWeekDays.length} de 7 dias
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    {/* Seg a Sex indicator */}
-                    <div className="px-2 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-slate-800/60 rounded-lg flex items-center justify-between">
-                      <span>Segunda – Sexta</span>
-                      <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px]">Padrão</span>
-                    </div>
-
-                    {/* Sábado Switch */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleDay("showSaturday")}
-                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
-                    >
-                      <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Sábado</span>
-                      <div
-                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${preferences.showSaturday ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
-                          }`}
-                      >
-                        <div
-                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${preferences.showSaturday ? "translate-x-3.5" : "translate-x-0"
-                            }`}
-                        />
-                      </div>
-                    </button>
-
-                    {/* Domingo Switch */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleDay("showSunday")}
-                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
-                    >
-                      <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Domingo</span>
-                      <div
-                        className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${preferences.showSunday ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
-                          }`}
-                      >
-                        <div
-                          className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${preferences.showSunday ? "translate-x-3.5" : "translate-x-0"
-                            }`}
-                        />
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Dark Mode Toggle Button */}
-            <button
-              type="button"
-              onClick={handleToggleTheme}
-              className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer flex items-center justify-center group"
-              title={isDarkMode ? "Mudar para modo claro" : "Mudar para modo escuro"}
-              aria-label={isDarkMode ? "Mudar para modo claro" : "Mudar para modo escuro"}
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-600 group-hover:-rotate-12 transition-transform duration-300" />
-              )}
-            </button>
-
-            {/* Separator */}
-            <div className="h-5 w-px bg-slate-200/80 dark:bg-slate-700/80 mx-1 hidden sm:block" />
-
-            {/* User Avatar Circle */}
-            <div
-              className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-bold text-xs flex items-center justify-center shadow-xs select-none uppercase flex-shrink-0"
-              title={userEmail}
-            >
-              {userEmail ? userEmail.charAt(0).toUpperCase() : "U"}
-            </div>
-
-            {/* Logout Button (Icon only) */}
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 bg-white/60 hover:bg-rose-50/80 dark:bg-slate-800/60 dark:hover:bg-rose-950/50 rounded-xl border border-slate-200/70 dark:border-slate-700/70 transition-colors cursor-pointer flex items-center justify-center"
-                title="Encerrar sessão"
-                aria-label="Encerrar sessão"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <WeeklyHeader
+        currentMonday={currentMonday}
+        userEmail={userEmail}
+        isNavigating={isNavigating}
+        isDarkMode={isDarkMode}
+        preferences={preferences}
+        visibleDaysCount={visibleWeekDays.length}
+        onPrevWeek={handlePrevWeek}
+        onNextWeek={handleNextWeek}
+        onGoToday={handleGoToday}
+        onToggleTheme={handleToggleTheme}
+        onToggleDay={handleToggleDay}
+      />
 
       {/* Main Board Container */}
       <main className="flex-1 px-3 sm:px-6 pb-8 w-full">
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${gridColsClass} gap-3.5 items-start`}>
-          {visibleWeekDays.map((day) => {
-            const dayTasks = tasksByDay[day.dateStr] || [];
-            const completedCount = dayTasks.filter((t) => t.completed).length;
-
-            return (
-              <div
-                key={day.dateStr}
-                onDragOver={(e) => handleColumnDragOver(e, day.dateStr)}
-                onDragLeave={(e) => handleColumnDragLeave(e, day.dateStr)}
-                onDrop={(e) => handleDrop(e, day.dateStr)}
-                className={`rounded-2xl flex flex-col min-h-[420px] p-3.5 transition-all duration-200 ${dropTarget?.dateStr === day.dateStr &&
-                  (dropTarget.position === "column" || !dropTarget.targetTaskId)
-                  ? "ring-2 ring-indigo-400/50 bg-indigo-50/25 dark:bg-indigo-950/30"
-                  : day.isToday
-                    ? "glass-card-today ring-1 ring-indigo-500/20"
-                    : "glass-card"
-                  }`}
-              >
-                {/* Column Day Header */}
-                <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/40 dark:border-slate-800/60">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-sm font-bold ${day.isToday ? "text-indigo-600 dark:text-indigo-400" : "text-slate-800 dark:text-slate-200"
-                        }`}
-                    >
-                      {day.dayNameShort}
-                    </span>
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {day.dayNumber} {day.monthNameShort}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {dayTasks.length > 0 && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                        {completedCount}/{dayTasks.length}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tasks List for the Day */}
-                <div className="flex-1 space-y-2 overflow-y-auto max-h-[560px] pr-0.5">
-                  {(() => {
-                    // 1. Top-level tasks on this day (no parentId)
-                    const mainTasks = dayTasks.filter((t) => !t.parentId);
-
-                    // 2. Subtasks on this day whose parent is on a different day or not in dayTasks
-                    const diffDaySubtasks = dayTasks.filter(
-                      (t) => t.parentId && !dayTasks.some((p) => p.id === t.parentId)
-                    );
-
-                    return (
-                      <>
-                        {/* Render main tasks and their same-day subtasks immediately below with indentation & guide line */}
-                        {mainTasks.map((mainTask) => {
-                          const sameDaySubtasks = dayTasks.filter(
-                            (sub) => sub.parentId === mainTask.id
-                          );
-
-                          return (
-                            <div key={mainTask.id} className="space-y-1.5">
-                              {renderTaskCard(mainTask)}
-
-                              {/* Same day subtasks nested with left indent and connector guide line */}
-                              {sameDaySubtasks.length > 0 && (
-                                <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 dark:border-indigo-800/60 space-y-1.5 my-1">
-                                  {sameDaySubtasks.map((sub) =>
-                                    renderTaskCard(sub, true, false)
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {/* Render subtasks scheduled on this day whose parent is on a different day */}
-                        {diffDaySubtasks.map((sub) => (
-                          <div key={sub.id}>
-                            {renderTaskCard(sub, false, true)}
-                          </div>
-                        ))}
-                      </>
-                    );
-                  })()}
-
-                  {/* Drop zone dedicada exibida na coluna durante arraste */}
-                  {draggedTaskId && (
-                    <div
-                      onDragOver={(e) => handleColumnDragOver(e, day.dateStr)}
-                      onDrop={(e) => handleDrop(e, day.dateStr)}
-                      className={`h-10 border-2 border-dashed rounded-xl flex items-center justify-center text-[11px] font-medium transition-all ${dropTarget?.dateStr === day.dateStr &&
-                        (dropTarget.position === "column" || !dropTarget.targetTaskId)
-                        ? "border-indigo-400 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 shadow-xs"
-                        : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-indigo-300 hover:text-indigo-500 bg-white/20 dark:bg-slate-800/20"
-                        }`}
-                    >
-                      <span>Mover para {day.dayNameShort}</span>
-                    </div>
-                  )}
-
-                  {/* Inline Quick Add Input immediately below the last task (or at start if 0 tasks) */}
-                  <div className="pt-0.5">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={newTitles[day.dateStr] || ""}
-                        onChange={(e) =>
-                          setNewTitles((prev) => ({
-                            ...prev,
-                            [day.dateStr]: e.target.value,
-                          }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleQuickAdd(day.dateStr);
-                          }
-                        }}
-                        placeholder="+ Nova tarefa"
-                        className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
-                      />
-                      {Boolean((newTitles[day.dateStr] || "").trim()) && (
-                        <button
-                          type="button"
-                          onClick={() => handleQuickAdd(day.dateStr)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
-                          title="Adicionar"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 ${gridColsClass} gap-3.5 items-start`}
+        >
+          {visibleWeekDays.map((day) => (
+            <DayColumn
+              key={day.dateStr}
+              day={day}
+              tasks={tasksByDay[day.dateStr] || []}
+              dnd={dnd}
+              quickAddTitle={newTitles[day.dateStr] || ""}
+              onQuickAddChange={(val) =>
+                setNewTitles((prev) => ({ ...prev, [day.dateStr]: val }))
+              }
+              onQuickAddSubmit={() => handleQuickAdd(day.dateStr)}
+              onOpenTask={handleOpenTask}
+              onToggleCompleted={handleToggleCompleted}
+            />
+          ))}
         </div>
 
-        {/* Seção Tarefas sem data (Backlog contínuo) */}
-        <section className="mt-6 glass-panel rounded-3xl p-5 sm:p-6 border border-white/80 dark:border-slate-800 shadow-sm transition-all">
-          {/* Header da Seção */}
-          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200/50 dark:border-slate-800/60">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-2xs">
-                <CalendarOff className="w-4 h-4" />
-              </div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 tracking-tight">
-                  Tarefas sem data
-                </h2>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
-                  {pendingUnscheduledCount} {pendingUnscheduledCount === 1 ? "pendente" : "pendentes"}
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsUnscheduledOpen((prev) => !prev)}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 dark:hover:text-slate-200 dark:hover:bg-slate-800/80 transition-all cursor-pointer flex items-center gap-1 text-xs font-medium"
-              title={isUnscheduledOpen ? "Recolher seção" : "Expandir seção"}
-            >
-              <span className="text-[11px] hidden sm:inline text-slate-500 dark:text-slate-400">
-                {isUnscheduledOpen ? "Recolher" : "Expandir"}
-              </span>
-              <ChevronDown
-                className={`w-4 h-4 transition-transform duration-200 ${isUnscheduledOpen ? "rotate-180" : ""
-                  }`}
-              />
-            </button>
-          </div>
-
-          {/* Conteúdo Expansível */}
-          {isUnscheduledOpen && (
-            <div className="pt-4 space-y-4">
-              {/* Dropzone dedicada para a seção durante arrastes */}
-              {draggedTaskId && (
-                <div
-                  onDragOver={(e) => handleColumnDragOver(e, "unscheduled")}
-                  onDrop={(e) => handleDrop(e, "unscheduled")}
-                  className={`h-12 border-2 border-dashed rounded-2xl flex items-center justify-center text-xs font-medium transition-all ${dropTarget?.dateStr === "unscheduled" &&
-                    (dropTarget.position === "column" || !dropTarget.targetTaskId)
-                    ? "border-indigo-400 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 shadow-xs"
-                    : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-indigo-300 hover:text-indigo-500 bg-white/30 dark:bg-slate-800/30"
-                    }`}
-                >
-                  <span>Mover para Tarefas sem data</span>
-                </div>
-              )}
-
-              {/* Grid Responsivo de Cards */}
-              {unscheduledTasks.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {unscheduledTasks.map((mainTask) => {
-                    const subtasksOfMain = tasks.filter(
-                      (sub) => sub.parentId === mainTask.id
-                    );
-
-                    return (
-                      <div key={mainTask.id} className="space-y-1.5">
-                        {renderTaskCard(mainTask)}
-
-                        {/* Subtarefas da tarefa sem data */}
-                        {subtasksOfMain.length > 0 && (
-                          <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 dark:border-indigo-800/60 space-y-1.5 my-1">
-                            {subtasksOfMain.map((sub) =>
-                              renderTaskCard(sub, true, false, sub.date)
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
-                  Nenhuma tarefa sem data no momento. Arraste tarefas de qualquer dia para cá ou use o campo abaixo.
-                </div>
-              )}
-
-              {/* Input Quick Add Dedicado */}
-              <div className="max-w-md pt-1">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={newTitles["unscheduled"] || ""}
-                    onChange={(e) =>
-                      setNewTitles((prev) => ({
-                        ...prev,
-                        unscheduled: e.target.value,
-                      }))
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleQuickAdd("unscheduled");
-                      }
-                    }}
-                    placeholder="+ Nova tarefa sem data... (Enter para adicionar)"
-                    className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/70 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
-                  />
-                  {Boolean((newTitles["unscheduled"] || "").trim()) && (
-                    <button
-                      type="button"
-                      onClick={() => handleQuickAdd("unscheduled")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
-                      title="Adicionar"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
+        {/* Persistent Collapsible Unscheduled Tasks Section */}
+        <UnscheduledSection
+          tasks={tasks}
+          unscheduledTasks={unscheduledTasks}
+          pendingCount={pendingUnscheduledCount}
+          isOpen={isUnscheduledOpen}
+          onToggleOpen={() => setIsUnscheduledOpen((prev) => !prev)}
+          quickAddTitle={newTitles["unscheduled"] || ""}
+          onQuickAddChange={(val) =>
+            setNewTitles((prev) => ({ ...prev, unscheduled: val }))
+          }
+          onQuickAddSubmit={() => handleQuickAdd("unscheduled")}
+          dnd={dnd}
+          onOpenTask={handleOpenTask}
+          onToggleCompleted={handleToggleCompleted}
+        />
       </main>
 
       {/* Task Details Modal */}
@@ -1507,4 +469,3 @@ export function WeeklyBoard({
     </div>
   );
 }
-
