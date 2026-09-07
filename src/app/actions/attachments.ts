@@ -7,10 +7,12 @@ import {
   uploadToR2,
   deleteFromR2,
   generateFilePath,
+  generateThumbnailPath,
 } from "@/lib/r2";
 import { eq, and, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
+import sharp from "sharp";
 
 // Tipos permitidos: imagens e documentos PDF
 const ALLOWED_MIME_TYPES = new Set([
@@ -26,6 +28,7 @@ const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
 export interface AttachmentWithUrl extends Attachment {
   url: string;
+  thumbUrl?: string | null;
 }
 
 /**
@@ -51,6 +54,7 @@ export async function getTaskAttachmentsAction(
     const list: AttachmentWithUrl[] = rows.map((att) => ({
       ...att,
       url: `/api/attachments/${att.id}`,
+      thumbUrl: att.thumbnailPath ? `/api/attachments/${att.id}?thumb=1` : null,
     }));
 
     return { attachments: list };
@@ -113,15 +117,40 @@ export async function uploadAttachmentAction(
   // 4. Preparação do ID do anexo e do caminho relativo no R2
   const attachmentId = randomUUID();
   const filePath = generateFilePath(attachmentId, file.name);
+  let thumbnailPath: string | null = null;
 
   try {
-    // 5. Upload do arquivo para o Cloudflare R2
+    // 5. Upload do arquivo original para o Cloudflare R2
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     await uploadToR2(filePath, buffer, file.type);
 
-    // 6. Inserção na tabela 'attachments'
+    // 6. Geração e upload de thumbnail caso seja imagem
+    if (file.type.startsWith("image/")) {
+      try {
+        const thumbBuffer = await sharp(buffer)
+          .resize({
+            width: 400,
+            height: 400,
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .webp({ quality: 80 })
+          .toBuffer();
+
+        const generatedThumbPath = generateThumbnailPath(attachmentId);
+        await uploadToR2(generatedThumbPath, thumbBuffer, "image/webp");
+        thumbnailPath = generatedThumbPath;
+      } catch (thumbErr) {
+        console.warn(
+          "Aviso: Não foi possível gerar a miniatura com sharp. O preview usará a imagem original:",
+          thumbErr
+        );
+      }
+    }
+
+    // 7. Inserção na tabela 'attachments'
     try {
       const [inserted] = await db
         .insert(attachments)
@@ -131,6 +160,7 @@ export async function uploadAttachmentAction(
           userId: session.userId,
           fileName: file.name,
           filePath,
+          thumbnailPath,
           contentType: file.type,
           fileSize: file.size,
         })
@@ -142,14 +172,22 @@ export async function uploadAttachmentAction(
         attachment: {
           ...inserted,
           url: `/api/attachments/${inserted.id}`,
+          thumbUrl: inserted.thumbnailPath
+            ? `/api/attachments/${inserted.id}?thumb=1`
+            : null,
         },
       };
     } catch (dbErr) {
       // Rollback no Cloudflare R2 se falhar a persistência no banco
       console.error("Falha ao salvar anexo no banco de dados. Executando rollback no R2:", dbErr);
       await deleteFromR2(filePath).catch((r2Err) =>
-        console.error("Falha no rollback do R2:", r2Err)
+        console.error("Falha no rollback do arquivo original no R2:", r2Err)
       );
+      if (thumbnailPath) {
+        await deleteFromR2(thumbnailPath).catch((r2Err) =>
+          console.error("Falha no rollback da thumbnail no R2:", r2Err)
+        );
+      }
       throw dbErr;
     }
   } catch (err: unknown) {
@@ -171,7 +209,11 @@ export async function deleteAttachmentAction(
 
   try {
     const [existing] = await db
-      .select({ id: attachments.id, filePath: attachments.filePath })
+      .select({
+        id: attachments.id,
+        filePath: attachments.filePath,
+        thumbnailPath: attachments.thumbnailPath,
+      })
       .from(attachments)
       .where(
         and(eq(attachments.id, attachmentId), eq(attachments.userId, session.userId))
@@ -182,8 +224,13 @@ export async function deleteAttachmentAction(
       return { error: "Anexo não encontrado ou acesso não autorizado." };
     }
 
-    // 1. Exclui o arquivo físico no Cloudflare R2
+    // 1. Exclui o arquivo original e a thumbnail física (se existir) no Cloudflare R2
     await deleteFromR2(existing.filePath);
+    if (existing.thumbnailPath) {
+      await deleteFromR2(existing.thumbnailPath).catch((err) =>
+        console.warn("Aviso ao deletar thumbnail do R2:", err)
+      );
+    }
 
     // 2. Remove o registro no banco de dados
     await db.delete(attachments).where(eq(attachments.id, attachmentId));

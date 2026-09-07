@@ -64,6 +64,13 @@
       "when": 1788791035479,
       "tag": "0008_rare_gravity",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788792580889,
+      "tag": "0009_mean_the_enforcers",
+      "breakpoints": true
     }
   ]
 }

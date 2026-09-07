@@ -236,12 +236,18 @@ export function TaskAttachmentsSection({
                   key={attachment.id}
                   className="group relative flex items-center gap-3 p-2 rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-xs overflow-hidden"
                 >
-                  {/* Thumbnail / Icon */}
-                  <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center">
+                  {/* Thumbnail / Icon (clique abre o arquivo original) */}
+                  <a
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90"
+                    title="Abrir arquivo original"
+                  >
                     {isImage ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={attachment.url}
+                        src={attachment.thumbUrl || attachment.url}
                         alt={attachment.fileName}
                         loading="lazy"
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
@@ -254,16 +260,19 @@ export function TaskAttachmentsSection({
                         </span>
                       </div>
                     )}
-                  </div>
+                  </a>
 
                   {/* Metadata */}
                   <div className="min-w-0 flex-1 pr-1">
-                    <p
-                      className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate"
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate block hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       title={attachment.fileName}
                     >
                       {attachment.fileName}
-                    </p>
+                    </a>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500">
                       {formatBytes(attachment.fileSize)}
                     </p>
@@ -276,7 +285,7 @@ export function TaskAttachmentsSection({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Abrir anexo em nova aba"
+                      title="Abrir arquivo original em nova aba"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>

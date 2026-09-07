@@ -63,6 +63,7 @@ export const attachments = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     fileName: varchar("file_name", { length: 255 }).notNull(),
     filePath: text("file_path").notNull(), // Caminho relativo no R2 (ex: files/{attachmentId}/{fileName})
+    thumbnailPath: text("thumbnail_path"), // Caminho relativo da thumbnail no R2 (ex: files/{attachmentId}/thumb.webp)
     contentType: varchar("content_type", { length: 100 }).notNull(),
     fileSize: integer("file_size").notNull(), // Tamanho em bytes
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

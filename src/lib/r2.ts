@@ -52,6 +52,14 @@ export function generateFilePath(attachmentId: string, fileName: string): string
 }
 
 /**
+ * Gera o caminho relativo para a thumbnail do anexo no bucket R2.
+ * Padrão: files/{attachmentId}/thumb.webp
+ */
+export function generateThumbnailPath(attachmentId: string): string {
+  return `files/${attachmentId}/thumb.webp`;
+}
+
+/**
  * Realiza upload de um Buffer/Uint8Array para o Cloudflare R2 via PutObjectCommand.
  */
 export async function uploadToR2(

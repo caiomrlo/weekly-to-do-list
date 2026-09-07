@@ -428,7 +428,10 @@ export async function deleteTaskAction(
     ];
 
     const taskAttachments = await db
-      .select({ filePath: attachments.filePath })
+      .select({
+        filePath: attachments.filePath,
+        thumbnailPath: attachments.thumbnailPath,
+      })
       .from(attachments)
       .where(
         and(
@@ -438,7 +441,11 @@ export async function deleteTaskAction(
       );
 
     if (taskAttachments.length > 0) {
-      await deleteManyFromR2(taskAttachments.map((a) => a.filePath)).catch((r2Err) =>
+      const keysToDelete = taskAttachments
+        .flatMap((a) => [a.filePath, a.thumbnailPath])
+        .filter((k): k is string => Boolean(k));
+
+      await deleteManyFromR2(keysToDelete).catch((r2Err) =>
         console.error("Aviso: Falha ao excluir arquivos do R2 durante deleteTaskAction:", r2Err)
       );
     }

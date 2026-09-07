@@ -201,6 +201,7 @@ flowchart TD
   - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
   - `file_name` (`varchar(255)`, Original filename for UI display, Not Null)
   - `file_path` (`text`, Relative object path in Cloudflare R2 e.g. `files/{attachmentId}/{sanitizedFileName}`, Not Null)
+  - `thumbnail_path` (`text`, Relative thumbnail path in Cloudflare R2 e.g. `files/{attachmentId}/thumb.webp`, Nullable)
   - `content_type` (`varchar(100)`, MIME type e.g. `image/png`, `application/pdf`, Not Null)
   - `file_size` (`integer`, File size in bytes, Not Null)
   - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)

@@ -30,11 +30,22 @@ export async function GET(
       return NextResponse.json({ error: "Anexo não encontrado." }, { status: 404 });
     }
 
+    const isThumb = request.nextUrl.searchParams.get("thumb") === "1";
     const download = request.nextUrl.searchParams.get("download") === "1";
 
+    // Se for solicitada miniatura e ela existir, usa o thumbnailPath; caso contrário, usa o original
+    const effectivePath =
+      isThumb && attachment.thumbnailPath
+        ? attachment.thumbnailPath
+        : attachment.filePath;
+
     const targetUrl = download
-      ? await getPresignedDownloadUrl(attachment.filePath, 3600, attachment.fileName)
-      : await getPresignedViewUrl(attachment.filePath, 3600, attachment.fileName);
+      ? await getPresignedDownloadUrl(effectivePath, 3600, attachment.fileName)
+      : await getPresignedViewUrl(
+          effectivePath,
+          3600,
+          isThumb ? `thumb_${attachment.fileName}` : attachment.fileName
+        );
 
     // Redireciona com status 307 (Temporary Redirect) para a URL assinada do Cloudflare R2
     return NextResponse.redirect(targetUrl, 307);
