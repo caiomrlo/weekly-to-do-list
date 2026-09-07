@@ -1,7 +1,7 @@
 "use client";
 
 import { TaskWithTag } from "@/db/schema";
-import { getTagColorStyles } from "@/lib/tag-utils";
+import { getProjectColorStyles } from "@/lib/project-utils";
 import { formatDuration, formatDayShort } from "@/lib/date-utils";
 import { DropTargetState } from "./hooks/useBoardDnD";
 import {
@@ -55,7 +55,7 @@ export function TaskCard({
   onOpenTask,
   onToggleCompleted,
 }: TaskCardProps) {
-  const tagStyles = task.tag ? getTagColorStyles(task.tag.color) : null;
+  const projectStyles = task.project ? getProjectColorStyles(task.project.color) : null;
   const isDragging = draggedTaskId === task.id;
   const isTarget = dropTarget?.targetTaskId === task.id;
   const isNestTarget = isTarget && dropTarget?.position === "nest";
@@ -234,21 +234,21 @@ export function TaskCard({
               </span>
             )}
 
-            {/* Tag badge */}
-            {task.tag && tagStyles && (
+            {/* Project badge */}
+            {task.project && projectStyles && (
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
                   task.completed
                     ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                    : tagStyles.badgeClass
+                    : projectStyles.badgeClass
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    task.completed ? "bg-slate-400" : tagStyles.dotClass
+                    task.completed ? "bg-slate-400" : projectStyles.dotClass
                   }`}
                 />
-                <span className="truncate max-w-[110px]">{task.tag.name}</span>
+                <span className="truncate max-w-[110px]">{task.project.name}</span>
               </span>
             )}
 

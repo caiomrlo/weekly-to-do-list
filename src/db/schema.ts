@@ -33,12 +33,24 @@ export const tags = pgTable("tags", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const projects = pgTable("projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 50 }).notNull(),
+  color: varchar("color", { length: 30 }).default("indigo").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const tasks = pgTable("tasks", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   tagId: uuid("tag_id").references(() => tags.id, { onDelete: "set null" }),
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
   parentId: uuid("parent_id").references((): AnyPgColumn => tasks.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 500 }).notNull(),
   content: text("content").default("").notNull(),
@@ -81,6 +93,9 @@ export type NewUser = typeof users.$inferInsert;
 export type Tag = typeof tags.$inferSelect;
 export type NewTag = typeof tags.$inferInsert;
 
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
+
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 
@@ -89,9 +104,13 @@ export type NewAttachment = typeof attachments.$inferInsert;
 
 export type TaskWithTag = Task & {
   tag?: Tag | null;
+  project?: Project | null;
   parent?: { id: string; title: string } | null;
   subtaskCount?: number;
   completedSubtaskCount?: number;
   attachmentCount?: number;
 };
+
+export type TaskWithProject = TaskWithTag;
+export type TaskWithRelations = TaskWithTag;
 

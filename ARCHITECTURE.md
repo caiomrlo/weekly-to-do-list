@@ -13,8 +13,9 @@ weekly-to-do-list/
 │   │   ├── actions/              # Typed Next.js Server Actions (RPC layer)
 │   │   │   ├── attachments.ts    # Attachment actions (getTaskAttachments, uploadAttachment, deleteAttachment)
 │   │   │   ├── auth.ts           # Authentication actions (login, register, logout)
+│   │   │   ├── projects.ts       # Project actions (getUserProjects, createProject, deleteProject)
 │   │   │   ├── tags.ts           # Tag actions (getUserTags, createTag, deleteTag)
-│   │   │   ├── tasks.ts          # Task actions (CRUD, status toggling, range querying, tag joins)
+│   │   │   ├── tasks.ts          # Task actions (CRUD, status toggling, range querying, tag/project joins)
 │   │   │   └── user.ts           # User preference actions (getUserPreferences, updateUserPreferences)
 │   │   ├── api/                  # Next.js Route Handlers
 │   │   │   └── attachments/      # Secure authenticated attachment retrieval
@@ -39,7 +40,8 @@ weekly-to-do-list/
 │   │   │   ├── TaskParentBanner.tsx # Visual banner for subtask parent linkage
 │   │   │   ├── TaskScheduleInputs.tsx # Inline date, time, and natural duration inputs
 │   │   │   ├── TaskSubtasksSection.tsx # Subtasks list, toggles, inline creation and deep links
-│   │   │   └── TaskTagSelector.tsx # Tag picker dropdown and inline tag creator with color palette
+│   │   │   ├── TaskProjectSelector.tsx # Project picker dropdown and inline project creator with color palette
+│   │   │   └── TaskTagSelector.tsx # Tag picker dropdown (preserved for backend compatibility)
 │   │   ├── TaskDescriptionEditor.tsx # WYSIWYG rich text editor powered by Tiptap with formatting toolbar
 │   │   ├── TaskModal.tsx         # Task details modal orchestrator (< 500 lines)
 │   │   └── WeeklyBoard.tsx       # Interactive weekly board orchestrator (< 500 lines)
@@ -52,6 +54,7 @@ weekly-to-do-list/
 │   │   │   └── useTodayDateStr.ts # useSyncExternalStore hook for zero-mismatch today date string
 │   │   ├── auth.ts               # JWT token signing/verification (jose) and bcryptjs password hashing
 │   │   ├── date-utils.ts         # Timezone-immune date arithmetic and week interval formatters
+│   │   ├── project-utils.ts      # Project color tokens and visual badge style helpers
 │   │   ├── r2.ts                 # Cloudflare R2 S3 client, file path generator, and presigned URLs
 │   │   └── tag-utils.ts          # Tag color tokens and visual badge style helpers
 │   └── middleware.ts             # Edge middleware for route protection and auth redirection
@@ -84,26 +87,28 @@ flowchart TD
         subgraph UI["Frontend UI (React 19)"]
             LoginPage["/login (LoginPage)"]
             WeeklyBoard["/ (WeeklyBoard Component)"]
-            TaskModal["TaskModal (Tag Selector & Auto-Save)"]
+            TaskModal["TaskModal (Project Selector & Auto-Save)"]
         end
 
         subgraph ServerActions["Server Actions (app/actions/*)"]
             AuthActions["Auth Actions\n(login, register, logout)"]
-            TagActions["Tag Actions\n(getTags, createTag, deleteTag)"]
-            TaskActions["Task Actions\n(create, update, toggle, delete, move/reorder, query with tags)"]
+            ProjectActions["Project Actions\n(getProjects, createProject, deleteProject)"]
+            TagActions["Tag Actions (Backend)\n(getTags, createTag, deleteTag)"]
+            TaskActions["Task Actions\n(create, update, toggle, delete, move/reorder, query with projects/tags)"]
             UserActions["User Actions\n(getPreferences, updatePreferences)"]
         end
 
         subgraph Lib["Core Utilities (src/lib/*)"]
             AuthLib["Auth Lib (jose + bcryptjs)"]
             DateUtils["Date Utils (ISO YYYY-MM-DD)"]
+            ProjectUtils["Project Utils (Palette Styles & Tokens)"]
             TagUtils["Tag Utils (Palette Styles & Tokens)"]
         end
     end
 
     subgraph DataLayer["Persistence Layer"]
         Drizzle["Drizzle ORM (node-postgres pool)"]
-        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• tags\n• tasks")]
+        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• projects\n• tags\n• tasks\n• attachments")]
     end
 
     %% Flow connections
@@ -116,11 +121,12 @@ flowchart TD
     WeeklyBoard -->|"Manage Tasks / Navigate Weeks"| TaskActions
     WeeklyBoard -->|"Toggle Visible Days"| UserActions
     WeeklyBoard --> TaskModal
-    TaskModal -->|"Manage Tags"| TagActions
+    TaskModal -->|"Manage Projects"| ProjectActions
     TaskModal -->|"Debounced Auto-Save"| TaskActions
     WeeklyBoard --> DateUtils
-    WeeklyBoard --> TagUtils
+    WeeklyBoard --> ProjectUtils
     TaskActions --> Drizzle
+    ProjectActions --> Drizzle
     TagActions --> Drizzle
     UserActions --> Drizzle
     Drizzle -->|"SQL Queries / Migrations"| Postgres
@@ -174,7 +180,14 @@ flowchart TD
   - `preferences` (`jsonb`, Default `{"showSaturday":false,"showSunday":false,"theme":"light"}`, Not Null) — *Extensible JSON storage for user UI settings and configs (visible days, theme).*
   - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
   - `last_login_at` (`timestamp with time zone`, Nullable)
-- **`tags` Table**:
+- **`tags` Table (Preserved on backend)**:
+  - `id` (`uuid`, Primary Key, `defaultRandom()`)
+  - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
+  - `name` (`varchar(50)`, Not Null)
+  - `color` (`varchar(30)`, Default `'indigo'`, Not Null)
+  - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+  - `updated_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+- **`projects` Table**:
   - `id` (`uuid`, Primary Key, `defaultRandom()`)
   - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
   - `name` (`varchar(50)`, Not Null)
@@ -185,6 +198,7 @@ flowchart TD
   - `id` (`uuid`, Primary Key, `defaultRandom()`)
   - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
   - `tag_id` (`uuid`, Foreign Key -> `tags.id`, `onDelete: 'set null'`, Nullable)
+  - `project_id` (`uuid`, Foreign Key -> `projects.id`, `onDelete: 'set null'`, Nullable)
   - `parent_id` (`uuid`, Foreign Key -> `tasks.id`, `onDelete: 'cascade'`, Nullable) — *Enables 1-level hierarchical subtasks.*
   - `title` (`varchar(500)`, Not Null)
   - `content` (`text`, Default `""`, Not Null)

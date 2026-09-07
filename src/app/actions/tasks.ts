@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { tasks, tags, attachments, TaskWithTag } from "@/db/schema";
+import { tasks, tags, projects, attachments, TaskWithTag } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { deleteManyFromR2 } from "@/lib/r2";
 import { and, eq, gte, lte, asc, isNotNull, sql, or, isNull, inArray } from "drizzle-orm";
@@ -25,6 +25,7 @@ export async function getWeekTasksAction(
         .select({
           task: tasks,
           tag: tags,
+          project: projects,
           parent: {
             id: parentTasks.id,
             title: parentTasks.title,
@@ -32,6 +33,7 @@ export async function getWeekTasksAction(
         })
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
+        .leftJoin(projects, eq(tasks.projectId, projects.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
         .where(
           and(
@@ -91,6 +93,7 @@ export async function getWeekTasksAction(
       return {
         ...r.task,
         tag: r.tag || null,
+        project: r.project || null,
         parent: r.parent?.id ? r.parent : null,
         subtaskCount: stats?.total || 0,
         completedSubtaskCount: stats?.completed || 0,
@@ -119,6 +122,7 @@ export async function getSubtasksAction(
       .select({
         task: tasks,
         tag: tags,
+        project: projects,
         parent: {
           id: parentTasks.id,
           title: parentTasks.title,
@@ -126,6 +130,7 @@ export async function getSubtasksAction(
       })
       .from(tasks)
       .leftJoin(tags, eq(tasks.tagId, tags.id))
+      .leftJoin(projects, eq(tasks.projectId, projects.id))
       .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
       .where(
         and(
@@ -138,6 +143,7 @@ export async function getSubtasksAction(
     const list: TaskWithTag[] = rows.map((r) => ({
       ...r.task,
       tag: r.tag || null,
+      project: r.project || null,
       parent: r.parent?.id ? r.parent : null,
       subtaskCount: 0,
       completedSubtaskCount: 0,
@@ -165,6 +171,7 @@ export async function getTaskByIdAction(
         .select({
           task: tasks,
           tag: tags,
+          project: projects,
           parent: {
             id: parentTasks.id,
             title: parentTasks.title,
@@ -172,6 +179,7 @@ export async function getTaskByIdAction(
         })
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
+        .leftJoin(projects, eq(tasks.projectId, projects.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
         .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
       db
@@ -196,6 +204,7 @@ export async function getTaskByIdAction(
     const item: TaskWithTag = {
       ...rows[0].task,
       tag: rows[0].tag || null,
+      project: rows[0].project || null,
       parent: rows[0].parent?.id ? rows[0].parent : null,
       subtaskCount: stats?.total || 0,
       completedSubtaskCount: stats?.completed || 0,
@@ -215,6 +224,7 @@ export async function createTaskAction(data: {
   time?: string;
   duration?: number | null;
   tagId?: string | null;
+  projectId?: string | null;
   parentId?: string | null;
 }): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
@@ -259,6 +269,7 @@ export async function createTaskAction(data: {
       .values({
         userId: session.userId,
         tagId: data.tagId || null,
+        projectId: data.projectId || null,
         parentId: data.parentId || null,
         title,
         date: targetDate,
@@ -281,9 +292,19 @@ export async function createTaskAction(data: {
       tagObj = foundTag || null;
     }
 
+    let projectObj = null;
+    if (inserted.projectId) {
+      const [foundProject] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, inserted.projectId));
+      projectObj = foundProject || null;
+    }
+
     const newTask: TaskWithTag = {
       ...inserted,
       tag: tagObj,
+      project: projectObj,
       parent: parentObj,
       subtaskCount: 0,
       completedSubtaskCount: 0,
@@ -332,6 +353,7 @@ export async function updateTaskAction(
     time?: string | null;
     duration?: number | null;
     tagId?: string | null;
+    projectId?: string | null;
   }
 ): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
@@ -350,6 +372,7 @@ export async function updateTaskAction(
     if (data.time !== undefined) updateValues.time = data.time ? data.time.trim() : null;
     if (data.duration !== undefined) updateValues.duration = data.duration && data.duration > 0 ? data.duration : null;
     if (data.tagId !== undefined) updateValues.tagId = data.tagId ? data.tagId : null;
+    if (data.projectId !== undefined) updateValues.projectId = data.projectId ? data.projectId : null;
 
     await db
       .update(tasks)
@@ -362,6 +385,7 @@ export async function updateTaskAction(
         .select({
           task: tasks,
           tag: tags,
+          project: projects,
           parent: {
             id: parentTasks.id,
             title: parentTasks.title,
@@ -369,6 +393,7 @@ export async function updateTaskAction(
         })
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
+        .leftJoin(projects, eq(tasks.projectId, projects.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
         .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
       db
@@ -393,6 +418,7 @@ export async function updateTaskAction(
     const updated: TaskWithTag = {
       ...rows[0].task,
       tag: rows[0].tag || null,
+      project: rows[0].project || null,
       parent: rows[0].parent?.id ? rows[0].parent : null,
       subtaskCount: stats?.total || 0,
       completedSubtaskCount: stats?.completed || 0,

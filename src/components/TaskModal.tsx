@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { TaskWithTag, Tag } from "@/db/schema";
+import { TaskWithTag, Project } from "@/db/schema";
 import {
   updateTaskAction,
   deleteTaskAction,
@@ -9,12 +9,12 @@ import {
   getSubtasksAction,
   toggleTaskStatusAction,
 } from "@/app/actions/tasks";
-import { getUserTagsAction } from "@/app/actions/tags";
+import { getUserProjectsAction } from "@/app/actions/projects";
 import { formatDuration, parseNaturalDuration } from "@/lib/date-utils";
 import { TaskDescriptionEditor } from "./TaskDescriptionEditor";
 import { TaskParentBanner } from "./task-modal/TaskParentBanner";
 import { TaskScheduleInputs } from "./task-modal/TaskScheduleInputs";
-import { TaskTagSelector } from "./task-modal/TaskTagSelector";
+import { TaskProjectSelector } from "./task-modal/TaskProjectSelector";
 import { TaskSubtasksSection } from "./task-modal/TaskSubtasksSection";
 import { TaskAttachmentsSection } from "./task-modal/TaskAttachmentsSection";
 import { TaskModalFooter } from "./task-modal/TaskModalFooter";
@@ -57,7 +57,7 @@ function TaskModalDialog({
     task.duration ? formatDuration(task.duration) : ""
   );
   const [completed, setCompleted] = useState(task.completed);
-  const [selectedTag, setSelectedTag] = useState<Tag | null>(task.tag || null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(task.project || null);
 
   // Subtasks state
   const [subtasks, setSubtasks] = useState<TaskWithTag[]>([]);
@@ -67,8 +67,8 @@ function TaskModalDialog({
   const [attachments, setAttachments] = useState<AttachmentWithUrl[]>([]);
   const [isLoadingAttachments, setIsLoadingAttachments] = useState(true);
 
-  // User tags state
-  const [userTags, setUserTags] = useState<Tag[]>([]);
+  // User projects state
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
 
@@ -108,15 +108,15 @@ function TaskModalDialog({
     };
   }, [task.id, task.parentId]);
 
-  // Fetch available user tags on load
+  // Fetch available user projects on load
   useEffect(() => {
-    async function loadTags() {
-      const res = await getUserTagsAction();
-      if (res.tags) {
-        setUserTags(res.tags);
+    async function loadProjects() {
+      const res = await getUserProjectsAction();
+      if (res.projects) {
+        setUserProjects(res.projects);
       }
     }
-    loadTags();
+    loadProjects();
   }, []);
 
   // Handle escape key to close modal
@@ -138,6 +138,7 @@ function TaskModalDialog({
     time?: string | null;
     duration?: number | null;
     tagId?: string | null;
+    projectId?: string | null;
   }) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -215,13 +216,13 @@ function TaskModalDialog({
     triggerAutoSave({ duration: null });
   };
 
-  const handleSelectTag = (tag: Tag | null) => {
-    setSelectedTag(tag);
-    triggerAutoSave({ tagId: tag ? tag.id : null });
+  const handleSelectProject = (project: Project | null) => {
+    setSelectedProject(project);
+    triggerAutoSave({ projectId: project ? project.id : null });
   };
 
-  const handleTagCreated = (newTag: Tag) => {
-    setUserTags((prev) => [...prev, newTag]);
+  const handleProjectCreated = (newProject: Project) => {
+    setUserProjects((prev) => [...prev, newProject]);
   };
 
   const handleToggleCompleted = async () => {
@@ -402,12 +403,12 @@ function TaskModalDialog({
             onClearDuration={handleClearDuration}
           />
 
-          {/* Tag Selector */}
-          <TaskTagSelector
-            selectedTag={selectedTag}
-            userTags={userTags}
-            onSelectTag={handleSelectTag}
-            onTagCreated={handleTagCreated}
+          {/* Project Selector */}
+          <TaskProjectSelector
+            selectedProject={selectedProject}
+            userProjects={userProjects}
+            onSelectProject={handleSelectProject}
+            onProjectCreated={handleProjectCreated}
           />
 
           {/* Description WYSIWYG Editor */}

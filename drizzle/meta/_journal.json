@@ -71,6 +71,13 @@
       "when": 1788792580889,
       "tag": "0009_mean_the_enforcers",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788793738937,
+      "tag": "0010_woozy_boom_boom",
+      "breakpoints": true
     }
   ]
 }
