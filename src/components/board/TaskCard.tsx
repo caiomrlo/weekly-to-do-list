@@ -62,7 +62,7 @@ export function TaskCard({
   const isBeforeTarget = isTarget && dropTarget?.position === "before";
   const isAfterTarget = isTarget && dropTarget?.position === "after";
 
-  // Se o pai desta subtarefa estiver sendo arrastado, destaca que a subtarefa o acompanha
+  // Highlight if subtask is moving along with its dragging parent
   const isAttachedToDragged = Boolean(
     draggedTaskId &&
       task.parentId === draggedTaskId &&
@@ -111,7 +111,7 @@ export function TaskCard({
       {/* Drag Grip Handle */}
       <div
         className="mt-0.5 text-slate-300 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400 transition-colors flex-shrink-0 cursor-grab active:cursor-grabbing"
-        title="Arraste para mover ou reordenar"
+        title="Drag to move or reorder"
       >
         <GripVertical className="w-3.5 h-3.5" />
       </div>
@@ -137,7 +137,7 @@ export function TaskCard({
           <div className="flex items-center gap-1 mb-1">
             <span
               className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900/60 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
-              title={`Subtarefa de: ${task.parent.title}`}
+              title={`Subtask of: ${task.parent.title}`}
             >
               <CornerDownRight className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
               <span className="truncate">{task.parent.title}</span>
@@ -159,7 +159,7 @@ export function TaskCard({
         {isNestTarget && (
           <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100/90 dark:bg-indigo-950/90 px-1.5 py-0.5 rounded-md animate-pulse">
             <CornerDownRight className="w-2.5 h-2.5 text-indigo-600 flex-shrink-0" />
-            <span>Soltar para virar subtarefa</span>
+            <span>Drop to make subtask</span>
           </div>
         )}
 
@@ -180,7 +180,7 @@ export function TaskCard({
                     ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
                     : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                 }`}
-                title={`Agendada para ${formatDayShort(scheduledDate)}`}
+                title={`Scheduled for ${formatDayShort(scheduledDate)}`}
               >
                 <CalendarDays className="w-2.5 h-2.5 text-amber-500" />
                 <span>{formatDayShort(scheduledDate)}</span>
@@ -196,9 +196,9 @@ export function TaskCard({
                     ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
                     : "bg-indigo-50/90 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/60"
                 }`}
-                title={`Subtarefas: ${task.completedSubtaskCount || 0} de ${
+                title={`Subtasks: ${task.completedSubtaskCount || 0} of ${
                   task.subtaskCount
-                } concluídas`}
+                } completed`}
               >
                 <ListTree
                   className={`w-2.5 h-2.5 ${
@@ -221,7 +221,7 @@ export function TaskCard({
                     ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
                     : "bg-slate-50/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60"
                 }`}
-                title={`Anexos: ${task.attachmentCount}`}
+                title={`Attachments: ${task.attachmentCount}`}
               >
                 <Paperclip
                   className={`w-2.5 h-2.5 ${
@@ -268,7 +268,7 @@ export function TaskCard({
                     ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
                     : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                 }`}
-                title={`Duração estimada: ${formatDuration(task.duration!)}`}
+                title={`Estimated duration: ${formatDuration(task.duration!)}`}
               >
                 <Timer
                   className={`w-2.5 h-2.5 ${

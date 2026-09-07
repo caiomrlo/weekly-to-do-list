@@ -64,7 +64,7 @@ export function WeeklyHeader({
               onClick={onPrevWeek}
               disabled={isNavigating}
               className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Semana anterior"
+              title="Previous week"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -75,7 +75,7 @@ export function WeeklyHeader({
               disabled={isNavigating}
               className="px-3.5 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/60 shadow-xs transition-all cursor-pointer"
             >
-              Hoje
+              Today
             </button>
 
             <button
@@ -83,7 +83,7 @@ export function WeeklyHeader({
               onClick={onNextWeek}
               disabled={isNavigating}
               className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Próxima semana"
+              title="Next week"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -101,8 +101,8 @@ export function WeeklyHeader({
             type="button"
             onClick={onToggleTheme}
             className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer flex items-center justify-center group"
-            title={isDarkMode ? "Mudar para modo claro" : "Mudar para modo escuro"}
-            aria-label={isDarkMode ? "Mudar para modo claro" : "Mudar para modo escuro"}
+            title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? (
               <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
@@ -122,13 +122,13 @@ export function WeeklyHeader({
             {userEmail ? userEmail.charAt(0).toUpperCase() : "U"}
           </div>
 
-          {/* Logout Button (Icon only) */}
+          {/* Logout Button */}
           <form action={logoutAction}>
             <button
               type="submit"
               className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 bg-white/60 hover:bg-rose-50/80 dark:bg-slate-800/60 dark:hover:bg-rose-950/50 rounded-xl border border-slate-200/70 dark:border-slate-700/70 transition-colors cursor-pointer flex items-center justify-center"
-              title="Encerrar sessão"
-              aria-label="Encerrar sessão"
+              title="Log out"
+              aria-label="Log out"
             >
               <LogOut className="w-4 h-4" />
             </button>

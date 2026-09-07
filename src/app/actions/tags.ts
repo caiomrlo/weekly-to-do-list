@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 export async function getUserTagsAction(): Promise<{ tags?: Tag[]; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -21,8 +21,8 @@ export async function getUserTagsAction(): Promise<{ tags?: Tag[]; error?: strin
 
     return { tags: list };
   } catch (err: unknown) {
-    console.error("Erro ao buscar tags:", err);
-    return { error: "Erro ao buscar tags." };
+    console.error("Error fetching tags:", err);
+    return { error: "Failed to fetch tags." };
   }
 }
 
@@ -32,16 +32,16 @@ export async function createTagAction(data: {
 }): Promise<{ tag?: Tag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   const name = data.name.trim();
   if (!name) {
-    return { error: "O nome da tag não pode estar vazio." };
+    return { error: "Tag name cannot be empty." };
   }
 
   if (name.length > 50) {
-    return { error: "O nome da tag deve ter no máximo 50 caracteres." };
+    return { error: "Tag name must be at most 50 characters." };
   }
 
   const validColors = [
@@ -72,8 +72,8 @@ export async function createTagAction(data: {
     revalidatePath("/");
     return { tag: newTag };
   } catch (err: unknown) {
-    console.error("Erro ao criar tag:", err);
-    return { error: "Erro ao criar tag." };
+    console.error("Error creating tag:", err);
+    return { error: "Failed to create tag." };
   }
 }
 
@@ -82,7 +82,7 @@ export async function deleteTagAction(
 ): Promise<{ success?: boolean; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -93,7 +93,7 @@ export async function deleteTagAction(
     revalidatePath("/");
     return { success: true };
   } catch (err: unknown) {
-    console.error("Erro ao excluir tag:", err);
-    return { error: "Erro ao excluir tag." };
+    console.error("Error deleting tag:", err);
+    return { error: "Failed to delete tag." };
   }
 }

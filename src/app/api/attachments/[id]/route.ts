@@ -11,12 +11,12 @@ export async function GET(
 ) {
   const session = await getSessionUser();
   if (!session) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
   const { id } = await params;
   if (!id) {
-    return NextResponse.json({ error: "ID inválido." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid ID." }, { status: 400 });
   }
 
   try {
@@ -27,13 +27,12 @@ export async function GET(
       .limit(1);
 
     if (!attachment) {
-      return NextResponse.json({ error: "Anexo não encontrado." }, { status: 404 });
+      return NextResponse.json({ error: "Attachment not found." }, { status: 404 });
     }
 
     const isThumb = request.nextUrl.searchParams.get("thumb") === "1";
     const download = request.nextUrl.searchParams.get("download") === "1";
 
-    // Se for solicitada miniatura e ela existir, usa o thumbnailPath; caso contrário, usa o original
     const effectivePath =
       isThumb && attachment.thumbnailPath
         ? attachment.thumbnailPath
@@ -47,13 +46,13 @@ export async function GET(
           isThumb ? `thumb_${attachment.fileName}` : attachment.fileName
         );
 
-    // Redireciona com status 307 (Temporary Redirect) para a URL assinada do Cloudflare R2
     return NextResponse.redirect(targetUrl, 307);
   } catch (err: unknown) {
-    console.error("Erro ao gerar URL do anexo:", err);
+    console.error("Error generating attachment URL:", err);
     return NextResponse.json(
-      { error: "Erro interno ao processar o anexo." },
+      { error: "Internal server error while processing attachment." },
       { status: 500 }
     );
   }
 }
+

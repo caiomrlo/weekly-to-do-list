@@ -87,11 +87,10 @@ export function WeeklyBoard({
     try {
       await updateUserPreferencesAction({ theme: nextTheme });
     } catch (err) {
-      console.error("Erro ao salvar preferência de tema:", err);
+      console.error("Error saving theme preference:", err);
     }
   };
 
-  // Toggle visible day setting
   const handleToggleDay = async (dayKey: "showSaturday" | "showSunday") => {
     const nextVal = !preferences[dayKey];
     const updated = { ...preferences, [dayKey]: nextVal };
@@ -100,7 +99,7 @@ export function WeeklyBoard({
     try {
       await updateUserPreferencesAction({ [dayKey]: nextVal });
     } catch (err) {
-      console.error("Erro ao salvar preferências:", err);
+      console.error("Error saving day visibility preference:", err);
     }
   };
 

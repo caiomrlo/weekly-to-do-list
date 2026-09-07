@@ -14,7 +14,6 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import sharp from "sharp";
 
-// Tipos permitidos: imagens e documentos PDF
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -23,7 +22,6 @@ const ALLOWED_MIME_TYPES = new Set([
   "application/pdf",
 ]);
 
-// Limite máximo de arquivo: 20 MB
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
 export interface AttachmentWithUrl extends Attachment {
@@ -31,15 +29,12 @@ export interface AttachmentWithUrl extends Attachment {
   thumbUrl?: string | null;
 }
 
-/**
- * Busca todos os anexos de uma tarefa específica pertencente ao usuário autenticado.
- */
 export async function getTaskAttachmentsAction(
   taskId: string
 ): Promise<{ attachments?: AttachmentWithUrl[]; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -59,51 +54,45 @@ export async function getTaskAttachmentsAction(
 
     return { attachments: list };
   } catch (err: unknown) {
-    console.error("Erro ao buscar anexos da tarefa:", err);
-    return { error: "Erro ao buscar anexos da tarefa." };
+    console.error("Error fetching task attachments:", err);
+    return { error: "Failed to fetch task attachments." };
   }
 }
 
-/**
- * Realiza o upload de um arquivo para o Cloudflare R2 e cria o registro na tabela attachments.
- */
 export async function uploadAttachmentAction(
   formData: FormData
 ): Promise<{ attachment?: AttachmentWithUrl; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   const taskId = formData.get("taskId");
   const file = formData.get("file");
 
   if (!taskId || typeof taskId !== "string") {
-    return { error: "ID da tarefa inválido." };
+    return { error: "Invalid task ID." };
   }
 
   if (!file || !(file instanceof File)) {
-    return { error: "Nenhum arquivo enviado." };
+    return { error: "No file provided." };
   }
 
-  // 1. Validação de formato (MIME type)
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
     return {
       error:
-        "Formato não suportado. Apenas imagens (PNG, JPG, WebP, GIF) e documentos PDF são permitidos.",
+        "Unsupported format. Only images (PNG, JPG, WebP, GIF) and PDF documents are allowed.",
     };
   }
 
-  // 2. Validação de tamanho
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return {
-      error: `O arquivo excede o limite máximo permitido de ${
+      error: `The file exceeds the maximum allowed limit of ${
         MAX_FILE_SIZE_BYTES / (1024 * 1024)
       }MB.`,
     };
   }
 
-  // 3. Validação de permissão na tarefa
   const [task] = await db
     .select({ id: tasks.id })
     .from(tasks)
@@ -111,22 +100,19 @@ export async function uploadAttachmentAction(
     .limit(1);
 
   if (!task) {
-    return { error: "Tarefa não encontrada ou acesso não autorizado." };
+    return { error: "Task not found or access denied." };
   }
 
-  // 4. Preparação do ID do anexo e do caminho relativo no R2
   const attachmentId = randomUUID();
   const filePath = generateFilePath(attachmentId, file.name);
   let thumbnailPath: string | null = null;
 
   try {
-    // 5. Upload do arquivo original para o Cloudflare R2
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     await uploadToR2(filePath, buffer, file.type);
 
-    // 6. Geração e upload de thumbnail caso seja imagem
     if (file.type.startsWith("image/")) {
       try {
         const thumbBuffer = await sharp(buffer)
@@ -144,13 +130,12 @@ export async function uploadAttachmentAction(
         thumbnailPath = generatedThumbPath;
       } catch (thumbErr) {
         console.warn(
-          "Aviso: Não foi possível gerar a miniatura com sharp. O preview usará a imagem original:",
+          "Failed to generate thumbnail with sharp. Falling back to original image:",
           thumbErr
         );
       }
     }
 
-    // 7. Inserção na tabela 'attachments'
     try {
       const [inserted] = await db
         .insert(attachments)
@@ -178,33 +163,30 @@ export async function uploadAttachmentAction(
         },
       };
     } catch (dbErr) {
-      // Rollback no Cloudflare R2 se falhar a persistência no banco
-      console.error("Falha ao salvar anexo no banco de dados. Executando rollback no R2:", dbErr);
+      // Rollback R2 upload if database insert fails
+      console.error("Failed to save attachment to database. Rolling back R2 upload:", dbErr);
       await deleteFromR2(filePath).catch((r2Err) =>
-        console.error("Falha no rollback do arquivo original no R2:", r2Err)
+        console.error("Failed to rollback original file from R2:", r2Err)
       );
       if (thumbnailPath) {
         await deleteFromR2(thumbnailPath).catch((r2Err) =>
-          console.error("Falha no rollback da thumbnail no R2:", r2Err)
+          console.error("Failed to rollback thumbnail from R2:", r2Err)
         );
       }
       throw dbErr;
     }
   } catch (err: unknown) {
-    console.error("Erro ao fazer upload do anexo:", err);
-    return { error: "Falha ao enviar o arquivo. Verifique sua conexão e tente novamente." };
+    console.error("Error uploading attachment:", err);
+    return { error: "Failed to upload file. Please check your connection and try again." };
   }
 }
 
-/**
- * Exclui um anexo do Cloudflare R2 e remove seu registro do banco de dados.
- */
 export async function deleteAttachmentAction(
   attachmentId: string
 ): Promise<{ success?: boolean; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -221,25 +203,23 @@ export async function deleteAttachmentAction(
       .limit(1);
 
     if (!existing) {
-      return { error: "Anexo não encontrado ou acesso não autorizado." };
+      return { error: "Attachment not found or access denied." };
     }
 
-    // 1. Exclui o arquivo original e a thumbnail física (se existir) no Cloudflare R2
     await deleteFromR2(existing.filePath);
     if (existing.thumbnailPath) {
       await deleteFromR2(existing.thumbnailPath).catch((err) =>
-        console.warn("Aviso ao deletar thumbnail do R2:", err)
+        console.warn("Warning deleting thumbnail from R2:", err)
       );
     }
 
-    // 2. Remove o registro no banco de dados
     await db.delete(attachments).where(eq(attachments.id, attachmentId));
 
     revalidatePath("/");
 
     return { success: true };
   } catch (err: unknown) {
-    console.error("Erro ao deletar anexo:", err);
-    return { error: "Erro ao excluir o anexo." };
+    console.error("Error deleting attachment:", err);
+    return { error: "Failed to delete attachment." };
   }
 }

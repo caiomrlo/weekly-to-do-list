@@ -152,7 +152,7 @@ function TaskModalDialog({
           onTaskUpdated(res.task);
         }
       } catch (err) {
-        console.error("Falha no auto-save:", err);
+        console.error("Auto-save failed:", err);
       } finally {
         setIsSaving(false);
       }
@@ -260,7 +260,7 @@ function TaskModalDialog({
         onSubtaskCreated?.(created);
       }
     } catch (err) {
-      console.error("Erro ao criar subtarefa:", err);
+      console.error("Error creating subtask:", err);
     }
   };
 
@@ -323,21 +323,18 @@ function TaskModalDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      {/* Modal Dialog Card */}
       <div className="relative w-full max-w-xl glass-panel rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col max-h-[90vh] overflow-hidden z-10 border border-white/80 dark:border-slate-800">
-        {/* Header Bar */}
         <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-200/50 dark:border-slate-800/60">
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 min-h-[20px]">
             {isSaving && (
               <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-medium animate-in fade-in duration-150">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Salvando...
+                Saving...
               </span>
             )}
           </div>
@@ -347,16 +344,14 @@ function TaskModalDialog({
               type="button"
               onClick={onClose}
               className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-              title="Fechar (Esc)"
+              title="Close (Esc)"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-1">
-          {/* Parent Task Banner if this is a subtask */}
           {task.parentId && (
             <TaskParentBanner
               parentId={task.parentId}
@@ -365,13 +360,12 @@ function TaskModalDialog({
             />
           )}
 
-          {/* Title and Complete Button */}
           <div className="flex items-start gap-3">
             <button
               type="button"
               onClick={handleToggleCompleted}
               className="mt-1 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors cursor-pointer flex-shrink-0"
-              title={completed ? "Marcar como pendente" : "Marcar como concluída"}
+              title={completed ? "Mark as pending" : "Mark as completed"}
             >
               {completed ? (
                 <CheckCircle2 className="w-6 h-6 text-emerald-500" />
@@ -384,14 +378,13 @@ function TaskModalDialog({
               type="text"
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="Título da tarefa..."
+              placeholder="Task title..."
               className={`w-full text-lg sm:text-xl font-semibold bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 focus:outline-none transition-colors px-1 py-0.5 text-slate-800 dark:text-slate-100 ${
                 completed ? "line-through text-slate-400 dark:text-slate-500" : ""
               }`}
             />
           </div>
 
-          {/* Date, Time & Duration Pills */}
           <TaskScheduleInputs
             date={date}
             time={time}
@@ -403,7 +396,6 @@ function TaskModalDialog({
             onClearDuration={handleClearDuration}
           />
 
-          {/* Project Selector */}
           <TaskProjectSelector
             selectedProject={selectedProject}
             userProjects={userProjects}
@@ -411,10 +403,9 @@ function TaskModalDialog({
             onProjectCreated={handleProjectCreated}
           />
 
-          {/* Description WYSIWYG Editor */}
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-              Descrição
+              Description
             </label>
             <TaskDescriptionEditor
               value={content}
@@ -422,7 +413,6 @@ function TaskModalDialog({
             />
           </div>
 
-          {/* Attachments Section */}
           <TaskAttachmentsSection
             taskId={task.id}
             attachments={attachments}
@@ -430,7 +420,6 @@ function TaskModalDialog({
             onAttachmentsChange={handleAttachmentsChange}
           />
 
-          {/* Subtasks Section (Main tasks only) */}
           {!task.parentId && (
             <TaskSubtasksSection
               subtasks={subtasks}
@@ -444,7 +433,6 @@ function TaskModalDialog({
           )}
         </div>
 
-        {/* Footer Bar with Delete Button */}
         <TaskModalFooter
           totalSubtasksToDelete={totalSubtasksToDelete}
           isDeleting={isDeleting}

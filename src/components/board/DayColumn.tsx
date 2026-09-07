@@ -162,7 +162,7 @@ export function DayColumn({
           </div>
         ))}
 
-        {/* Drop zone dedicada exibida na coluna durante arraste */}
+        {/* Drag drop zone displayed on column during drag */}
         {draggedTaskId && (
           <div
             onDragOver={(e) => handleColumnDragOver(e, day.dateStr)}
@@ -173,7 +173,7 @@ export function DayColumn({
                 : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-indigo-300 hover:text-indigo-500 bg-white/20 dark:bg-slate-800/20"
             }`}
           >
-            <span>Mover para {day.dayNameShort}</span>
+            <span>Move to {day.dayNameShort}</span>
           </div>
         )}
 
@@ -190,7 +190,7 @@ export function DayColumn({
                   onQuickAddSubmit();
                 }
               }}
-              placeholder="+ Nova tarefa"
+              placeholder="+ New task"
               className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
             />
             {Boolean(quickAddTitle.trim()) && (
@@ -198,7 +198,7 @@ export function DayColumn({
                 type="button"
                 onClick={onQuickAddSubmit}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
-                title="Adicionar"
+                title="Add"
               >
                 <Plus className="w-4 h-4" />
               </button>

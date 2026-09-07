@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 export async function getUserProjectsAction(): Promise<{ projects?: Project[]; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -21,8 +21,8 @@ export async function getUserProjectsAction(): Promise<{ projects?: Project[]; e
 
     return { projects: list };
   } catch (err: unknown) {
-    console.error("Erro ao buscar projetos:", err);
-    return { error: "Erro ao buscar projetos." };
+    console.error("Error fetching projects:", err);
+    return { error: "Failed to fetch projects." };
   }
 }
 
@@ -32,16 +32,16 @@ export async function createProjectAction(data: {
 }): Promise<{ project?: Project; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   const name = data.name.trim();
   if (!name) {
-    return { error: "O nome do projeto não pode estar vazio." };
+    return { error: "Project name cannot be empty." };
   }
 
   if (name.length > 50) {
-    return { error: "O nome do projeto deve ter no máximo 50 caracteres." };
+    return { error: "Project name must be at most 50 characters." };
   }
 
   const validColors = [
@@ -72,8 +72,8 @@ export async function createProjectAction(data: {
     revalidatePath("/");
     return { project: newProject };
   } catch (err: unknown) {
-    console.error("Erro ao criar projeto:", err);
-    return { error: "Erro ao criar projeto." };
+    console.error("Error creating project:", err);
+    return { error: "Failed to create project." };
   }
 }
 
@@ -82,7 +82,7 @@ export async function deleteProjectAction(
 ): Promise<{ success?: boolean; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -93,7 +93,7 @@ export async function deleteProjectAction(
     revalidatePath("/");
     return { success: true };
   } catch (err: unknown) {
-    console.error("Erro ao excluir projeto:", err);
-    return { error: "Erro ao excluir projeto." };
+    console.error("Error deleting project:", err);
+    return { error: "Failed to delete project." };
   }
 }

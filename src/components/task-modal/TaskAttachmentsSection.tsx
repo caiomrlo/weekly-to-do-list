@@ -77,7 +77,7 @@ export function TaskAttachmentsSection({
       }
     } catch (err: unknown) {
       console.error(err);
-      setUploadError("Falha no envio do arquivo. Tente novamente.");
+      setUploadError("Failed to upload file. Please try again.");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -126,7 +126,7 @@ export function TaskAttachmentsSection({
         }
       } catch (err) {
         console.error(err);
-        setUploadError("Não foi possível excluir o anexo.");
+        setUploadError("Could not delete attachment.");
       } finally {
         setDeletingId(null);
       }
@@ -140,7 +140,7 @@ export function TaskAttachmentsSection({
         <div className="flex items-center gap-2">
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <Paperclip className="w-3.5 h-3.5" />
-            Anexos
+            Attachments
           </label>
           {attachments.length > 0 && (
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
@@ -166,7 +166,7 @@ export function TaskAttachmentsSection({
             className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer disabled:opacity-50"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Anexar</span>
+            <span>Attach</span>
           </button>
         </div>
       </div>
@@ -207,24 +207,24 @@ export function TaskAttachmentsSection({
         {isUploading && (
           <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-800/70 text-indigo-600 dark:text-indigo-400 text-xs font-medium animate-pulse mb-3">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Enviando anexo para o Cloudflare R2...</span>
+            <span>Uploading attachment to Cloudflare R2...</span>
           </div>
         )}
 
-        {/* Empty state: prompt to drag & drop or click */}
+        {/* Empty state */}
         {attachments.length === 0 && !isUploading && (
           <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400 dark:text-slate-500">
             <UploadCloud className="w-6 h-6 stroke-[1.5] text-slate-400 dark:text-slate-500" />
             <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              Arraste imagens ou PDFs aqui, ou clique para selecionar
+              Drag images or PDFs here, or click to browse
             </p>
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              PNG, JPG, WebP, GIF ou PDF até 20MB
+              PNG, JPG, WebP, GIF or PDF up to 20MB
             </p>
           </div>
         )}
 
-        {/* Attachments List / Grid */}
+        {/* Attachments List */}
         {attachments.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {attachments.map((attachment) => {
@@ -236,13 +236,12 @@ export function TaskAttachmentsSection({
                   key={attachment.id}
                   className="group relative flex items-center gap-3 p-2 rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-xs overflow-hidden"
                 >
-                  {/* Thumbnail / Icon (clique abre o arquivo original) */}
                   <a
                     href={attachment.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90"
-                    title="Abrir arquivo original"
+                    title="Open original file"
                   >
                     {isImage ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
@@ -285,7 +284,7 @@ export function TaskAttachmentsSection({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Abrir arquivo original em nova aba"
+                      title="Open original file in new tab"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
@@ -295,7 +294,7 @@ export function TaskAttachmentsSection({
                       onClick={() => handleDelete(attachment.id)}
                       disabled={isDeletingThis}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
-                      title="Excluir anexo"
+                      title="Delete attachment"
                     >
                       {isDeletingThis ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-500" />
@@ -314,7 +313,7 @@ export function TaskAttachmentsSection({
       {isLoading && attachments.length === 0 && (
         <div className="flex items-center justify-center py-2 text-slate-400 text-xs">
           <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-          Carregando anexos...
+          Loading attachments...
         </div>
       )}
     </div>

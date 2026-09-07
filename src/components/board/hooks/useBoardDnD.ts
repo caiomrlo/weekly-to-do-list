@@ -82,7 +82,7 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
       tasks.some((t) => t.parentId === draggedTaskId)
     );
 
-    // Permite aninhar apenas se o alvo for tarefa principal (sem parentId) e o item arrastado não tiver subtarefas
+    // Nest only if target is a main task (no parentId) and dragged item has no subtasks
     const canNest = !targetTask.parentId && !draggedHasSubs;
 
     let position: "before" | "after" | "nest";
@@ -165,10 +165,10 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
     const targetTask = targetId ? tasks.find((t) => t.id === targetId) : null;
     const targetPosition = currentDrop?.position || "column";
 
-    // Snapshot para rollback seguro em caso de falha de rede
+    // Snapshot for optimistic rollback on failure
     const previousTasks = [...tasks];
 
-    // Determinar nova data e novo pai
+    // Determine new date and parent
     const incomingResolvedDate = (!dateStr || dateStr === "unscheduled") ? null : dateStr;
     let newDate: string | null = incomingResolvedDate;
     let newParentId: string | null = null;
@@ -182,7 +182,7 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
       sameDaySubtasks.length > 0;
 
     if (targetPosition === "nest" && targetTask) {
-      // Aninhar dentro de uma tarefa principal
+      // Nest within a parent task
       if (targetTask.parentId || draggedHasSubs) return;
       newParentId = targetTask.id;
       newParentObj = { id: targetTask.id, title: targetTask.title };
@@ -193,7 +193,7 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
     ) {
       newDate = targetTask.date || null;
       if (targetTask.parentId) {
-        // Alvo é subtarefa -> arrastado vira subtarefa sob o mesmo pai se permitido
+        // Target is subtask -> dragged becomes subtask under same parent if allowed
         if (!draggedHasSubs) {
           newParentId = targetTask.parentId;
           newParentObj = targetTask.parent || null;
@@ -202,22 +202,22 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
           newParentObj = null;
         }
       } else {
-        // Alvo é tarefa principal -> arrastado vira tarefa independente
+        // Target is main task -> dragged becomes root task
         newParentId = null;
         newParentObj = null;
       }
     } else {
-      // Solto no espaço da coluna
+      // Dropped into column space
       newDate = incomingResolvedDate;
       newParentId = null;
       newParentObj = null;
     }
 
-    // Regra do usuário: se a tarefa for arrastada para outro dia e contiver subtarefas no mesmo dia, todas vão para o novo dia
+    // Move same-day subtasks when parent is moved to another day
     const movingParentToNewDate =
       !newParentId && originalDate !== newDate && Boolean(originalDate && newDate && sameDaySubtasks.length > 0);
 
-    // Calcular IDs ordenados no container de destino
+    // Calculate ordered IDs in target container
     let targetOrderedIds: string[] = [];
 
     if (newParentId) {
@@ -259,7 +259,7 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
       targetOrderedIds = currentMains.map((t) => t.id);
     }
 
-    // Calcular IDs ordenados no container de origem caso a data ou pai tenham mudado
+    // Calculate ordered IDs in source container if date or parent changed
     let sourceOrderedIds: string[] = [];
     if (originalDate !== newDate || originalParentId !== newParentId) {
       if (!originalParentId) {
@@ -284,7 +284,7 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
       }
     }
 
-    // Atualização otimista e fluida da UI
+    // Optimistic UI update
     setTasks((prev) => {
       return prev.map((t) => {
         if (t.id === currentDraggedId) {
@@ -298,7 +298,6 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
           };
         }
 
-        // Subtarefas do mesmo dia que acompanham o pai para o novo dia
         if (
           movingParentToNewDate &&
           t.parentId === currentDraggedId &&
@@ -320,7 +319,6 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
           return { ...t, order: sourceIdx };
         }
 
-        // Atualizar contadores do pai anterior se mudou
         if (
           originalParentId &&
           originalParentId !== newParentId &&
@@ -335,7 +333,6 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
           };
         }
 
-        // Atualizar contadores do novo pai se mudou
         if (
           newParentId &&
           newParentId !== originalParentId &&
@@ -354,7 +351,6 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
       });
     });
 
-    // Sincronizar com o banco via Server Action em background
     try {
       const res = await moveOrReorderTasksAction({
         taskId: currentDraggedId,
@@ -367,11 +363,11 @@ export function useBoardDnD({ tasks, setTasks }: UseBoardDnDProps) {
       });
 
       if (res?.error) {
-        console.error("Erro ao sincronizar ordenação:", res.error);
+        console.error("Error syncing task reorder:", res.error);
         setTasks(previousTasks);
       }
     } catch (err) {
-      console.error("Erro de rede ao sincronizar drag and drop:", err);
+      console.error("Network error syncing drag and drop:", err);
       setTasks(previousTasks);
     }
   };

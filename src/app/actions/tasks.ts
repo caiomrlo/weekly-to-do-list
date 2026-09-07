@@ -14,7 +14,7 @@ export async function getWeekTasksAction(
 ): Promise<{ tasks?: TaskWithTag[]; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -103,8 +103,8 @@ export async function getWeekTasksAction(
 
     return { tasks: list };
   } catch (err: unknown) {
-    console.error("Erro ao buscar tarefas da semana:", err);
-    return { error: "Erro ao buscar tarefas." };
+    console.error("Error fetching week tasks:", err);
+    return { error: "Failed to fetch tasks." };
   }
 }
 
@@ -113,7 +113,7 @@ export async function getSubtasksAction(
 ): Promise<{ subtasks?: TaskWithTag[]; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -151,8 +151,8 @@ export async function getSubtasksAction(
 
     return { subtasks: list };
   } catch (err: unknown) {
-    console.error("Erro ao buscar subtarefas:", err);
-    return { error: "Erro ao buscar subtarefas." };
+    console.error("Error fetching subtasks:", err);
+    return { error: "Failed to fetch subtasks." };
   }
 }
 
@@ -161,7 +161,7 @@ export async function getTaskByIdAction(
 ): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -198,7 +198,7 @@ export async function getTaskByIdAction(
     ]);
 
     if (!rows.length) {
-      return { error: "Tarefa não encontrada." };
+      return { error: "Task not found." };
     }
 
     const item: TaskWithTag = {
@@ -213,8 +213,8 @@ export async function getTaskByIdAction(
 
     return { task: item };
   } catch (err: unknown) {
-    console.error("Erro ao buscar tarefa por ID:", err);
-    return { error: "Erro ao carregar tarefa." };
+    console.error("Error fetching task by ID:", err);
+    return { error: "Failed to load task." };
   }
 }
 
@@ -229,12 +229,12 @@ export async function createTaskAction(data: {
 }): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   const title = data.title.trim();
   if (!title) {
-    return { error: "O título da tarefa não pode estar vazio." };
+    return { error: "Task title cannot be empty." };
   }
 
   try {
@@ -246,10 +246,10 @@ export async function createTaskAction(data: {
         .where(and(eq(tasks.id, data.parentId), eq(tasks.userId, session.userId)));
 
       if (!parent) {
-        return { error: "Tarefa principal não encontrada." };
+        return { error: "Parent task not found." };
       }
       if (parent.parentId) {
-        return { error: "Não é permitido criar subtarefa de uma subtarefa (limite de 1 nível)." };
+        return { error: "Cannot create a subtask of a subtask (maximum 1 level of nesting allowed)." };
       }
       parentObj = { id: parent.id, title: parent.title };
     }
@@ -313,8 +313,8 @@ export async function createTaskAction(data: {
     revalidatePath("/");
     return { task: newTask };
   } catch (err: unknown) {
-    console.error("Erro ao criar tarefa:", err);
-    return { error: "Erro ao criar tarefa." };
+    console.error("Error creating task:", err);
+    return { error: "Failed to create task." };
   }
 }
 
@@ -324,7 +324,7 @@ export async function toggleTaskStatusAction(
 ): Promise<{ success?: boolean; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -339,8 +339,8 @@ export async function toggleTaskStatusAction(
     revalidatePath("/");
     return { success: true };
   } catch (err: unknown) {
-    console.error("Erro ao atualizar status:", err);
-    return { error: "Erro ao atualizar status." };
+    console.error("Error updating status:", err);
+    return { error: "Failed to update status." };
   }
 }
 
@@ -358,7 +358,7 @@ export async function updateTaskAction(
 ): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -412,7 +412,7 @@ export async function updateTaskAction(
     ]);
 
     if (!rows.length) {
-      return { error: "Tarefa não encontrada." };
+      return { error: "Task not found." };
     }
 
     const updated: TaskWithTag = {
@@ -428,8 +428,8 @@ export async function updateTaskAction(
     revalidatePath("/");
     return { task: updated };
   } catch (err: unknown) {
-    console.error("Erro ao atualizar tarefa:", err);
-    return { error: "Erro ao salvar alterações da tarefa." };
+    console.error("Error updating task:", err);
+    return { error: "Failed to save task changes." };
   }
 }
 
@@ -438,11 +438,10 @@ export async function deleteTaskAction(
 ): Promise<{ success?: boolean; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
-    // 1. Busca anexos da tarefa e de suas subtarefas para limpeza no Cloudflare R2
     const taskIdsToDelete = [
       taskId,
       ...(
@@ -472,11 +471,11 @@ export async function deleteTaskAction(
         .filter((k): k is string => Boolean(k));
 
       await deleteManyFromR2(keysToDelete).catch((r2Err) =>
-        console.error("Aviso: Falha ao excluir arquivos do R2 durante deleteTaskAction:", r2Err)
+        console.error("Warning: Failed to delete R2 files during deleteTaskAction:", r2Err)
       );
     }
 
-    // 2. Exclui a tarefa no banco (cascade cuidará de subtarefas e linhas de attachments)
+    // Cascade deletes child subtasks and attachment records via DB foreign key
     await db
       .delete(tasks)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
@@ -484,8 +483,8 @@ export async function deleteTaskAction(
     revalidatePath("/");
     return { success: true };
   } catch (err: unknown) {
-    console.error("Erro ao excluir tarefa:", err);
-    return { error: "Erro ao excluir tarefa." };
+    console.error("Error deleting task:", err);
+    return { error: "Failed to delete task." };
   }
 }
 
@@ -500,7 +499,7 @@ export async function moveOrReorderTasksAction(params: {
 }): Promise<{ success?: boolean; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -517,20 +516,18 @@ export async function moveOrReorderTasksAction(params: {
     const resolvedTargetDate = targetDate && targetDate.trim() ? targetDate.trim() : null;
     const resolvedOriginalDate = originalDate && originalDate.trim() ? originalDate.trim() : null;
 
-    // 1. Verificar propriedade da tarefa
     const [task] = await db
       .select()
       .from(tasks)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
 
     if (!task) {
-      return { error: "Tarefa não encontrada." };
+      return { error: "Task not found." };
     }
 
-    // 2. Se for aninhar em um pai, validar regras de 1 nível de aninhamento
     if (targetParentId) {
       if (targetParentId === taskId) {
-        return { error: "Uma tarefa não pode ser subtarefa de si mesma." };
+        return { error: "A task cannot be a subtask of itself." };
       }
 
       const [targetParent] = await db
@@ -539,14 +536,13 @@ export async function moveOrReorderTasksAction(params: {
         .where(and(eq(tasks.id, targetParentId), eq(tasks.userId, session.userId)));
 
       if (!targetParent) {
-        return { error: "Tarefa de destino não encontrada." };
+        return { error: "Target task not found." };
       }
 
       if (targetParent.parentId) {
-        return { error: "Não é permitido criar subtarefa de uma subtarefa (limite de 1 nível)." };
+        return { error: "Cannot create a subtask of a subtask (maximum 1 level of nesting allowed)." };
       }
 
-      // Garantir que a tarefa arrastada não possua subtarefas (pois criaria 2 níveis)
       const [existingSubtask] = await db
         .select({ id: tasks.id })
         .from(tasks)
@@ -554,13 +550,12 @@ export async function moveOrReorderTasksAction(params: {
         .limit(1);
 
       if (existingSubtask) {
-        return { error: "Uma tarefa que já possui subtarefas não pode ser transformada em subtarefa." };
+        return { error: "A task that already has subtasks cannot be converted into a subtask." };
       }
     }
 
     const now = new Date();
 
-    // 3. Se a tarefa pai mudou de dia e solicitou mover subtarefas do mesmo dia
     if (moveSameDaySubtasks && resolvedOriginalDate && resolvedOriginalDate !== resolvedTargetDate && resolvedTargetDate) {
       await db
         .update(tasks)
@@ -577,7 +572,6 @@ export async function moveOrReorderTasksAction(params: {
         );
     }
 
-    // 4. Atualizar a tarefa movida (data, parentId)
     await db
       .update(tasks)
       .set({
@@ -587,7 +581,6 @@ export async function moveOrReorderTasksAction(params: {
       })
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
 
-    // 5. Atualizar ordem no container de destino
     if (targetOrderedIds && targetOrderedIds.length > 0) {
       await Promise.all(
         targetOrderedIds.map((id, index) =>
@@ -599,7 +592,6 @@ export async function moveOrReorderTasksAction(params: {
       );
     }
 
-    // 6. Atualizar ordem no container de origem (se houver)
     if (sourceOrderedIds && sourceOrderedIds.length > 0) {
       await Promise.all(
         sourceOrderedIds.map((id, index) =>
@@ -614,9 +606,7 @@ export async function moveOrReorderTasksAction(params: {
     revalidatePath("/");
     return { success: true };
   } catch (err: unknown) {
-    console.error("Erro ao mover/reordenar tarefas:", err);
-    return { error: "Erro ao salvar ordenação das tarefas." };
+    console.error("Error moving/reordering tasks:", err);
+    return { error: "Failed to save task order." };
   }
 }
-
-

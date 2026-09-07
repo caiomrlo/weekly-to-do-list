@@ -28,7 +28,6 @@ export function TaskProjectSelector({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -48,7 +47,7 @@ export function TaskProjectSelector({
     e.preventDefault();
     const trimmed = newProjectName.trim();
     if (!trimmed) {
-      setError("O nome do projeto é obrigatório.");
+      setError("Project name is required.");
       return;
     }
 
@@ -72,7 +71,7 @@ export function TaskProjectSelector({
       }
     } catch (err) {
       console.error(err);
-      setError("Erro ao criar o projeto.");
+      setError("Failed to create project.");
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +112,7 @@ export function TaskProjectSelector({
               type="button"
               onClick={() => onSelectProject(null)}
               className="text-slate-400 hover:text-rose-500 p-0.5 rounded-md transition-colors cursor-pointer"
-              title="Remover projeto"
+              title="Remove project"
             >
               <X className="w-3 h-3" />
             </button>
@@ -129,7 +128,7 @@ export function TaskProjectSelector({
             className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium py-1 px-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Adicionar projeto</span>
+            <span>Add project</span>
           </button>
         )}
       </div>
@@ -140,14 +139,14 @@ export function TaskProjectSelector({
           {!isCreating ? (
             <div>
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                <span>Selecionar Projeto</span>
+                <span>Select Project</span>
                 <button
                   type="button"
                   onClick={() => setIsCreating(true)}
                   className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Novo Projeto
+                  New Project
                 </button>
               </div>
 
@@ -162,14 +161,14 @@ export function TaskProjectSelector({
                     }}
                     className="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-between transition-colors cursor-pointer"
                   >
-                    <span>Nenhum (Remover projeto)</span>
+                    <span>None (Remove project)</span>
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
 
                 {userProjects.length === 0 ? (
                   <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
-                    Nenhum projeto criado ainda.
+                    No projects created yet.
                   </div>
                 ) : (
                   userProjects.map((project) => {
@@ -209,7 +208,7 @@ export function TaskProjectSelector({
             /* Inline Project Creation Form */
             <form onSubmit={handleCreate} className="space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
-                <span>Criar Novo Projeto</span>
+                <span>Create New Project</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -232,7 +231,7 @@ export function TaskProjectSelector({
                 type="text"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
-                placeholder="Nome do projeto..."
+                placeholder="Project name..."
                 maxLength={50}
                 autoFocus
                 className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
@@ -240,7 +239,7 @@ export function TaskProjectSelector({
 
               {/* Color swatches */}
               <div className="space-y-1">
-                <span className="text-[11px] text-slate-400 block">Cor</span>
+                <span className="text-[11px] text-slate-400 block">Color</span>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(PROJECT_COLORS).map(([key, c]) => (
                     <button
@@ -271,7 +270,7 @@ export function TaskProjectSelector({
                   }}
                   className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -281,10 +280,10 @@ export function TaskProjectSelector({
                   {isLoading ? (
                     <>
                       <Loader2 className="w-3 h-3 animate-spin" />
-                      <span>Salvando...</span>
+                      <span>Saving...</span>
                     </>
                   ) : (
-                    <span>Salvar Projeto</span>
+                    <span>Save Project</span>
                   )}
                 </button>
               </div>

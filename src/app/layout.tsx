@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Weekly To-Do List | Planejamento Semanal",
-  description: "Gerenciador semanal de tarefas simples, elegante e produtivo com design moderno glassmorphism.",
+  title: "Weekly To-Do List | Weekly Planning",
+  description: "Simple, elegant and productive weekly task manager with modern glassmorphism design.",
 };
 
 const themeScript = `
@@ -38,7 +38,7 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="pt-BR"
+      lang="en"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >

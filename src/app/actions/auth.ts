@@ -25,11 +25,11 @@ export async function registerAction(formData: {
   const password = formData.password;
 
   if (!email || !email.includes("@")) {
-    return { error: "Por favor, informe um e-mail válido." };
+    return { error: "Please enter a valid email address." };
   }
 
   if (!password || password.length < 6) {
-    return { error: "A senha deve ter pelo menos 6 caracteres." };
+    return { error: "Password must be at least 6 characters." };
   }
 
   try {
@@ -40,7 +40,7 @@ export async function registerAction(formData: {
       .limit(1);
 
     if (existing.length > 0) {
-      return { error: "Este e-mail já está cadastrado. Tente entrar." };
+      return { error: "This email is already registered. Please sign in." };
     }
 
     const passwordHash = await hashPassword(password);
@@ -65,8 +65,8 @@ export async function registerAction(formData: {
 
     return { success: true };
   } catch (err: unknown) {
-    console.error("Erro no registro:", err);
-    return { error: "Ocorreu um erro ao criar a conta. Tente novamente." };
+    console.error("Error during registration:", err);
+    return { error: "An error occurred while creating your account. Please try again." };
   }
 }
 
@@ -78,7 +78,7 @@ export async function loginAction(formData: {
   const password = formData.password;
 
   if (!email || !password) {
-    return { error: "Preencha e-mail e senha." };
+    return { error: "Please enter both email and password." };
   }
 
   try {
@@ -89,15 +89,14 @@ export async function loginAction(formData: {
       .limit(1);
 
     if (!user) {
-      return { error: "E-mail ou senha incorretos." };
+      return { error: "Incorrect email or password." };
     }
 
     const isValid = await comparePassword(password, user.passwordHash);
     if (!isValid) {
-      return { error: "E-mail ou senha incorretos." };
+      return { error: "Incorrect email or password." };
     }
 
-    // Atualiza lastLoginAt
     await db
       .update(users)
       .set({ lastLoginAt: new Date() })
@@ -112,8 +111,8 @@ export async function loginAction(formData: {
 
     return { success: true };
   } catch (err: unknown) {
-    console.error("Erro no login:", err);
-    return { error: "Ocorreu um erro ao entrar. Tente novamente." };
+    console.error("Error during login:", err);
+    return { error: "An error occurred while signing in. Please try again." };
   }
 }
 

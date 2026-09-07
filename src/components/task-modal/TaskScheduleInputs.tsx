@@ -29,7 +29,7 @@ export function TaskScheduleInputs({
       <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
         <Calendar className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
         <span className="pointer-events-none">
-          {date ? date.split("-").reverse().join("/") : "Sem data (Fixa)"}
+          {date ? date.split("-").reverse().join("/") : "No date (Fixed)"}
         </span>
         {date ? (
           <button
@@ -39,7 +39,7 @@ export function TaskScheduleInputs({
               onDateChange("");
             }}
             className="relative z-10 text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
-            title="Remover data (mover para Tarefas sem data)"
+            title="Remove date (move to Unscheduled)"
           >
             <X className="w-3 h-3" />
           </button>
@@ -56,7 +56,7 @@ export function TaskScheduleInputs({
             } catch {}
           }}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-0"
-          title={date ? "Alterar data" : "Definir data"}
+          title={date ? "Change date" : "Set date"}
         />
       </div>
 
@@ -73,14 +73,14 @@ export function TaskScheduleInputs({
                 onTimeChange("");
               }}
               className="relative z-10 text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
-              title="Remover horário"
+              title="Remove time"
             >
               <X className="w-3 h-3" />
             </button>
           </>
         ) : (
           <span className="text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 transition-colors pointer-events-none">
-            Adicionar horário
+            Add time
           </span>
         )}
         <input
@@ -93,7 +93,7 @@ export function TaskScheduleInputs({
             } catch {}
           }}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-0"
-          title={time ? `Horário: ${time}` : "Adicionar horário"}
+          title={time ? `Time: ${time}` : "Add time"}
         />
       </div>
 
@@ -110,7 +110,7 @@ export function TaskScheduleInputs({
               (e.target as HTMLInputElement).blur();
             }
           }}
-          placeholder="Duração"
+          placeholder="Duration"
           className="bg-transparent text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none w-14 focus:w-20 transition-all"
         />
         {durationText && (
@@ -118,7 +118,7 @@ export function TaskScheduleInputs({
             type="button"
             onClick={onClearDuration}
             className="text-slate-400 hover:text-rose-500 p-0.5 rounded transition-colors cursor-pointer"
-            title="Limpar duração"
+            title="Clear duration"
           >
             <X className="w-3 h-3" />
           </button>

@@ -42,7 +42,7 @@ export function TaskDescriptionEditor({
       }),
       Placeholder.configure({
         placeholder:
-          placeholder || "Adicione uma descrição detalhada, anotações ou listas...",
+          placeholder || "Add a detailed description, notes or lists...",
       }),
     ],
     content: value || "",
@@ -59,7 +59,7 @@ export function TaskDescriptionEditor({
     },
   });
 
-  // Keep editor content in sync when value changes externally (e.g. task switch)
+  // Sync content when value changes externally (e.g. task switch)
   useEffect(() => {
     if (!editor) return;
     const currentHtml = editor.isEmpty ? "" : editor.getHTML();
@@ -71,7 +71,7 @@ export function TaskDescriptionEditor({
   if (!editor) {
     return (
       <div className="w-full h-36 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 animate-pulse flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
-        Carregando editor...
+        Loading editor...
       </div>
     );
   }
@@ -83,16 +83,14 @@ export function TaskDescriptionEditor({
 
   return (
     <div className="w-full rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 overflow-hidden shadow-2xs">
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800/60 bg-slate-50/70 dark:bg-slate-800/50 text-xs">
-        {/* Paragraph & Headings */}
         <button
           type="button"
           onClick={() => editor.chain().focus().setParagraph().run()}
           className={`${btnBase} ${
             editor.isActive("paragraph") ? btnActive : btnInactive
           }`}
-          title="Texto normal"
+          title="Normal text"
         >
           <Pilcrow className="w-3.5 h-3.5" />
         </button>
@@ -103,7 +101,7 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("heading", { level: 1 }) ? btnActive : btnInactive
           }`}
-          title="Título Principal (H1)"
+          title="Main Heading (H1)"
         >
           <Heading1 className="w-3.5 h-3.5" />
         </button>
@@ -114,7 +112,7 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("heading", { level: 2 }) ? btnActive : btnInactive
           }`}
-          title="Subtítulo (H2)"
+          title="Subheading (H2)"
         >
           <Heading2 className="w-3.5 h-3.5" />
         </button>
@@ -125,15 +123,13 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("heading", { level: 3 }) ? btnActive : btnInactive
           }`}
-          title="Seção (H3)"
+          title="Section (H3)"
         >
           <Heading3 className="w-3.5 h-3.5" />
         </button>
 
-        {/* Divider */}
         <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
 
-        {/* Inline formatting */}
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -141,7 +137,7 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("bold") ? btnActive : btnInactive
           }`}
-          title="Negrito (Ctrl+B)"
+          title="Bold (Ctrl+B)"
         >
           <Bold className="w-3.5 h-3.5" />
         </button>
@@ -153,7 +149,7 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("italic") ? btnActive : btnInactive
           }`}
-          title="Itálico (Ctrl+I)"
+          title="Italic (Ctrl+I)"
         >
           <Italic className="w-3.5 h-3.5" />
         </button>
@@ -165,7 +161,7 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("strike") ? btnActive : btnInactive
           }`}
-          title="Tachado"
+          title="Strikethrough"
         >
           <Strikethrough className="w-3.5 h-3.5" />
         </button>
@@ -177,22 +173,20 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("code") ? btnActive : btnInactive
           }`}
-          title="Código inline"
+          title="Inline code"
         >
           <Code className="w-3.5 h-3.5" />
         </button>
 
-        {/* Divider */}
         <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
 
-        {/* Lists & Blocks */}
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={`${btnBase} ${
             editor.isActive("bulletList") ? btnActive : btnInactive
           }`}
-          title="Lista com marcadores"
+          title="Bullet list"
         >
           <List className="w-3.5 h-3.5" />
         </button>
@@ -203,7 +197,7 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("orderedList") ? btnActive : btnInactive
           }`}
-          title="Lista numerada"
+          title="Numbered list"
         >
           <ListOrdered className="w-3.5 h-3.5" />
         </button>
@@ -214,7 +208,7 @@ export function TaskDescriptionEditor({
           className={`${btnBase} ${
             editor.isActive("blockquote") ? btnActive : btnInactive
           }`}
-          title="Citação em bloco"
+          title="Blockquote"
         >
           <Quote className="w-3.5 h-3.5" />
         </button>
@@ -223,34 +217,31 @@ export function TaskDescriptionEditor({
           type="button"
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
           className={`${btnBase} ${btnInactive}`}
-          title="Linha divisória"
+          title="Horizontal line"
         >
           <Minus className="w-3.5 h-3.5" />
         </button>
 
-        {/* Divider */}
         <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
 
-        {/* Clear formatting */}
         <button
           type="button"
           onClick={() =>
             editor.chain().focus().unsetAllMarks().clearNodes().run()
           }
           className={`${btnBase} ${btnInactive}`}
-          title="Limpar formatação"
+          title="Clear formatting"
         >
           <RemoveFormatting className="w-3.5 h-3.5" />
         </button>
 
-        {/* Undo / Redo */}
         <div className="ml-auto flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().chain().focus().undo().run()}
             className={`${btnBase} ${btnInactive} disabled:opacity-30 disabled:cursor-not-allowed`}
-            title="Desfazer (Ctrl+Z)"
+            title="Undo (Ctrl+Z)"
           >
             <Undo className="w-3.5 h-3.5" />
           </button>
@@ -259,14 +250,13 @@ export function TaskDescriptionEditor({
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().chain().focus().redo().run()}
             className={`${btnBase} ${btnInactive} disabled:opacity-30 disabled:cursor-not-allowed`}
-            title="Refazer (Ctrl+Y)"
+            title="Redo (Ctrl+Y)"
           >
             <Redo className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Editor Content Area */}
       <EditorContent editor={editor} />
     </div>
   );

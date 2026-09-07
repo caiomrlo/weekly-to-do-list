@@ -1,58 +1,53 @@
-/**
- * Utilitários para manipulação de datas no calendário semanal.
- * Baseados no formato ISO 'YYYY-MM-DD' para total imunidade a desvios de timezone.
- */
-
 export interface DayInfo {
   dateStr: string; // 'YYYY-MM-DD'
-  dayName: string; // 'Segunda-feira', etc.
-  dayNameShort: string; // 'Seg', 'Ter', etc.
+  dayName: string; // 'Monday', etc.
+  dayNameShort: string; // 'Mon', 'Tue', etc.
   dayNumber: number; // 7, 8, etc.
-  monthNameShort: string; // 'set.', etc.
+  monthNameShort: string; // 'Sep', etc.
   isToday: boolean;
-  dayOfWeek: number; // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+  dayOfWeek: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 }
 
 const DAY_NAMES = [
-  "Domingo",
-  "Segunda-feira",
-  "Terça-feira",
-  "Quarta-feira",
-  "Quinta-feira",
-  "Sexta-feira",
-  "Sábado",
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
 ];
 
-const DAY_NAMES_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const MONTH_NAMES = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const MONTH_NAMES_SHORT = [
   "Jan",
-  "Fev",
+  "Feb",
   "Mar",
-  "Abr",
-  "Mai",
+  "Apr",
+  "May",
   "Jun",
   "Jul",
-  "Ago",
-  "Set",
-  "Out",
+  "Aug",
+  "Sep",
+  "Oct",
   "Nov",
-  "Dez",
+  "Dec",
 ];
 
 export function toDateString(date: Date): string {
@@ -67,22 +62,13 @@ export function parseDateString(dateStr: string): Date {
   return new Date(year, month - 1, day);
 }
 
-/**
- * Retorna a Segunda-feira da semana de uma data de referência.
- */
 export function getMondayOfWeek(refDate: Date = new Date()): Date {
   const d = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
   const day = d.getDay();
-  // Se domingo (0), subtrai 6 dias. Caso contrário, subtrai (day - 1) dias.
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   return new Date(d.setDate(diff));
 }
 
-/**
- * Retorna os 7 dias da semana (Segunda a Domingo) a partir de uma data de Segunda-feira.
- * @param monday - Data da Segunda-feira
- * @param todayStr - Opcional string 'YYYY-MM-DD' para definir o dia atual. Se null ou "", nenhum dia será marcado como hoje (ideal para SSR/hidratação limpa). Se undefined, calcula via new Date().
- */
 export function getWeekDays(monday: Date, todayStr?: string | null): DayInfo[] {
   const effectiveTodayStr = todayStr !== undefined ? todayStr : toDateString(new Date());
   const days: DayInfo[] = [];
@@ -106,10 +92,6 @@ export function getWeekDays(monday: Date, todayStr?: string | null): DayInfo[] {
   return days;
 }
 
-/**
- * Formata o intervalo da semana para exibição amigável no cabeçalho.
- * Ex: "07 de Setembro – 13 de Setembro de 2026"
- */
 export function formatWeekRange(monday: Date): string {
   const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
 
@@ -123,20 +105,16 @@ export function formatWeekRange(monday: Date): string {
   const endYear = sunday.getFullYear();
 
   if (startYear !== endYear) {
-    return `${startDay} de ${startMonth} de ${startYear} – ${endDay} de ${endMonth} de ${endYear}`;
+    return `${startMonth} ${startDay}, ${startYear} – ${endMonth} ${endDay}, ${endYear}`;
   }
 
   if (startMonth !== endMonth) {
-    return `${startDay} de ${startMonth} – ${endDay} de ${endMonth} de ${startYear}`;
+    return `${startMonth} ${startDay} – ${endMonth} ${endDay}, ${startYear}`;
   }
 
-  return `${startDay} a ${endDay} de ${startMonth} de ${startYear}`;
+  return `${startMonth} ${startDay} – ${endDay}, ${startYear}`;
 }
 
-/**
- * Formata o mês e ano da semana atual para exibição no cabeçalho.
- * Ex: "Julho, 2026" ou "Agosto / Setembro, 2026"
- */
 export function formatMonthYear(monday: Date): string {
   const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
 
@@ -156,15 +134,6 @@ export function formatMonthYear(monday: Date): string {
   return `${startMonth}, ${startYear}`;
 }
 
-/**
- * Formata a duração em minutos de forma simplificada e legível.
- * Exemplos:
- *  - 60 -> "1h"
- *  - 120 -> "2h"
- *  - 30 -> "30min"
- *  - 90 -> "1h 30min"
- *  - 75 -> "1h 15min"
- */
 export function formatDuration(minutes: number | null | undefined): string {
   if (minutes === null || minutes === undefined || minutes <= 0) {
     return "";
@@ -184,13 +153,6 @@ export function formatDuration(minutes: number | null | undefined): string {
   return `${hours}h ${mins}min`;
 }
 
-/**
- * Converte minutos inteiros para string no formato "HH:mm" (usado por inputs de hora).
- * Exemplos:
- *  - 60 -> "01:00"
- *  - 30 -> "00:30"
- *  - 90 -> "01:30"
- */
 export function minutesToTimeString(minutes: number | null | undefined): string {
   if (minutes === null || minutes === undefined || minutes <= 0) {
     return "";
@@ -202,13 +164,6 @@ export function minutesToTimeString(minutes: number | null | undefined): string 
   return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
-/**
- * Converte string no formato "HH:mm" ou "H:mm" para minutos inteiros.
- * Exemplos:
- *  - "01:00" ou "1:00" -> 60
- *  - "00:30" ou "0:30" -> 30
- *  - "01:30" ou "1:30" -> 90
- */
 export function timeStringToMinutes(timeStr: string | null | undefined): number | null {
   if (!timeStr || typeof timeStr !== "string") {
     return null;
@@ -231,22 +186,12 @@ export function timeStringToMinutes(timeStr: string | null | undefined): number 
   return total > 0 ? total : null;
 }
 
-/**
- * Converte entradas em linguagem natural ou abreviada para minutos inteiros.
- * Exemplos aceitos:
- *  - "30", "30m", "30min", "30 minutos" -> 30
- *  - "1h", "1 h", "1 hora", "1hr" -> 60
- *  - "1:30", "1h30", "1h 30m", "1h 30min", "1.5h", "1,5h" -> 90
- *  - "2h", "2:00", "2 hrs" -> 120
- *  - "2h15", "2h 15m" -> 135
- *  - "" ou inválido -> null
- */
 export function parseNaturalDuration(input: string | null | undefined): number | null {
   if (!input || typeof input !== "string") return null;
   const str = input.trim().toLowerCase().replace(/,/g, ".");
   if (!str) return null;
 
-  // Formato "1:30", "0:45", "2:00", "01:30"
+  // Format "1:30", "0:45", "2:00", "01:30"
   const colonMatch = str.match(/^(\d{1,2}):(\d{1,2})$/);
   if (colonMatch) {
     const h = parseInt(colonMatch[1], 10);
@@ -257,8 +202,8 @@ export function parseNaturalDuration(input: string | null | undefined): number |
     }
   }
 
-  // Formato decimal de horas: "1.5h", "0.5h", "2.5h", "1.5 horas"
-  const decimalHourMatch = str.match(/^(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hora|horas)$/);
+  // Decimal hours format: "1.5h", "0.5h", "2.5h", "1.5 hours", "1.5 horas"
+  const decimalHourMatch = str.match(/^(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours|hora|horas)$/);
   if (decimalHourMatch) {
     const hours = parseFloat(decimalHourMatch[1]);
     if (!isNaN(hours) && hours > 0) {
@@ -266,9 +211,9 @@ export function parseNaturalDuration(input: string | null | undefined): number |
     }
   }
 
-  // Formato composto: "1h30", "1h 30m", "1h 30min", "2h 15min"
+  // Combined format: "1h30", "1h 30m", "1h 30min", "2h 15min"
   const combinedMatch = str.match(
-    /^(\d+)\s*(?:h|hr|hrs|hora|horas)\s*(\d+)?\s*(?:m|min|mins|minuto|minutos)?$/
+    /^(\d+)\s*(?:h|hr|hrs|hour|hours|hora|horas)\s*(\d+)?\s*(?:m|min|mins|minute|minutes|minuto|minutos)?$/
   );
   if (combinedMatch) {
     const h = parseInt(combinedMatch[1], 10);
@@ -279,27 +224,24 @@ export function parseNaturalDuration(input: string | null | undefined): number |
     }
   }
 
-  // Formato apenas minutos: "30m", "30min", "45 mins", "15 minutos"
-  const minutesOnlyMatch = str.match(/^(\d+)\s*(?:m|min|mins|minuto|minutos)$/);
+  // Minutes only format: "30m", "30min", "45 mins", "15 minutes"
+  const minutesOnlyMatch = str.match(/^(\d+)\s*(?:m|min|mins|minute|minutes|minuto|minutos)$/);
   if (minutesOnlyMatch) {
     const m = parseInt(minutesOnlyMatch[1], 10);
     return !isNaN(m) && m > 0 ? m : null;
   }
 
-  // Apenas números puros sem unidade
+  // Pure numbers without unit
   const pureNumMatch = str.match(/^(\d+(?:\.\d+)?)$/);
   if (pureNumMatch) {
     const val = parseFloat(pureNumMatch[1]);
     if (!isNaN(val) && val > 0) {
       if (str.includes(".")) {
-        // Ex: "1.5" -> 90 min, "0.5" -> 30 min
         return Math.round(val * 60);
       }
       if (val <= 12) {
-        // Ex: "1" -> 60 min (1h), "2" -> 120 min (2h)
         return Math.round(val * 60);
       }
-      // Ex: "15", "30", "45", "90" -> minutos
       return Math.round(val);
     }
   }
@@ -307,10 +249,6 @@ export function parseNaturalDuration(input: string | null | undefined): number |
   return null;
 }
 
-/**
- * Formata uma data ISO 'YYYY-MM-DD' para formato abreviado legível.
- * Ex: "2026-09-08" -> "Ter, 08/09"
- */
 export function formatDayShort(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
   const parts = dateStr.split("-").map(Number);
@@ -318,7 +256,5 @@ export function formatDayShort(dateStr: string | null | undefined): string {
   const [year, month, day] = parts;
   const d = new Date(year, month - 1, day);
   const dayOfWeek = d.getDay();
-  return `${DAY_NAMES_SHORT[dayOfWeek]}, ${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}`;
+  return `${DAY_NAMES_SHORT[dayOfWeek]}, ${MONTH_NAMES_SHORT[month - 1]} ${day}`;
 }
-
-

@@ -12,7 +12,7 @@ export async function getUserPreferencesAction(): Promise<{
 }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -24,8 +24,8 @@ export async function getUserPreferencesAction(): Promise<{
 
     return { preferences: user?.preferences || DEFAULT_USER_PREFERENCES };
   } catch (err: unknown) {
-    console.error("Erro ao buscar preferências:", err);
-    return { error: "Erro ao buscar preferências." };
+    console.error("Error fetching preferences:", err);
+    return { error: "Failed to fetch preferences." };
   }
 }
 
@@ -38,7 +38,7 @@ export async function updateUserPreferencesAction(
 }> {
   const session = await getSessionUser();
   if (!session) {
-    return { error: "Não autenticado." };
+    return { error: "Not authenticated." };
   }
 
   try {
@@ -62,7 +62,7 @@ export async function updateUserPreferencesAction(
     revalidatePath("/");
     return { success: true, preferences: mergedPreferences };
   } catch (err: unknown) {
-    console.error("Erro ao atualizar preferências:", err);
-    return { error: "Erro ao salvar preferências." };
+    console.error("Error updating preferences:", err);
+    return { error: "Failed to save preferences." };
   }
 }

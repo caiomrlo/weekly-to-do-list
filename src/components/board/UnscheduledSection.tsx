@@ -48,7 +48,7 @@ export function UnscheduledSection({
 
   return (
     <section className="mt-6 glass-panel rounded-3xl p-5 sm:p-6 border border-white/80 dark:border-slate-800 shadow-sm transition-all">
-      {/* Header da Seção */}
+      {/* Section Header */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200/50 dark:border-slate-800/60">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-2xs">
@@ -56,10 +56,10 @@ export function UnscheduledSection({
           </div>
           <div className="flex items-center gap-2">
             <h2 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 tracking-tight">
-              Tarefas sem data
+              Unscheduled
             </h2>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
-              {pendingCount} {pendingCount === 1 ? "pendente" : "pendentes"}
+              {pendingCount} {pendingCount === 1 ? "pending" : "pending"}
             </span>
           </div>
         </div>
@@ -68,10 +68,10 @@ export function UnscheduledSection({
           type="button"
           onClick={onToggleOpen}
           className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 dark:hover:text-slate-200 dark:hover:bg-slate-800/80 transition-all cursor-pointer flex items-center gap-1 text-xs font-medium"
-          title={isOpen ? "Recolher seção" : "Expandir seção"}
+          title={isOpen ? "Collapse section" : "Expand section"}
         >
           <span className="text-[11px] hidden sm:inline text-slate-500 dark:text-slate-400">
-            {isOpen ? "Recolher" : "Expandir"}
+            {isOpen ? "Collapse" : "Expand"}
           </span>
           <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
@@ -81,10 +81,9 @@ export function UnscheduledSection({
         </button>
       </div>
 
-      {/* Conteúdo Expansível */}
       {isOpen && (
         <div className="pt-4 space-y-4">
-          {/* Dropzone dedicada para a seção durante arrastes */}
+          {/* Drag dropzone */}
           {draggedTaskId && (
             <div
               onDragOver={(e) => handleColumnDragOver(e, "unscheduled")}
@@ -95,11 +94,11 @@ export function UnscheduledSection({
                   : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-indigo-300 hover:text-indigo-500 bg-white/30 dark:bg-slate-800/30"
               }`}
             >
-              <span>Mover para Tarefas sem data</span>
+              <span>Move to Unscheduled</span>
             </div>
           )}
 
-          {/* Grid Responsivo de Cards */}
+          {/* Cards Grid */}
           {unscheduledTasks.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {unscheduledTasks.map((mainTask) => {
@@ -122,7 +121,7 @@ export function UnscheduledSection({
                       onToggleCompleted={onToggleCompleted}
                     />
 
-                    {/* Subtarefas da tarefa sem data */}
+                    {/* Subtasks */}
                     {subtasksOfMain.length > 0 && (
                       <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 dark:border-indigo-800/60 space-y-1.5 my-1">
                         {subtasksOfMain.map((sub) => (
@@ -150,11 +149,11 @@ export function UnscheduledSection({
             </div>
           ) : (
             <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
-              Nenhuma tarefa sem data no momento. Arraste tarefas de qualquer dia para cá ou use o campo abaixo.
+              No unscheduled tasks right now. Drag tasks here from any day or use the input below.
             </div>
           )}
 
-          {/* Input Quick Add Dedicado */}
+          {/* Inline Quick Add Input */}
           <div className="max-w-md pt-1">
             <div className="relative">
               <input
@@ -167,7 +166,7 @@ export function UnscheduledSection({
                     onQuickAddSubmit();
                   }
                 }}
-                placeholder="+ Nova tarefa sem data... (Enter para adicionar)"
+                placeholder="+ New unscheduled task... (Press Enter to add)"
                 className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/70 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
               />
               {Boolean(quickAddTitle.trim()) && (
@@ -175,7 +174,7 @@ export function UnscheduledSection({
                   type="button"
                   onClick={onQuickAddSubmit}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
-                  title="Adicionar"
+                  title="Add"
                 >
                   <Plus className="w-4 h-4" />
                 </button>

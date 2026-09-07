@@ -39,3 +39,13 @@ Always validate your changes before considering a task completed:
   - Changes in authentication, session management, or authorization strategies.
   - Introduction of new infrastructure components, external integrations, services, or significant package additions.
 
+## 5. Language & Localization Standard
+- **English Everywhere**: All UI text, placeholder copy, button labels, notifications, toast messages, server action responses, error messages, and logs must be in English.
+
+## 6. Strategic Code Commenting
+- **Self-Documenting Code First**: Write clear, intention-revealing code (descriptive naming and modular structure) rather than adding explanatory comments.
+- **Keep Only Essential Comments**:
+  - **Allowed**: Non-obvious workarounds, browser quirks, external API edge cases, performance trade-offs, and critical security/regex constraints.
+  - **Forbidden**: Comments that narrate *what* the code does, redundant descriptions, and dead/commented-out code. Always write retained comments in English.
+
+
