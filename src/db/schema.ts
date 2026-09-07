@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb, AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb, index, AnyPgColumn } from "drizzle-orm/pg-core";
 
 export interface UserPreferences {
   showSaturday?: boolean;
@@ -51,6 +51,29 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const attachments = pgTable(
+  "attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    fileName: varchar("file_name", { length: 255 }).notNull(),
+    filePath: text("file_path").notNull(), // Caminho relativo no R2 (ex: files/{attachmentId}/{fileName})
+    contentType: varchar("content_type", { length: 100 }).notNull(),
+    fileSize: integer("file_size").notNull(), // Tamanho em bytes
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("attachments_task_id_idx").on(table.taskId),
+    index("attachments_user_id_idx").on(table.userId),
+  ]
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
@@ -60,10 +83,14 @@ export type NewTag = typeof tags.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 
+export type Attachment = typeof attachments.$inferSelect;
+export type NewAttachment = typeof attachments.$inferInsert;
+
 export type TaskWithTag = Task & {
   tag?: Tag | null;
   parent?: { id: string; title: string } | null;
   subtaskCount?: number;
   completedSubtaskCount?: number;
+  attachmentCount?: number;
 };
 

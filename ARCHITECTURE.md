@@ -11,10 +11,14 @@ weekly-to-do-list/
 ├── src/
 │   ├── app/                      # Next.js 16 App Router pages, layouts, and server actions
 │   │   ├── actions/              # Typed Next.js Server Actions (RPC layer)
+│   │   │   ├── attachments.ts    # Attachment actions (getTaskAttachments, uploadAttachment, deleteAttachment)
 │   │   │   ├── auth.ts           # Authentication actions (login, register, logout)
 │   │   │   ├── tags.ts           # Tag actions (getUserTags, createTag, deleteTag)
 │   │   │   ├── tasks.ts          # Task actions (CRUD, status toggling, range querying, tag joins)
 │   │   │   └── user.ts           # User preference actions (getUserPreferences, updateUserPreferences)
+│   │   ├── api/                  # Next.js Route Handlers
+│   │   │   └── attachments/      # Secure authenticated attachment retrieval
+│   │   │       └── [id]/route.ts # Presigned R2 redirect/streaming route handler
 │   │   ├── login/                # Authentication route (/login)
 │   │   │   └── page.tsx          # Login & registration glassmorphism card
 │   │   ├── favicon.ico           # Application favicon
@@ -30,6 +34,7 @@ weekly-to-do-list/
 │   │   │   ├── ViewSettingsMenu.tsx # Popover menu for toggling Saturday/Sunday visibility
 │   │   │   └── WeeklyHeader.tsx  # Board navigation header, date display, theme and logout
 │   │   ├── task-modal/           # Task details modal specialized subcomponents
+│   │   │   ├── TaskAttachmentsSection.tsx # Dropzone, image/PDF cards and attachment management
 │   │   │   ├── TaskModalFooter.tsx # Modal footer with cascade delete confirmation
 │   │   │   ├── TaskParentBanner.tsx # Visual banner for subtask parent linkage
 │   │   │   ├── TaskScheduleInputs.tsx # Inline date, time, and natural duration inputs
@@ -47,6 +52,7 @@ weekly-to-do-list/
 │   │   │   └── useTodayDateStr.ts # useSyncExternalStore hook for zero-mismatch today date string
 │   │   ├── auth.ts               # JWT token signing/verification (jose) and bcryptjs password hashing
 │   │   ├── date-utils.ts         # Timezone-immune date arithmetic and week interval formatters
+│   │   ├── r2.ts                 # Cloudflare R2 S3 client, file path generator, and presigned URLs
 │   │   └── tag-utils.ts          # Tag color tokens and visual badge style helpers
 │   └── middleware.ts             # Edge middleware for route protection and auth redirection
 ├── drizzle/                      # Drizzle Kit migration files and metadata
@@ -140,12 +146,15 @@ flowchart TD
   - **Top-Down Cognitive Hierarchy**: Sequence layout flow consistently: Primary Identity/Action -> Inline Metadata -> Core Content -> Nested/Relational Artifacts.
 
 ### 3.2. Backend Services & Server Actions
-- **Architecture Pattern**: Next.js Server Actions with direct Drizzle ORM queries and optimistic client synchronization.
+- **Architecture Pattern**: Next.js Server Actions with direct Drizzle ORM queries, optimistic client synchronization, and dedicated Route Handlers for binary media serving.
 - **Key Action Modules**:
+  - **`src/app/actions/attachments.ts`**: Provides `getTaskAttachmentsAction`, `uploadAttachmentAction` (multipart buffer upload to R2, MIME type and size validation, database persistence with automated rollback), and `deleteAttachmentAction` (deletes object from R2 and removes database row).
   - **`src/app/actions/auth.ts`**: Handles registration (email uniqueness check, bcrypt hashing), login (password comparison, `lastLoginAt` update), and logout with HTTP-only cookie invalidation.
   - **`src/app/actions/tags.ts`**: Provides `getUserTagsAction`, `createTagAction` (color-validated), and `deleteTagAction`.
-  - **`src/app/actions/tasks.ts`**: Provides `getWeekTasksAction` (ordered by `tasks.order` and `tasks.createdAt`, joined with `tags` and aliased parent `tasks`, aggregating subtask completion stats), `getSubtasksAction`, `getTaskByIdAction`, `createTaskAction` (with `order` calculation, `parentId`, and 1-level nesting validation), `toggleTaskStatusAction`, `updateTaskAction` (partial updates for auto-save, tag assignment, and subtask recount), `deleteTaskAction` (with automatic cascade deletion of child subtasks), and `moveOrReorderTasksAction` (atomic reordering, cross-day task moving with same-day subtask batch migration, and nesting/un-nesting).
+  - **`src/app/actions/tasks.ts`**: Provides `getWeekTasksAction` (ordered by `tasks.order` and `tasks.createdAt`, joined with `tags`, aliased parent `tasks`, aggregating subtask and attachment stats), `getSubtasksAction`, `getTaskByIdAction`, `createTaskAction`, `toggleTaskStatusAction`, `updateTaskAction`, `deleteTaskAction` (with cascade deletion of child subtasks and batch physical cleanup of attachments from Cloudflare R2), and `moveOrReorderTasksAction`.
   - **`src/app/actions/user.ts`**: Provides `getUserPreferencesAction` and `updateUserPreferencesAction` for user-level JSON preferences persistence (e.g. `showSaturday`, `showSunday`, `theme`).
+- **Route Handlers**:
+  - **`src/app/api/attachments/[id]/route.ts`**: Authenticated GET endpoint validating session and attachment ownership, redirecting (HTTP 307) to expiring presigned Cloudflare R2 URLs for secure in-browser viewing or download.
 - **Route Middleware (`src/middleware.ts`)**: Intercepts requests on the Edge runtime, decrypts and validates JWT session tokens from the `auth_token` cookie, preventing unauthorized access to `/` and redirecting authenticated users away from `/login`.
 
 ---
@@ -186,12 +195,27 @@ flowchart TD
   - `order` (`integer`, Default `0`, Not Null) — *Determines custom ordering within day columns and subtask lists.*
   - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
   - `updated_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+- **`attachments` Table**:
+  - `id` (`uuid`, Primary Key, `defaultRandom()`)
+  - `task_id` (`uuid`, Foreign Key -> `tasks.id`, `onDelete: 'cascade'`, Not Null)
+  - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
+  - `file_name` (`varchar(255)`, Original filename for UI display, Not Null)
+  - `file_path` (`text`, Relative object path in Cloudflare R2 e.g. `files/{attachmentId}/{sanitizedFileName}`, Not Null)
+  - `content_type` (`varchar(100)`, MIME type e.g. `image/png`, `application/pdf`, Not Null)
+  - `file_size` (`integer`, File size in bytes, Not Null)
+  - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+  - `updated_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+  - *Indexes*: `attachments_task_id_idx` on `task_id`, `attachments_user_id_idx` on `user_id`.
 
 ---
 
 ## 5. External Integrations & APIs
 
-- **External Third-Party APIs**: N/A (Self-contained standalone application).
+- **Object Storage (Cloudflare R2)**:
+  - S3-compatible cloud object storage without egress fees.
+  - Interfaced via `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner`.
+  - Enforces private bucket security model; objects accessed exclusively via authenticated signed URLs generated on-demand (`files/{attachmentId}/{fileName}`).
+  - Automated physical file deletion on task and attachment removal.
 - **Static Assets & Fonts**: Google Fonts (`Geist` and `Geist_Mono`) via `next/font/google`.
 
 ---

@@ -1,8 +1,9 @@
 "use server";
 
 import { db } from "@/db";
-import { tasks, tags, TaskWithTag } from "@/db/schema";
+import { tasks, tags, attachments, TaskWithTag } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { deleteManyFromR2 } from "@/lib/r2";
 import { and, eq, gte, lte, asc, isNotNull, sql, or, isNull, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
@@ -19,7 +20,7 @@ export async function getWeekTasksAction(
   try {
     const parentTasks = alias(tasks, "parent_task");
 
-    const [rows, subtaskStats] = await Promise.all([
+    const [rows, subtaskStats, attachmentStats] = await Promise.all([
       db
         .select({
           task: tasks,
@@ -58,6 +59,14 @@ export async function getWeekTasksAction(
         .from(tasks)
         .where(and(eq(tasks.userId, session.userId), isNotNull(tasks.parentId)))
         .groupBy(tasks.parentId),
+      db
+        .select({
+          taskId: attachments.taskId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(attachments)
+        .where(eq(attachments.userId, session.userId))
+        .groupBy(attachments.taskId),
     ]);
 
     const statsMap = new Map<string, { total: number; completed: number }>();
@@ -70,6 +79,13 @@ export async function getWeekTasksAction(
       }
     }
 
+    const attachmentStatsMap = new Map<string, number>();
+    for (const a of attachmentStats) {
+      if (a.taskId) {
+        attachmentStatsMap.set(a.taskId, Number(a.total) || 0);
+      }
+    }
+
     const list: TaskWithTag[] = rows.map((r) => {
       const stats = statsMap.get(r.task.id);
       return {
@@ -78,6 +94,7 @@ export async function getWeekTasksAction(
         parent: r.parent?.id ? r.parent : null,
         subtaskCount: stats?.total || 0,
         completedSubtaskCount: stats?.completed || 0,
+        attachmentCount: attachmentStatsMap.get(r.task.id) || 0,
       };
     });
 
@@ -143,7 +160,7 @@ export async function getTaskByIdAction(
 
   try {
     const parentTasks = alias(tasks, "parent_task");
-    const [rows, [stats]] = await Promise.all([
+    const [rows, [stats], [attachmentStat]] = await Promise.all([
       db
         .select({
           task: tasks,
@@ -164,6 +181,12 @@ export async function getTaskByIdAction(
         })
         .from(tasks)
         .where(and(eq(tasks.userId, session.userId), eq(tasks.parentId, taskId))),
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+        })
+        .from(attachments)
+        .where(and(eq(attachments.userId, session.userId), eq(attachments.taskId, taskId))),
     ]);
 
     if (!rows.length) {
@@ -176,6 +199,7 @@ export async function getTaskByIdAction(
       parent: rows[0].parent?.id ? rows[0].parent : null,
       subtaskCount: stats?.total || 0,
       completedSubtaskCount: stats?.completed || 0,
+      attachmentCount: attachmentStat?.total || 0,
     };
 
     return { task: item };
@@ -333,7 +357,7 @@ export async function updateTaskAction(
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
 
     const parentTasks = alias(tasks, "parent_task");
-    const [rows, [stats]] = await Promise.all([
+    const [rows, [stats], [attachmentStat]] = await Promise.all([
       db
         .select({
           task: tasks,
@@ -354,6 +378,12 @@ export async function updateTaskAction(
         })
         .from(tasks)
         .where(and(eq(tasks.userId, session.userId), eq(tasks.parentId, taskId))),
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+        })
+        .from(attachments)
+        .where(and(eq(attachments.userId, session.userId), eq(attachments.taskId, taskId))),
     ]);
 
     if (!rows.length) {
@@ -366,6 +396,7 @@ export async function updateTaskAction(
       parent: rows[0].parent?.id ? rows[0].parent : null,
       subtaskCount: stats?.total || 0,
       completedSubtaskCount: stats?.completed || 0,
+      attachmentCount: attachmentStat?.total || 0,
     };
 
     revalidatePath("/");
@@ -385,6 +416,34 @@ export async function deleteTaskAction(
   }
 
   try {
+    // 1. Busca anexos da tarefa e de suas subtarefas para limpeza no Cloudflare R2
+    const taskIdsToDelete = [
+      taskId,
+      ...(
+        await db
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(and(eq(tasks.parentId, taskId), eq(tasks.userId, session.userId)))
+      ).map((t) => t.id),
+    ];
+
+    const taskAttachments = await db
+      .select({ filePath: attachments.filePath })
+      .from(attachments)
+      .where(
+        and(
+          inArray(attachments.taskId, taskIdsToDelete),
+          eq(attachments.userId, session.userId)
+        )
+      );
+
+    if (taskAttachments.length > 0) {
+      await deleteManyFromR2(taskAttachments.map((a) => a.filePath)).catch((r2Err) =>
+        console.error("Aviso: Falha ao excluir arquivos do R2 durante deleteTaskAction:", r2Err)
+      );
+    }
+
+    // 2. Exclui a tarefa no banco (cascade cuidará de subtarefas e linhas de attachments)
     await db
       .delete(tasks)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));

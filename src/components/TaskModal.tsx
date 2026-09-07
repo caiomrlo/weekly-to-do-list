@@ -16,7 +16,9 @@ import { TaskParentBanner } from "./task-modal/TaskParentBanner";
 import { TaskScheduleInputs } from "./task-modal/TaskScheduleInputs";
 import { TaskTagSelector } from "./task-modal/TaskTagSelector";
 import { TaskSubtasksSection } from "./task-modal/TaskSubtasksSection";
+import { TaskAttachmentsSection } from "./task-modal/TaskAttachmentsSection";
 import { TaskModalFooter } from "./task-modal/TaskModalFooter";
+import { getTaskAttachmentsAction, AttachmentWithUrl } from "@/app/actions/attachments";
 import { X, CheckCircle2, Circle, Loader2 } from "lucide-react";
 
 export interface TaskModalProps {
@@ -61,12 +63,32 @@ function TaskModalDialog({
   const [subtasks, setSubtasks] = useState<TaskWithTag[]>([]);
   const [isLoadingSubtasks, setIsLoadingSubtasks] = useState(!task.parentId);
 
+  // Attachments state
+  const [attachments, setAttachments] = useState<AttachmentWithUrl[]>([]);
+  const [isLoadingAttachments, setIsLoadingAttachments] = useState(true);
+
   // User tags state
   const [userTags, setUserTags] = useState<Tag[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch attachments for this task
+  useEffect(() => {
+    let isMounted = true;
+    getTaskAttachmentsAction(task.id).then((res) => {
+      if (isMounted) {
+        if (res.attachments) {
+          setAttachments(res.attachments);
+        }
+        setIsLoadingAttachments(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [task.id]);
 
   // Fetch subtasks if task is a main task
   useEffect(() => {
@@ -278,6 +300,14 @@ function TaskModalDialog({
     await deleteTaskAction(subId);
   };
 
+  const handleAttachmentsChange = (updated: AttachmentWithUrl[]) => {
+    setAttachments(updated);
+    onTaskUpdated({
+      ...task,
+      attachmentCount: updated.length,
+    });
+  };
+
   const handleDelete = () => {
     startDeleteTransition(async () => {
       const res = await deleteTaskAction(task.id);
@@ -390,6 +420,14 @@ function TaskModalDialog({
               onChange={handleContentChange}
             />
           </div>
+
+          {/* Attachments Section */}
+          <TaskAttachmentsSection
+            taskId={task.id}
+            attachments={attachments}
+            isLoading={isLoadingAttachments}
+            onAttachmentsChange={handleAttachmentsChange}
+          />
 
           {/* Subtasks Section (Main tasks only) */}
           {!task.parentId && (
