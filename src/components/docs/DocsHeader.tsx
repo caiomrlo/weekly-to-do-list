@@ -1,59 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { UserPreferences } from "@/db/schema";
-import { formatMonthYear } from "@/lib/date-utils";
 import { logoutAction } from "@/app/actions/auth";
-import { ViewSettingsMenu } from "./ViewSettingsMenu";
 import {
   CalendarDays,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   Sun,
   Moon,
   LogOut,
 } from "lucide-react";
 
-interface WeeklyHeaderProps {
-  currentMonday: Date;
+interface DocsHeaderProps {
   userEmail: string;
-  isNavigating: boolean;
   isDarkMode: boolean;
-  preferences: UserPreferences;
-  visibleDaysCount: number;
-  onPrevWeek: () => void;
-  onNextWeek: () => void;
-  onGoToday: () => void;
   onToggleTheme: () => void;
-  onToggleDay: (dayKey: "showSaturday" | "showSunday") => void;
 }
 
-export function WeeklyHeader({
-  currentMonday,
+export function DocsHeader({
   userEmail,
-  isNavigating,
   isDarkMode,
-  preferences,
-  visibleDaysCount,
-  onPrevWeek,
-  onNextWeek,
-  onGoToday,
   onToggleTheme,
-  onToggleDay,
-}: WeeklyHeaderProps) {
+}: DocsHeaderProps) {
   return (
     <header className="sticky top-0 z-30 px-4 sm:px-8 py-3.5 glass-panel border-b border-white/60 dark:border-slate-800/80 mb-6">
       <div className="w-full flex items-center justify-between gap-4">
-        {/* Left: Title + Navigation Tabs */}
+        {/* Left: Brand Icon & Title + Nav Tabs */}
         <div className="flex items-center gap-3 sm:gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 flex-shrink-0">
-              <CalendarDays className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 flex-shrink-0">
+              <FileText className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                {formatMonthYear(currentMonday)}
+                Docs & Notes
               </h1>
             </div>
           </div>
@@ -61,14 +40,14 @@ export function WeeklyHeader({
           <nav className="flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
             <Link
               href="/"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all"
             >
               <CalendarDays className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Planner</span>
             </Link>
             <Link
               href="/docs"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs transition-all"
             >
               <FileText className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Docs</span>
@@ -76,48 +55,9 @@ export function WeeklyHeader({
           </nav>
         </div>
 
-        {/* Right Controls: Week Navigation + Theme Toggle + User Avatar Circle + Logout */}
+        {/* Right Controls: Theme Toggle + User Avatar + Logout */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Week Navigation Controls */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
-            <button
-              type="button"
-              onClick={onPrevWeek}
-              disabled={isNavigating}
-              className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Previous week"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={onGoToday}
-              disabled={isNavigating}
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/60 shadow-xs transition-all cursor-pointer"
-            >
-              Today
-            </button>
-
-            <button
-              type="button"
-              onClick={onNextWeek}
-              disabled={isNavigating}
-              className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Next week"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* View Settings Popover */}
-          <ViewSettingsMenu
-            preferences={preferences}
-            visibleDaysCount={visibleDaysCount}
-            onToggleDay={onToggleDay}
-          />
-
-          {/* Quick Dark Mode Toggle Button */}
+          {/* Theme Mode Toggle Button */}
           <button
             type="button"
             onClick={onToggleTheme}

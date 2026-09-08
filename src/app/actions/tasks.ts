@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { tasks, tags, projects, attachments, TaskWithTag } from "@/db/schema";
+import { tasks, tags, projects, attachments, taskDocs, TaskWithTag } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { deleteManyFromR2 } from "@/lib/r2";
 import { and, eq, gte, lte, asc, isNotNull, sql, or, isNull, inArray } from "drizzle-orm";
@@ -20,7 +20,7 @@ export async function getWeekTasksAction(
   try {
     const parentTasks = alias(tasks, "parent_task");
 
-    const [rows, subtaskStats, attachmentStats] = await Promise.all([
+    const [rows, subtaskStats, attachmentStats, docStats] = await Promise.all([
       db
         .select({
           task: tasks,
@@ -69,6 +69,14 @@ export async function getWeekTasksAction(
         .from(attachments)
         .where(eq(attachments.userId, session.userId))
         .groupBy(attachments.taskId),
+      db
+        .select({
+          taskId: taskDocs.taskId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(taskDocs)
+        .where(eq(taskDocs.userId, session.userId))
+        .groupBy(taskDocs.taskId),
     ]);
 
     const statsMap = new Map<string, { total: number; completed: number }>();
@@ -88,6 +96,13 @@ export async function getWeekTasksAction(
       }
     }
 
+    const docStatsMap = new Map<string, number>();
+    for (const d of docStats) {
+      if (d.taskId) {
+        docStatsMap.set(d.taskId, Number(d.total) || 0);
+      }
+    }
+
     const list: TaskWithTag[] = rows.map((r) => {
       const stats = statsMap.get(r.task.id);
       return {
@@ -98,6 +113,7 @@ export async function getWeekTasksAction(
         subtaskCount: stats?.total || 0,
         completedSubtaskCount: stats?.completed || 0,
         attachmentCount: attachmentStatsMap.get(r.task.id) || 0,
+        docCount: docStatsMap.get(r.task.id) || 0,
       };
     });
 
@@ -166,7 +182,7 @@ export async function getTaskByIdAction(
 
   try {
     const parentTasks = alias(tasks, "parent_task");
-    const [rows, [stats], [attachmentStat]] = await Promise.all([
+    const [rows, [stats], [attachmentStat], [docStat]] = await Promise.all([
       db
         .select({
           task: tasks,
@@ -195,6 +211,12 @@ export async function getTaskByIdAction(
         })
         .from(attachments)
         .where(and(eq(attachments.userId, session.userId), eq(attachments.taskId, taskId))),
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+        })
+        .from(taskDocs)
+        .where(and(eq(taskDocs.userId, session.userId), eq(taskDocs.taskId, taskId))),
     ]);
 
     if (!rows.length) {
@@ -209,6 +231,7 @@ export async function getTaskByIdAction(
       subtaskCount: stats?.total || 0,
       completedSubtaskCount: stats?.completed || 0,
       attachmentCount: attachmentStat?.total || 0,
+      docCount: docStat?.total || 0,
     };
 
     return { task: item };

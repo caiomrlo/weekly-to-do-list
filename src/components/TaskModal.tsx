@@ -17,6 +17,7 @@ import { TaskScheduleInputs } from "./task-modal/TaskScheduleInputs";
 import { TaskProjectSelector } from "./task-modal/TaskProjectSelector";
 import { TaskSubtasksSection } from "./task-modal/TaskSubtasksSection";
 import { TaskAttachmentsSection } from "./task-modal/TaskAttachmentsSection";
+import { TaskDocsSection } from "./task-modal/TaskDocsSection";
 import { TaskModalFooter } from "./task-modal/TaskModalFooter";
 import { getTaskAttachmentsAction, AttachmentWithUrl } from "@/app/actions/attachments";
 import { X, CheckCircle2, Circle, Loader2 } from "lucide-react";
@@ -309,6 +310,13 @@ function TaskModalDialog({
     });
   };
 
+  const handleDocsCountChange = (count: number) => {
+    onTaskUpdated({
+      ...task,
+      docCount: count,
+    });
+  };
+
   const handleDelete = () => {
     startDeleteTransition(async () => {
       const res = await deleteTaskAction(task.id);
@@ -418,6 +426,11 @@ function TaskModalDialog({
             attachments={attachments}
             isLoading={isLoadingAttachments}
             onAttachmentsChange={handleAttachmentsChange}
+          />
+
+          <TaskDocsSection
+            taskId={task.id}
+            onDocsCountChange={handleDocsCountChange}
           />
 
           {!task.parentId && (

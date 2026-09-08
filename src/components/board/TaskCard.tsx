@@ -14,6 +14,7 @@ import {
   Clock,
   Timer,
   Paperclip,
+  FileText,
 } from "lucide-react";
 
 interface TaskCardProps {
@@ -231,6 +232,27 @@ export function TaskCard({
                   }`}
                 />
                 <span>{task.attachmentCount}</span>
+              </span>
+            )}
+
+            {/* Doc count badge */}
+            {Boolean(task.docCount != null && task.docCount > 0) && (
+              <span
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
+                  task.completed
+                    ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                    : "bg-slate-50/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60"
+                }`}
+                title={`Linked docs: ${task.docCount}`}
+              >
+                <FileText
+                  className={`w-2.5 h-2.5 ${
+                    task.completed
+                      ? "text-slate-400 dark:text-slate-500"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                />
+                <span>{task.docCount}</span>
               </span>
             )}
 

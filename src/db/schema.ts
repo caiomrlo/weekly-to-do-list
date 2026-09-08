@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb, index, AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb, index, uniqueIndex, AnyPgColumn } from "drizzle-orm/pg-core";
 
 export interface UserPreferences {
   showSaturday?: boolean;
@@ -54,9 +54,9 @@ export const tasks = pgTable("tasks", {
   parentId: uuid("parent_id").references((): AnyPgColumn => tasks.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 500 }).notNull(),
   content: text("content").default("").notNull(),
-  date: date("date"), // Formato 'YYYY-MM-DD' opcional (nulo para tarefas sem data fixa)
-  time: varchar("time", { length: 5 }), // Formato opcional 'HH:mm'
-  duration: integer("duration"), // Duração estimada em minutos (ex: 30, 60, 90)
+  date: date("date"), // 'YYYY-MM-DD' 
+  time: varchar("time", { length: 5 }), // 'HH:mm'
+  duration: integer("duration"), // (ex: 30, 60, 90)
   completed: boolean("completed").default(false).notNull(),
   order: integer("order").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -74,16 +74,62 @@ export const attachments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     fileName: varchar("file_name", { length: 255 }).notNull(),
-    filePath: text("file_path").notNull(), // Caminho relativo no R2 (ex: files/{attachmentId}/{fileName})
-    thumbnailPath: text("thumbnail_path"), // Caminho relativo da thumbnail no R2 (ex: files/{attachmentId}/thumb.webp)
+    filePath: text("file_path").notNull(), // (ex: files/{attachmentId}/{fileName})
+    thumbnailPath: text("thumbnail_path"), // (ex: files/{attachmentId}/thumb.webp)
     contentType: varchar("content_type", { length: 100 }).notNull(),
-    fileSize: integer("file_size").notNull(), // Tamanho em bytes
+    fileSize: integer("file_size").notNull(), // bytes
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("attachments_task_id_idx").on(table.taskId),
     index("attachments_user_id_idx").on(table.userId),
+  ]
+);
+
+export const docs = pgTable(
+  "docs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+    title: varchar("title", { length: 255 }).default("Untitled Document").notNull(),
+    content: text("content").default("").notNull(),
+    isFavorite: boolean("is_favorite").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("docs_user_id_idx").on(table.userId),
+    index("docs_project_id_idx").on(table.projectId),
+    index("docs_favorite_idx").on(table.userId, table.isFavorite),
+  ]
+);
+
+export const taskDocs = pgTable(
+  "task_docs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    docId: uuid("doc_id")
+      .notNull()
+      .references(() => docs.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("task_docs_task_doc_unique_idx").on(table.taskId, table.docId),
+    index("task_docs_task_id_idx").on(table.taskId),
+    index("task_docs_doc_id_idx").on(table.docId),
+    index("task_docs_user_id_idx").on(table.userId),
   ]
 );
 
@@ -102,6 +148,12 @@ export type NewTask = typeof tasks.$inferInsert;
 export type Attachment = typeof attachments.$inferSelect;
 export type NewAttachment = typeof attachments.$inferInsert;
 
+export type Doc = typeof docs.$inferSelect;
+export type NewDoc = typeof docs.$inferInsert;
+
+export type TaskDoc = typeof taskDocs.$inferSelect;
+export type NewTaskDoc = typeof taskDocs.$inferInsert;
+
 export type TaskWithTag = Task & {
   tag?: Tag | null;
   project?: Project | null;
@@ -109,8 +161,21 @@ export type TaskWithTag = Task & {
   subtaskCount?: number;
   completedSubtaskCount?: number;
   attachmentCount?: number;
+  docCount?: number;
 };
 
 export type TaskWithProject = TaskWithTag;
 export type TaskWithRelations = TaskWithTag;
+
+export type DocWithRelations = Doc & {
+  project?: Project | null;
+  taskCount?: number;
+  tasks?: Array<{
+    id: string;
+    title: string;
+    completed: boolean;
+    date?: string | null;
+  }>;
+};
+
 

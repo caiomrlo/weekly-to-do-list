@@ -13,6 +13,7 @@ weekly-to-do-list/
 │   │   ├── actions/              # Typed Next.js Server Actions (RPC layer)
 │   │   │   ├── attachments.ts    # Attachment actions (getTaskAttachments, uploadAttachment, deleteAttachment)
 │   │   │   ├── auth.ts           # Authentication actions (login, register, logout)
+│   │   │   ├── docs.ts           # Document actions (getUserDocs, getDocById, createDoc, updateDoc, deleteDoc, link/unlink task)
 │   │   │   ├── projects.ts       # Project actions (getUserProjects, createProject, deleteProject)
 │   │   │   ├── tags.ts           # Tag actions (getUserTags, createTag, deleteTag)
 │   │   │   ├── tasks.ts          # Task actions (CRUD, status toggling, range querying, tag/project joins)
@@ -20,6 +21,10 @@ weekly-to-do-list/
 │   │   ├── api/                  # Next.js Route Handlers
 │   │   │   └── attachments/      # Secure authenticated attachment retrieval
 │   │   │       └── [id]/route.ts # Presigned R2 redirect/streaming route handler
+│   │   ├── docs/                 # Document workspace routes (/docs and /docs/[id])
+│   │   │   ├── [id]/             # Dynamic document route (/docs/[id])
+│   │   │   │   └── page.tsx      # Deep link & direct document loader
+│   │   │   └── page.tsx          # Master-detail docs workspace root
 │   │   ├── login/                # Authentication route (/login)
 │   │   │   └── page.tsx          # Login & registration glassmorphism card
 │   │   ├── favicon.ico           # Application favicon
@@ -34,8 +39,17 @@ weekly-to-do-list/
 │   │   │   ├── UnscheduledSection.tsx # Collapsible backlog panel for unscheduled tasks
 │   │   │   ├── ViewSettingsMenu.tsx # Popover menu for toggling Saturday/Sunday visibility
 │   │   │   └── WeeklyHeader.tsx  # Board navigation header, date display, theme and logout
+│   │   ├── docs/                 # Document management components and editor
+│   │   │   ├── DocEditor.tsx     # Active document editor with title, project picker and autosave
+│   │   │   ├── DocLinkedTasksSection.tsx # Linked tasks chips, jump and unlinking
+│   │   │   ├── DocProjectSelector.tsx # Project picker dropdown for documents
+│   │   │   ├── DocRichEditor.tsx # Full WYSIWYG editor with rich formatting toolbar via Tiptap
+│   │   │   ├── DocsHeader.tsx    # Header with navigation tabs, theme toggle and logout
+│   │   │   ├── DocsSidebar.tsx   # Sidebar with search, favorite/project filtering and doc list
+│   │   │   └── DocsWorkspace.tsx # Responsive master-detail split-pane orchestrator
 │   │   ├── task-modal/           # Task details modal specialized subcomponents
 │   │   │   ├── TaskAttachmentsSection.tsx # Dropzone, image/PDF cards and attachment management
+│   │   │   ├── TaskDocsSection.tsx # Linked docs chips, quick doc creation and doc linker popover
 │   │   │   ├── TaskModalFooter.tsx # Modal footer with cascade delete confirmation
 │   │   │   ├── TaskParentBanner.tsx # Visual banner for subtask parent linkage
 │   │   │   ├── TaskScheduleInputs.tsx # Inline date, time, and natural duration inputs
@@ -87,11 +101,13 @@ flowchart TD
         subgraph UI["Frontend UI (React 19)"]
             LoginPage["/login (LoginPage)"]
             WeeklyBoard["/ (WeeklyBoard Component)"]
-            TaskModal["TaskModal (Project Selector & Auto-Save)"]
+            DocsWorkspace["/docs (DocsWorkspace Component)"]
+            TaskModal["TaskModal (Project Selector, Attachments, Docs & Auto-Save)"]
         end
 
         subgraph ServerActions["Server Actions (app/actions/*)"]
             AuthActions["Auth Actions\n(login, register, logout)"]
+            DocActions["Doc Actions\n(getDocs, getDocById, createDoc, updateDoc, deleteDoc, link/unlink)"]
             ProjectActions["Project Actions\n(getProjects, createProject, deleteProject)"]
             TagActions["Tag Actions (Backend)\n(getTags, createTag, deleteTag)"]
             TaskActions["Task Actions\n(create, update, toggle, delete, move/reorder, query with projects/tags)"]
@@ -108,12 +124,13 @@ flowchart TD
 
     subgraph DataLayer["Persistence Layer"]
         Drizzle["Drizzle ORM (node-postgres pool)"]
-        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• projects\n• tags\n• tasks\n• attachments")]
+        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• projects\n• tags\n• tasks\n• attachments\n• docs\n• task_docs")]
     end
 
     %% Flow connections
     User -->|"HTTP Request"| Middleware
     Middleware -->|"Authorized (Cookie Valid)"| WeeklyBoard
+    Middleware -->|"Authorized (Cookie Valid)"| DocsWorkspace
     Middleware -->|"Unauthorized"| LoginPage
     LoginPage -->|"Submit Credentials"| AuthActions
     AuthActions --> AuthLib
@@ -121,8 +138,11 @@ flowchart TD
     WeeklyBoard -->|"Manage Tasks / Navigate Weeks"| TaskActions
     WeeklyBoard -->|"Toggle Visible Days"| UserActions
     WeeklyBoard --> TaskModal
+    DocsWorkspace -->|"Manage Documents & Notes"| DocActions
     TaskModal -->|"Manage Projects"| ProjectActions
     TaskModal -->|"Debounced Auto-Save"| TaskActions
+    TaskModal -->|"Link & Create Notes"| DocActions
+    DocActions --> Drizzle
     WeeklyBoard --> DateUtils
     WeeklyBoard --> ProjectUtils
     TaskActions --> Drizzle
@@ -142,7 +162,8 @@ flowchart TD
 - **Icons**: `lucide-react` vector icons.
 - **Key UI Modules**:
   - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Renders interactive weekly board with configurable day visibility (Saturday and Sunday hidden by default, toggled via glassmorphic View Popover), fast Dark Mode quick-toggle in the top header with `useSyncExternalStore` DOM synchronization, dynamic grid layout (5, 6, or 7 columns), highlights the current day ("Hoje"), provides week navigation buttons (Previous, Today, Next), renders tag badges per task, displays hierarchical same-day subtasks with indentation and guide lines, indicates cross-day subtasks with parent indicator pills, shows subtask completion progress counters (e.g. `1/3`), provides a persistent collapsible bottom panel for **"Tarefas sem data"** (continuous backlog with responsive grid and inline quick-add), supports optimistic inline task creation via `+ Nova tarefa`, and implements a fluid **Native HTML5 Drag and Drop** system allowing users to reorder tasks within a day, migrate tasks between days, move tasks bidirectionally between days and the unscheduled section, nest tasks as subtasks when dropped onto the center of another top-level task (enforcing the 1-level nesting limit), and drag subtasks out to day columns to make them independent.
-  - **`TaskModal` (`src/components/TaskModal.tsx`)**: Self-contained details modal with tag selection & inline creation (8 palette colors with dark-mode variants), rich WYSIWYG description editor (`TaskDescriptionEditor` powered by Tiptap with dark theme support), debounced auto-save (600ms latency), date rescheduling picker, optional time setter (`HH:mm`), subtasks management section (quick inline creation with Enter, status toggle, date pills, deletion, and deep-link navigation), 1-level nesting enforcement, subtask parent header banner, and cascade deletion confirmation.
+  - **`TaskModal` (`src/components/TaskModal.tsx`)**: Self-contained details modal with tag selection & inline creation (8 palette colors with dark-mode variants), rich WYSIWYG description editor (`TaskDescriptionEditor` powered by Tiptap with dark theme support), linked documents section (`TaskDocsSection` supporting search, direct linking and inline creation of notes), debounced auto-save (600ms latency), date rescheduling picker, optional time setter (`HH:mm`), subtasks management section (quick inline creation with Enter, status toggle, date pills, deletion, and deep-link navigation), 1-level nesting enforcement, subtask parent header banner, and cascade deletion confirmation.
+  - **`DocsWorkspace` (`src/components/docs/DocsWorkspace.tsx`)**: Split-pane master-detail documentation workspace with real-time text and content search, project filtering, favorites filtering, instant document creation, rich WYSIWYG note editing (`DocRichEditor` powered by Tiptap), linked tasks section, and debounced auto-save.
   - **`LoginPage` (`src/app/login/page.tsx`)**: Minimalist authentication card with dark mode support, tab toggling between "Entrar" and "Criar Conta", password visibility toggle, and loading state transitions.
 - **Clean UI & Cognitive Load Reduction (Mandatory across all views, layouts & components)**:
   - **Inline Over Container Nesting**: Avoid "card-inside-card" fatigue. Group related metadata and controls horizontally into compact inline rows (subtle pills, semantic icons) instead of nested wrappers or heavy borders.
@@ -156,6 +177,7 @@ flowchart TD
 - **Key Action Modules**:
   - **`src/app/actions/attachments.ts`**: Provides `getTaskAttachmentsAction`, `uploadAttachmentAction` (multipart buffer upload to R2, MIME type and size validation, database persistence with automated rollback), and `deleteAttachmentAction` (deletes object from R2 and removes database row).
   - **`src/app/actions/auth.ts`**: Handles registration (email uniqueness check, bcrypt hashing), login (password comparison, `lastLoginAt` update), and logout with HTTP-only cookie invalidation.
+  - **`src/app/actions/docs.ts`**: Provides `getUserDocsAction`, `getDocByIdAction`, `createDocAction`, `updateDocAction`, `deleteDocAction`, `toggleDocFavoriteAction`, `getTaskDocsAction`, `linkDocToTaskAction`, `unlinkDocFromTaskAction`, and `createAndLinkDocAction`.
   - **`src/app/actions/tags.ts`**: Provides `getUserTagsAction`, `createTagAction` (color-validated), and `deleteTagAction`.
   - **`src/app/actions/tasks.ts`**: Provides `getWeekTasksAction` (ordered by `tasks.order` and `tasks.createdAt`, joined with `tags`, aliased parent `tasks`, aggregating subtask and attachment stats), `getSubtasksAction`, `getTaskByIdAction`, `createTaskAction`, `toggleTaskStatusAction`, `updateTaskAction`, `deleteTaskAction` (with cascade deletion of child subtasks and batch physical cleanup of attachments from Cloudflare R2), and `moveOrReorderTasksAction`.
   - **`src/app/actions/user.ts`**: Provides `getUserPreferencesAction` and `updateUserPreferencesAction` for user-level JSON preferences persistence (e.g. `showSaturday`, `showSunday`, `theme`).
@@ -221,6 +243,23 @@ flowchart TD
   - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
   - `updated_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
   - *Indexes*: `attachments_task_id_idx` on `task_id`, `attachments_user_id_idx` on `user_id`.
+- **`docs` Table**:
+  - `id` (`uuid`, Primary Key, `defaultRandom()`)
+  - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
+  - `project_id` (`uuid`, Foreign Key -> `projects.id`, `onDelete: 'set null'`, Nullable)
+  - `title` (`varchar(255)`, Default `'Untitled Document'`, Not Null)
+  - `content` (`text`, Default `""`, Not Null)
+  - `is_favorite` (`boolean`, Default `false`, Not Null)
+  - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+  - `updated_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+  - *Indexes*: `docs_user_id_idx` on `user_id`, `docs_project_id_idx` on `project_id`, `docs_favorite_idx` on `(user_id, is_favorite)`.
+- **`task_docs` Table (N:N Associative)**:
+  - `id` (`uuid`, Primary Key, `defaultRandom()`)
+  - `task_id` (`uuid`, Foreign Key -> `tasks.id`, `onDelete: 'cascade'`, Not Null)
+  - `doc_id` (`uuid`, Foreign Key -> `docs.id`, `onDelete: 'cascade'`, Not Null)
+  - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
+  - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+  - *Indexes*: `task_docs_task_doc_unique_idx` unique on `(task_id, doc_id)`, `task_docs_task_id_idx` on `task_id`, `task_docs_doc_id_idx` on `doc_id`, `task_docs_user_id_idx` on `user_id`.
 
 ---
 

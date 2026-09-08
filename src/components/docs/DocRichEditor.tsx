@@ -1,0 +1,265 @@
+"use client";
+
+import { useEffect } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import {
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  Pilcrow,
+  List,
+  ListOrdered,
+  Quote,
+  Minus,
+  Undo,
+  Redo,
+  RemoveFormatting,
+} from "lucide-react";
+
+interface DocRichEditorProps {
+  value: string;
+  onChange: (html: string) => void;
+  placeholder?: string;
+}
+
+export function DocRichEditor({
+  value,
+  onChange,
+  placeholder,
+}: DocRichEditorProps) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
+      Placeholder.configure({
+        placeholder: placeholder || "Write your document notes, plans or ideas...",
+      }),
+    ],
+    content: value || "",
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class:
+          "focus:outline-none min-h-[420px] max-h-[68vh] overflow-y-auto px-5 py-4 text-sm sm:text-base text-slate-700 dark:text-slate-200 leading-relaxed select-text",
+      },
+    },
+    onUpdate: ({ editor: activeEditor }) => {
+      const html = activeEditor.isEmpty ? "" : activeEditor.getHTML();
+      onChange(html);
+    },
+  });
+
+  // Synchronize externally changed content
+  useEffect(() => {
+    if (!editor) return;
+    const currentHtml = editor.isEmpty ? "" : editor.getHTML();
+    if (value !== currentHtml) {
+      editor.commands.setContent(value || "");
+    }
+  }, [value, editor]);
+
+  if (!editor) {
+    return (
+      <div className="w-full h-80 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 animate-pulse flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
+        Loading editor...
+      </div>
+    );
+  }
+
+  const btnBase =
+    "p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center";
+  const btnActive =
+    "bg-indigo-100/90 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-semibold shadow-2xs";
+  const btnInactive =
+    "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60";
+
+  return (
+    <div className="w-full rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all focus-within:border-indigo-500/80 focus-within:ring-2 focus-within:ring-indigo-500/20 overflow-hidden shadow-2xs">
+      {/* Sticky Editor Formatting Toolbar */}
+      <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-slate-200/60 dark:border-slate-800/60 bg-slate-50/70 dark:bg-slate-800/50 text-xs">
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setParagraph().run()}
+          className={`${btnBase} ${
+            editor.isActive("paragraph") ? btnActive : btnInactive
+          }`}
+          title="Normal text"
+        >
+          <Pilcrow className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+          className={`${btnBase} ${
+            editor.isActive("heading", { level: 1 }) ? btnActive : btnInactive
+          }`}
+          title="Main Heading (H1)"
+        >
+          <Heading1 className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={`${btnBase} ${
+            editor.isActive("heading", { level: 2 }) ? btnActive : btnInactive
+          }`}
+          title="Subheading (H2)"
+        >
+          <Heading2 className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          className={`${btnBase} ${
+            editor.isActive("heading", { level: 3 }) ? btnActive : btnInactive
+          }`}
+          title="Section (H3)"
+        >
+          <Heading3 className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1.5" />
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          disabled={!editor.can().chain().focus().toggleBold().run()}
+          className={`${btnBase} ${
+            editor.isActive("bold") ? btnActive : btnInactive
+          }`}
+          title="Bold (Ctrl+B)"
+        >
+          <Bold className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          disabled={!editor.can().chain().focus().toggleItalic().run()}
+          className={`${btnBase} ${
+            editor.isActive("italic") ? btnActive : btnInactive
+          }`}
+          title="Italic (Ctrl+I)"
+        >
+          <Italic className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          disabled={!editor.can().chain().focus().toggleStrike().run()}
+          className={`${btnBase} ${
+            editor.isActive("strike") ? btnActive : btnInactive
+          }`}
+          title="Strikethrough"
+        >
+          <Strikethrough className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleCode().run()}
+          disabled={!editor.can().chain().focus().toggleCode().run()}
+          className={`${btnBase} ${
+            editor.isActive("code") ? btnActive : btnInactive
+          }`}
+          title="Inline code"
+        >
+          <Code className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1.5" />
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={`${btnBase} ${
+            editor.isActive("bulletList") ? btnActive : btnInactive
+          }`}
+          title="Bullet list"
+        >
+          <List className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={`${btnBase} ${
+            editor.isActive("orderedList") ? btnActive : btnInactive
+          }`}
+          title="Numbered list"
+        >
+          <ListOrdered className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          className={`${btnBase} ${
+            editor.isActive("blockquote") ? btnActive : btnInactive
+          }`}
+          title="Blockquote"
+        >
+          <Quote className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          className={`${btnBase} ${btnInactive}`}
+          title="Horizontal line"
+        >
+          <Minus className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1.5" />
+
+        <button
+          type="button"
+          onClick={() =>
+            editor.chain().focus().unsetAllMarks().clearNodes().run()
+          }
+          className={`${btnBase} ${btnInactive}`}
+          title="Clear formatting"
+        >
+          <RemoveFormatting className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="ml-auto flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editor.can().chain().focus().undo().run()}
+            className={`${btnBase} ${btnInactive} disabled:opacity-30 disabled:cursor-not-allowed`}
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editor.can().chain().focus().redo().run()}
+            className={`${btnBase} ${btnInactive} disabled:opacity-30 disabled:cursor-not-allowed`}
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <EditorContent editor={editor} />
+    </div>
+  );
+}
