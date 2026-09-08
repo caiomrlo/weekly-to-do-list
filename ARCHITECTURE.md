@@ -40,6 +40,7 @@ weekly-to-do-list/
 │   │   │   ├── ViewSettingsMenu.tsx # Popover menu for toggling Saturday/Sunday visibility
 │   │   │   └── WeeklyHeader.tsx  # Board navigation header, date display, theme and logout
 │   │   ├── docs/                 # Document management components and editor
+│   │   │   ├── DocAttachmentsSection.tsx # Document attachments dropzone, multi-doc link picker & manager
 │   │   │   ├── DocEditor.tsx     # Active document editor with title, project picker and autosave
 │   │   │   ├── DocLinkedTasksSection.tsx # Linked tasks chips, jump and unlinking
 │   │   │   ├── DocProjectSelector.tsx # Project picker dropdown for documents
@@ -163,7 +164,7 @@ flowchart TD
 - **Key UI Modules**:
   - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Renders interactive weekly board with configurable day visibility (Saturday and Sunday hidden by default, toggled via glassmorphic View Popover), fast Dark Mode quick-toggle in the top header with `useSyncExternalStore` DOM synchronization, dynamic grid layout (5, 6, or 7 columns), highlights the current day ("Hoje"), provides week navigation buttons (Previous, Today, Next), renders tag badges per task, displays hierarchical same-day subtasks with indentation and guide lines, indicates cross-day subtasks with parent indicator pills, shows subtask completion progress counters (e.g. `1/3`), provides a persistent collapsible bottom panel for **"Tarefas sem data"** (continuous backlog with responsive grid and inline quick-add), supports optimistic inline task creation via `+ Nova tarefa`, and implements a fluid **Native HTML5 Drag and Drop** system allowing users to reorder tasks within a day, migrate tasks between days, move tasks bidirectionally between days and the unscheduled section, nest tasks as subtasks when dropped onto the center of another top-level task (enforcing the 1-level nesting limit), and drag subtasks out to day columns to make them independent.
   - **`TaskModal` (`src/components/TaskModal.tsx`)**: Self-contained details modal with tag selection & inline creation (8 palette colors with dark-mode variants), rich WYSIWYG description editor (`TaskDescriptionEditor` powered by Tiptap with dark theme support), linked documents section (`TaskDocsSection` supporting search, direct linking and inline creation of notes), debounced auto-save (600ms latency), date rescheduling picker, optional time setter (`HH:mm`), subtasks management section (quick inline creation with Enter, status toggle, date pills, deletion, and deep-link navigation), 1-level nesting enforcement, subtask parent header banner, and cascade deletion confirmation.
-  - **`DocsWorkspace` (`src/components/docs/DocsWorkspace.tsx`)**: Split-pane master-detail documentation workspace with real-time text and content search, project filtering, favorites filtering, instant document creation, rich WYSIWYG note editing (`DocRichEditor` powered by Tiptap), linked tasks section, and debounced auto-save.
+  - **`DocsWorkspace` (`src/components/docs/DocsWorkspace.tsx`)**: Split-pane master-detail documentation workspace with real-time text and content search, project filtering, favorites filtering, instant document creation, rich WYSIWYG note editing (`DocRichEditor` powered by Tiptap), linked tasks section, attachments management (`DocAttachmentsSection` with upload, N:N attachment linking across docs, unlinking, and R2 preview), and debounced auto-save.
   - **`LoginPage` (`src/app/login/page.tsx`)**: Minimalist authentication card with dark mode support, tab toggling between "Entrar" and "Criar Conta", password visibility toggle, and loading state transitions.
 - **Clean UI & Cognitive Load Reduction (Mandatory across all views, layouts & components)**:
   - **Inline Over Container Nesting**: Avoid "card-inside-card" fatigue. Group related metadata and controls horizontally into compact inline rows (subtle pills, semantic icons) instead of nested wrappers or heavy borders.
@@ -175,11 +176,11 @@ flowchart TD
 ### 3.2. Backend Services & Server Actions
 - **Architecture Pattern**: Next.js Server Actions with direct Drizzle ORM queries, optimistic client synchronization, and dedicated Route Handlers for binary media serving.
 - **Key Action Modules**:
-  - **`src/app/actions/attachments.ts`**: Provides `getTaskAttachmentsAction`, `uploadAttachmentAction` (multipart buffer upload to R2, MIME type and size validation, database persistence with automated rollback), and `deleteAttachmentAction` (deletes object from R2 and removes database row).
+  - **`src/app/actions/attachments.ts`**: Provides `getTaskAttachmentsAction`, `getDocAttachmentsAction`, `uploadAttachmentAction` (multipart buffer upload to R2 for tasks or docs, MIME type and size validation, database persistence with automated rollback), `linkAttachmentToTaskAction`, `unlinkAttachmentFromTaskAction`, `getUserAvailableTaskAttachmentsAction`, `linkAttachmentToDocAction`, `unlinkAttachmentFromDocAction`, `getUserAvailableAttachmentsAction`, and `deleteAttachmentAction` (deletes object from R2 and removes database row).
   - **`src/app/actions/auth.ts`**: Handles registration (email uniqueness check, bcrypt hashing), login (password comparison, `lastLoginAt` update), and logout with HTTP-only cookie invalidation.
   - **`src/app/actions/docs.ts`**: Provides `getUserDocsAction`, `getDocByIdAction`, `createDocAction`, `updateDocAction`, `deleteDocAction`, `toggleDocFavoriteAction`, `getTaskDocsAction`, `linkDocToTaskAction`, `unlinkDocFromTaskAction`, and `createAndLinkDocAction`.
   - **`src/app/actions/tags.ts`**: Provides `getUserTagsAction`, `createTagAction` (color-validated), and `deleteTagAction`.
-  - **`src/app/actions/tasks.ts`**: Provides `getWeekTasksAction` (ordered by `tasks.order` and `tasks.createdAt`, joined with `tags`, aliased parent `tasks`, aggregating subtask and attachment stats), `getSubtasksAction`, `getTaskByIdAction`, `createTaskAction`, `toggleTaskStatusAction`, `updateTaskAction`, `deleteTaskAction` (with cascade deletion of child subtasks and batch physical cleanup of attachments from Cloudflare R2), and `moveOrReorderTasksAction`.
+  - **`src/app/actions/tasks.ts`**: Provides `getWeekTasksAction` (ordered by `tasks.order` and `tasks.createdAt`, joined with `tags`, aliased parent `tasks`, aggregating subtask and attachment stats), `getSubtasksAction`, `getTaskByIdAction`, `createTaskAction`, `toggleTaskStatusAction`, `updateTaskAction`, `deleteTaskAction` (with cascade deletion of child subtasks and batch physical cleanup of unshared attachments from Cloudflare R2), and `moveOrReorderTasksAction`.
   - **`src/app/actions/user.ts`**: Provides `getUserPreferencesAction` and `updateUserPreferencesAction` for user-level JSON preferences persistence (e.g. `showSaturday`, `showSunday`, `theme`).
 - **Route Handlers**:
   - **`src/app/api/attachments/[id]/route.ts`**: Authenticated GET endpoint validating session and attachment ownership, redirecting (HTTP 307) to expiring presigned Cloudflare R2 URLs for secure in-browser viewing or download.
@@ -233,7 +234,7 @@ flowchart TD
   - `updated_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
 - **`attachments` Table**:
   - `id` (`uuid`, Primary Key, `defaultRandom()`)
-  - `task_id` (`uuid`, Foreign Key -> `tasks.id`, `onDelete: 'cascade'`, Not Null)
+  - `task_id` (`uuid`, Foreign Key -> `tasks.id`, `onDelete: 'set null'`, Nullable) — *Nullable to support attachments uploaded directly to docs or shared across multiple documents/tasks.*
   - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
   - `file_name` (`varchar(255)`, Original filename for UI display, Not Null)
   - `file_path` (`text`, Relative object path in Cloudflare R2 e.g. `files/{attachmentId}/{sanitizedFileName}`, Not Null)
@@ -260,6 +261,20 @@ flowchart TD
   - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
   - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
   - *Indexes*: `task_docs_task_doc_unique_idx` unique on `(task_id, doc_id)`, `task_docs_task_id_idx` on `task_id`, `task_docs_doc_id_idx` on `doc_id`, `task_docs_user_id_idx` on `user_id`.
+- **`task_attachments` Table (N:N Associative)**:
+  - `id` (`uuid`, Primary Key, `defaultRandom()`)
+  - `task_id` (`uuid`, Foreign Key -> `tasks.id`, `onDelete: 'cascade'`, Not Null)
+  - `attachment_id` (`uuid`, Foreign Key -> `attachments.id`, `onDelete: 'cascade'`, Not Null)
+  - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
+  - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+  - *Indexes*: `task_attachments_task_attachment_unique_idx` unique on `(task_id, attachment_id)`, `task_attachments_task_id_idx` on `task_id`, `task_attachments_attachment_id_idx` on `attachment_id`, `task_attachments_user_id_idx` on `user_id`.
+- **`doc_attachments` Table (N:N Associative)**:
+  - `id` (`uuid`, Primary Key, `defaultRandom()`)
+  - `doc_id` (`uuid`, Foreign Key -> `docs.id`, `onDelete: 'cascade'`, Not Null)
+  - `attachment_id` (`uuid`, Foreign Key -> `attachments.id`, `onDelete: 'cascade'`, Not Null)
+  - `user_id` (`uuid`, Foreign Key -> `users.id`, `onDelete: 'cascade'`, Not Null)
+  - `created_at` (`timestamp with time zone`, `defaultNow()`, Not Null)
+  - *Indexes*: `doc_attachments_doc_attachment_unique_idx` unique on `(doc_id, attachment_id)`, `doc_attachments_doc_id_idx` on `doc_id`, `doc_attachments_attachment_id_idx` on `attachment_id`, `doc_attachments_user_id_idx` on `user_id`.
 
 ---
 

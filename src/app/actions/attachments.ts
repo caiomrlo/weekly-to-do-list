@@ -1,7 +1,14 @@
 "use server";
 
 import { db } from "@/db";
-import { attachments, tasks, Attachment } from "@/db/schema";
+import {
+  attachments,
+  tasks,
+  docs,
+  docAttachments,
+  taskAttachments,
+  Attachment,
+} from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import {
   uploadToR2,
@@ -39,23 +46,66 @@ export async function getTaskAttachmentsAction(
 
   try {
     const rows = await db
-      .select()
-      .from(attachments)
+      .select({
+        attachment: attachments,
+      })
+      .from(taskAttachments)
+      .innerJoin(attachments, eq(taskAttachments.attachmentId, attachments.id))
       .where(
-        and(eq(attachments.taskId, taskId), eq(attachments.userId, session.userId))
+        and(
+          eq(taskAttachments.taskId, taskId),
+          eq(taskAttachments.userId, session.userId)
+        )
       )
-      .orderBy(desc(attachments.createdAt));
+      .orderBy(desc(taskAttachments.createdAt));
 
-    const list: AttachmentWithUrl[] = rows.map((att) => ({
-      ...att,
-      url: `/api/attachments/${att.id}`,
-      thumbUrl: att.thumbnailPath ? `/api/attachments/${att.id}?thumb=1` : null,
+    const list: AttachmentWithUrl[] = rows.map(({ attachment }) => ({
+      ...attachment,
+      url: `/api/attachments/${attachment.id}`,
+      thumbUrl: attachment.thumbnailPath
+        ? `/api/attachments/${attachment.id}?thumb=1`
+        : null,
     }));
 
     return { attachments: list };
   } catch (err: unknown) {
     console.error("Error fetching task attachments:", err);
     return { error: "Failed to fetch task attachments." };
+  }
+}
+
+export async function getDocAttachmentsAction(
+  docId: string
+): Promise<{ attachments?: AttachmentWithUrl[]; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const rows = await db
+      .select({
+        attachment: attachments,
+      })
+      .from(docAttachments)
+      .innerJoin(attachments, eq(docAttachments.attachmentId, attachments.id))
+      .where(
+        and(eq(docAttachments.docId, docId), eq(docAttachments.userId, session.userId))
+      )
+      .orderBy(desc(docAttachments.createdAt));
+
+    const list: AttachmentWithUrl[] = rows.map(({ attachment }) => ({
+      ...attachment,
+      url: `/api/attachments/${attachment.id}`,
+      thumbUrl: attachment.thumbnailPath
+        ? `/api/attachments/${attachment.id}?thumb=1`
+        : null,
+    }));
+
+    return { attachments: list };
+  } catch (err: unknown) {
+    console.error("Error fetching doc attachments:", err);
+    return { error: "Failed to fetch document attachments." };
   }
 }
 
@@ -68,10 +118,14 @@ export async function uploadAttachmentAction(
   }
 
   const taskId = formData.get("taskId");
+  const docId = formData.get("docId");
   const file = formData.get("file");
 
-  if (!taskId || typeof taskId !== "string") {
-    return { error: "Invalid task ID." };
+  const validTaskId = typeof taskId === "string" && taskId.trim() ? taskId.trim() : null;
+  const validDocId = typeof docId === "string" && docId.trim() ? docId.trim() : null;
+
+  if (!validTaskId && !validDocId) {
+    return { error: "Invalid target: taskId or docId is required." };
   }
 
   if (!file || !(file instanceof File)) {
@@ -93,14 +147,28 @@ export async function uploadAttachmentAction(
     };
   }
 
-  const [task] = await db
-    .select({ id: tasks.id })
-    .from(tasks)
-    .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)))
-    .limit(1);
+  if (validTaskId) {
+    const [task] = await db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(and(eq(tasks.id, validTaskId), eq(tasks.userId, session.userId)))
+      .limit(1);
 
-  if (!task) {
-    return { error: "Task not found or access denied." };
+    if (!task) {
+      return { error: "Task not found or access denied." };
+    }
+  }
+
+  if (validDocId) {
+    const [doc] = await db
+      .select({ id: docs.id })
+      .from(docs)
+      .where(and(eq(docs.id, validDocId), eq(docs.userId, session.userId)))
+      .limit(1);
+
+    if (!doc) {
+      return { error: "Document not found or access denied." };
+    }
   }
 
   const attachmentId = randomUUID();
@@ -141,7 +209,7 @@ export async function uploadAttachmentAction(
         .insert(attachments)
         .values({
           id: attachmentId,
-          taskId,
+          taskId: validTaskId,
           userId: session.userId,
           fileName: file.name,
           filePath,
@@ -151,7 +219,27 @@ export async function uploadAttachmentAction(
         })
         .returning();
 
+      if (validTaskId) {
+        await db.insert(taskAttachments).values({
+          taskId: validTaskId,
+          attachmentId: inserted.id,
+          userId: session.userId,
+        });
+      }
+
+      if (validDocId) {
+        await db.insert(docAttachments).values({
+          docId: validDocId,
+          attachmentId: inserted.id,
+          userId: session.userId,
+        });
+      }
+
       revalidatePath("/");
+      if (validDocId) {
+        revalidatePath("/docs");
+        revalidatePath(`/docs/${validDocId}`);
+      }
 
       return {
         attachment: {
@@ -178,6 +266,131 @@ export async function uploadAttachmentAction(
   } catch (err: unknown) {
     console.error("Error uploading attachment:", err);
     return { error: "Failed to upload file. Please check your connection and try again." };
+  }
+}
+
+export async function linkAttachmentToDocAction(
+  docId: string,
+  attachmentId: string
+): Promise<{ success?: boolean; attachment?: AttachmentWithUrl; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const [doc] = await db
+      .select({ id: docs.id })
+      .from(docs)
+      .where(and(eq(docs.id, docId), eq(docs.userId, session.userId)))
+      .limit(1);
+
+    if (!doc) {
+      return { error: "Document not found or access denied." };
+    }
+
+    const [att] = await db
+      .select()
+      .from(attachments)
+      .where(and(eq(attachments.id, attachmentId), eq(attachments.userId, session.userId)))
+      .limit(1);
+
+    if (!att) {
+      return { error: "Attachment not found or access denied." };
+    }
+
+    await db
+      .insert(docAttachments)
+      .values({
+        docId,
+        attachmentId,
+        userId: session.userId,
+      })
+      .onConflictDoNothing();
+
+    revalidatePath("/docs");
+    revalidatePath(`/docs/${docId}`);
+
+    return {
+      success: true,
+      attachment: {
+        ...att,
+        url: `/api/attachments/${att.id}`,
+        thumbUrl: att.thumbnailPath ? `/api/attachments/${att.id}?thumb=1` : null,
+      },
+    };
+  } catch (err: unknown) {
+    console.error("Error linking attachment to doc:", err);
+    return { error: "Failed to link attachment to document." };
+  }
+}
+
+export async function unlinkAttachmentFromDocAction(
+  docId: string,
+  attachmentId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    await db
+      .delete(docAttachments)
+      .where(
+        and(
+          eq(docAttachments.docId, docId),
+          eq(docAttachments.attachmentId, attachmentId),
+          eq(docAttachments.userId, session.userId)
+        )
+      );
+
+    revalidatePath("/docs");
+    revalidatePath(`/docs/${docId}`);
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("Error unlinking attachment from doc:", err);
+    return { error: "Failed to unlink attachment." };
+  }
+}
+
+export async function getUserAvailableAttachmentsAction(
+  docId: string
+): Promise<{ attachments?: AttachmentWithUrl[]; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const linked = await db
+      .select({ attachmentId: docAttachments.attachmentId })
+      .from(docAttachments)
+      .where(
+        and(eq(docAttachments.docId, docId), eq(docAttachments.userId, session.userId))
+      );
+
+    const linkedIds = new Set(linked.map((r) => r.attachmentId));
+
+    const allUserAttachments = await db
+      .select()
+      .from(attachments)
+      .where(eq(attachments.userId, session.userId))
+      .orderBy(desc(attachments.createdAt));
+
+    const available = allUserAttachments
+      .filter((att) => !linkedIds.has(att.id))
+      .map((att) => ({
+        ...att,
+        url: `/api/attachments/${att.id}`,
+        thumbUrl: att.thumbnailPath ? `/api/attachments/${att.id}?thumb=1` : null,
+      }));
+
+    return { attachments: available };
+  } catch (err: unknown) {
+    console.error("Error fetching available attachments:", err);
+    return { error: "Failed to fetch user attachments." };
   }
 }
 
@@ -216,10 +429,134 @@ export async function deleteAttachmentAction(
     await db.delete(attachments).where(eq(attachments.id, attachmentId));
 
     revalidatePath("/");
+    revalidatePath("/docs");
 
     return { success: true };
   } catch (err: unknown) {
     console.error("Error deleting attachment:", err);
     return { error: "Failed to delete attachment." };
+  }
+}
+
+export async function linkAttachmentToTaskAction(
+  taskId: string,
+  attachmentId: string
+): Promise<{ success?: boolean; attachment?: AttachmentWithUrl; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const [task] = await db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)))
+      .limit(1);
+
+    if (!task) {
+      return { error: "Task not found or access denied." };
+    }
+
+    const [att] = await db
+      .select()
+      .from(attachments)
+      .where(and(eq(attachments.id, attachmentId), eq(attachments.userId, session.userId)))
+      .limit(1);
+
+    if (!att) {
+      return { error: "Attachment not found or access denied." };
+    }
+
+    await db
+      .insert(taskAttachments)
+      .values({
+        taskId,
+        attachmentId,
+        userId: session.userId,
+      })
+      .onConflictDoNothing();
+
+    revalidatePath("/");
+
+    return {
+      success: true,
+      attachment: {
+        ...att,
+        url: `/api/attachments/${att.id}`,
+        thumbUrl: att.thumbnailPath ? `/api/attachments/${att.id}?thumb=1` : null,
+      },
+    };
+  } catch (err: unknown) {
+    console.error("Error linking attachment to task:", err);
+    return { error: "Failed to link attachment to task." };
+  }
+}
+
+export async function unlinkAttachmentFromTaskAction(
+  taskId: string,
+  attachmentId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    await db
+      .delete(taskAttachments)
+      .where(
+        and(
+          eq(taskAttachments.taskId, taskId),
+          eq(taskAttachments.attachmentId, attachmentId),
+          eq(taskAttachments.userId, session.userId)
+        )
+      );
+
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("Error unlinking attachment from task:", err);
+    return { error: "Failed to unlink attachment." };
+  }
+}
+
+export async function getUserAvailableTaskAttachmentsAction(
+  taskId: string
+): Promise<{ attachments?: AttachmentWithUrl[]; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const linked = await db
+      .select({ attachmentId: taskAttachments.attachmentId })
+      .from(taskAttachments)
+      .where(
+        and(eq(taskAttachments.taskId, taskId), eq(taskAttachments.userId, session.userId))
+      );
+
+    const linkedIds = new Set(linked.map((r) => r.attachmentId));
+
+    const allUserAttachments = await db
+      .select()
+      .from(attachments)
+      .where(eq(attachments.userId, session.userId))
+      .orderBy(desc(attachments.createdAt));
+
+    const available = allUserAttachments
+      .filter((att) => !linkedIds.has(att.id))
+      .map((att) => ({
+        ...att,
+        url: `/api/attachments/${att.id}`,
+        thumbUrl: att.thumbnailPath ? `/api/attachments/${att.id}?thumb=1` : null,
+      }));
+
+    return { attachments: available };
+  } catch (err: unknown) {
+    console.error("Error fetching available task attachments:", err);
+    return { error: "Failed to fetch user attachments." };
   }
 }

@@ -5,9 +5,9 @@ import {
   AttachmentWithUrl,
   uploadAttachmentAction,
   deleteAttachmentAction,
-  linkAttachmentToTaskAction,
-  unlinkAttachmentFromTaskAction,
-  getUserAvailableTaskAttachmentsAction,
+  linkAttachmentToDocAction,
+  unlinkAttachmentFromDocAction,
+  getUserAvailableAttachmentsAction,
 } from "@/app/actions/attachments";
 import {
   Paperclip,
@@ -24,10 +24,9 @@ import {
   X,
 } from "lucide-react";
 
-interface TaskAttachmentsSectionProps {
-  taskId: string;
+interface DocAttachmentsSectionProps {
+  docId: string;
   attachments: AttachmentWithUrl[];
-  isLoading?: boolean;
   onAttachmentsChange: (updated: AttachmentWithUrl[]) => void;
 }
 
@@ -40,12 +39,11 @@ function formatBytes(bytes: number, decimals = 1): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
-export function TaskAttachmentsSection({
-  taskId,
+export function DocAttachmentsSection({
+  docId,
   attachments,
-  isLoading = false,
   onAttachmentsChange,
-}: TaskAttachmentsSectionProps) {
+}: DocAttachmentsSectionProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -81,7 +79,7 @@ export function TaskAttachmentsSection({
     setPickerSearch("");
     setIsLoadingAvailable(true);
     try {
-      const res = await getUserAvailableTaskAttachmentsAction(taskId);
+      const res = await getUserAvailableAttachmentsAction(docId);
       if (res.attachments) {
         setAvailableAttachments(res.attachments);
       }
@@ -95,7 +93,7 @@ export function TaskAttachmentsSection({
   const handleLinkExisting = async (attachment: AttachmentWithUrl) => {
     setLinkingId(attachment.id);
     try {
-      const res = await linkAttachmentToTaskAction(taskId, attachment.id);
+      const res = await linkAttachmentToDocAction(docId, attachment.id);
       if (res.attachment) {
         onAttachmentsChange([res.attachment, ...attachments]);
         setAvailableAttachments((prev) => prev.filter((a) => a.id !== attachment.id));
@@ -103,8 +101,8 @@ export function TaskAttachmentsSection({
         setUploadError(res.error);
       }
     } catch (err) {
-      console.error("Failed to link attachment to task:", err);
-      setUploadError("Could not link attachment to this task.");
+      console.error("Failed to link attachment:", err);
+      setUploadError("Could not link attachment to this document.");
     } finally {
       setLinkingId(null);
     }
@@ -121,7 +119,7 @@ export function TaskAttachmentsSection({
     try {
       for (const file of fileList) {
         const formData = new FormData();
-        formData.append("taskId", taskId);
+        formData.append("docId", docId);
         formData.append("file", file);
 
         const res = await uploadAttachmentAction(formData);
@@ -139,7 +137,7 @@ export function TaskAttachmentsSection({
         onAttachmentsChange([...newAttachments, ...attachments]);
       }
     } catch (err: unknown) {
-      console.error(err);
+      console.error("Failed to upload document attachment:", err);
       setUploadError("Failed to upload file. Please try again.");
     } finally {
       setIsUploading(false);
@@ -177,20 +175,20 @@ export function TaskAttachmentsSection({
     }
   };
 
-  // Unlink from this task (leaves file and other task/doc links intact)
+  // Unlink from this document (leaves file and other document links intact)
   const handleUnlink = (attachmentId: string) => {
     setUnlinkingId(attachmentId);
     startTransition(async () => {
       try {
-        const res = await unlinkAttachmentFromTaskAction(taskId, attachmentId);
+        const res = await unlinkAttachmentFromDocAction(docId, attachmentId);
         if (res.success) {
           onAttachmentsChange(attachments.filter((a) => a.id !== attachmentId));
         } else if (res.error) {
           setUploadError(res.error);
         }
       } catch (err) {
-        console.error(err);
-        setUploadError("Could not unlink attachment from this task.");
+        console.error("Could not unlink attachment:", err);
+        setUploadError("Could not unlink attachment from this document.");
       } finally {
         setUnlinkingId(null);
       }
@@ -210,7 +208,7 @@ export function TaskAttachmentsSection({
           setUploadError(res.error);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Could not delete attachment:", err);
         setUploadError("Could not permanently delete attachment.");
       } finally {
         setDeletingId(null);
@@ -223,22 +221,22 @@ export function TaskAttachmentsSection({
   );
 
   return (
-    <div className="space-y-3">
+    <div className="max-w-xl sm:max-w-2xl rounded-xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/80 p-2.5 sm:p-3 space-y-2">
       {/* Header Bar */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Paperclip className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-1.5">
+          <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Paperclip className="w-3.5 h-3.5 text-indigo-500" />
             Attachments
           </label>
           {attachments.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
               {attachments.length}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Link Existing Popover Button */}
           <div className="relative" ref={pickerRef}>
             <button
@@ -250,8 +248,8 @@ export function TaskAttachmentsSection({
                   handleOpenPicker();
                 }
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-              title="Link an existing file to this task"
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+              title="Link an existing file to this document"
             >
               <Link2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Link Existing</span>
@@ -348,6 +346,7 @@ export function TaskAttachmentsSection({
             )}
           </div>
 
+          {/* Native File Input Trigger */}
           <input
             ref={fileInputRef}
             type="file"
@@ -361,8 +360,8 @@ export function TaskAttachmentsSection({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer disabled:opacity-50"
-            title="Upload a new file to this task"
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer disabled:opacity-50"
+            title="Upload a new file to this document"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Attach</span>
@@ -372,7 +371,7 @@ export function TaskAttachmentsSection({
 
       {/* Error Notice */}
       {uploadError && (
-        <div className="flex items-center gap-2 p-2.5 rounded-xl text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">
+        <div className="flex items-center gap-2 p-2 rounded-lg text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span className="flex-1">{uploadError}</span>
           <button
@@ -385,7 +384,7 @@ export function TaskAttachmentsSection({
         </div>
       )}
 
-      {/* Dropzone & Loading State */}
+      {/* Dropzone & Attachments List */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -395,37 +394,37 @@ export function TaskAttachmentsSection({
             fileInputRef.current?.click();
           }
         }}
-        className={`relative transition-all rounded-2xl border ${
+        className={`relative transition-all rounded-xl border ${
           isDraggingOver
-            ? "border-dashed border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40 scale-[1.01]"
+            ? "border-dashed border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40"
             : attachments.length === 0
-            ? "border-dashed border-slate-300/80 dark:border-slate-700/80 hover:border-indigo-400 dark:hover:border-indigo-500/70 bg-slate-50/40 dark:bg-slate-900/30 p-4 text-center cursor-pointer"
+            ? "border-dashed border-slate-200/90 dark:border-slate-800/90 hover:border-indigo-400 dark:hover:border-indigo-500/70 bg-white/40 dark:bg-slate-900/30 cursor-pointer"
             : "border-transparent"
         }`}
       >
         {isUploading && (
-          <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-800/70 text-indigo-600 dark:text-indigo-400 text-xs font-medium animate-pulse mb-3">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Uploading attachment to Cloudflare R2...</span>
+          <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-800/70 text-indigo-600 dark:text-indigo-400 text-xs font-medium animate-pulse mb-2">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <span>Uploading attachment...</span>
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Compact Empty state */}
         {attachments.length === 0 && !isUploading && (
-          <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400 dark:text-slate-500">
-            <UploadCloud className="w-6 h-6 stroke-[1.5] text-slate-400 dark:text-slate-500" />
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              Drag images or PDFs here, or click to browse
-            </p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              PNG, JPG, WebP, GIF or PDF up to 20MB
-            </p>
+          <div className="py-2.5 px-3 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+            <UploadCloud className="w-4 h-4 text-indigo-500 shrink-0" />
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+              Drag files here or click to browse
+            </span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+              (Images, PDF up to 20MB)
+            </span>
           </div>
         )}
 
         {/* Attachments List */}
         {attachments.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {attachments.map((attachment) => {
               const isImage = attachment.contentType.startsWith("image/");
               const isUnlinkingThis = unlinkingId === attachment.id;
@@ -435,13 +434,13 @@ export function TaskAttachmentsSection({
               return (
                 <div
                   key={attachment.id}
-                  className="group relative flex items-center gap-3 p-2 rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-xs overflow-hidden"
+                  className="group relative flex items-center gap-2.5 p-1.5 rounded-lg border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-xs overflow-hidden"
                 >
                   <a
                     href={attachment.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90"
+                    className="relative w-9 h-9 rounded-md overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90"
                     title="Open original file"
                   >
                     {isImage ? (
@@ -454,8 +453,8 @@ export function TaskAttachmentsSection({
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center text-rose-500">
-                        <FileText className="w-5 h-5" />
-                        <span className="text-[9px] font-bold tracking-tighter uppercase mt-[-2px]">
+                        <FileText className="w-4 h-4" />
+                        <span className="text-[8px] font-bold tracking-tighter uppercase mt-[-2px]">
                           PDF
                         </span>
                       </div>
@@ -479,24 +478,25 @@ export function TaskAttachmentsSection({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {/* View */}
                     <a
                       href={attachment.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Open original file in new tab"
+                      className="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Open file in new tab"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
 
-                    {/* Unlink from this task */}
+                    {/* Unlink from this doc */}
                     <button
                       type="button"
                       onClick={() => handleUnlink(attachment.id)}
                       disabled={isUnlinkingThis || isDeletingThis}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer disabled:opacity-50"
-                      title="Unlink from this task (keeps file intact)"
+                      className="p-1 rounded-md text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                      title="Unlink from this document (keeps file intact)"
                     >
                       {isUnlinkingThis ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
@@ -505,9 +505,9 @@ export function TaskAttachmentsSection({
                       )}
                     </button>
 
-                    {/* Delete permanently (with confirmation) */}
+                    {/* Delete Permanently (with confirmation) */}
                     {isConfirmingDelete ? (
-                      <div className="flex items-center gap-1 bg-rose-50/95 dark:bg-rose-950/90 border border-rose-200 dark:border-rose-900 px-1.5 py-0.5 rounded-lg">
+                      <div className="flex items-center gap-1 bg-rose-50/95 dark:bg-rose-950/90 border border-rose-200 dark:border-rose-900 px-1.5 py-0.5 rounded-md">
                         <button
                           type="button"
                           disabled={isDeletingThis}
@@ -531,8 +531,8 @@ export function TaskAttachmentsSection({
                         type="button"
                         onClick={() => setConfirmDeleteId(attachment.id)}
                         disabled={isUnlinkingThis || isDeletingThis}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
-                        title="Delete file permanently from all tasks and docs"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                        title="Delete file permanently from all docs and tasks"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -544,13 +544,6 @@ export function TaskAttachmentsSection({
           </div>
         )}
       </div>
-
-      {isLoading && attachments.length === 0 && (
-        <div className="flex items-center justify-center py-2 text-slate-400 text-xs">
-          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-          Loading attachments...
-        </div>
-      )}
     </div>
   );
 }

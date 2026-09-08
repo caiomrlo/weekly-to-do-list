@@ -85,6 +85,20 @@
       "when": 1788870188920,
       "tag": "0011_curved_rage",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788873858746,
+      "tag": "0012_uneven_thundra",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788874576239,
+      "tag": "0013_chunky_wolverine",
+      "breakpoints": true
     }
   ]
 }

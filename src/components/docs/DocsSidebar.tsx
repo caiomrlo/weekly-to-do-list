@@ -9,6 +9,7 @@ import {
   Star,
   FileText,
   Link2,
+  Paperclip,
   Trash2,
   X,
   Filter,
@@ -205,6 +206,13 @@ export function DocsSidebar({
                         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                           <Link2 className="w-2.5 h-2.5" />
                           <span>{doc.taskCount}</span>
+                        </span>
+                      )}
+
+                      {(doc.attachmentCount ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                          <Paperclip className="w-2.5 h-2.5" />
+                          <span>{doc.attachmentCount}</span>
                         </span>
                       )}
                     </div>

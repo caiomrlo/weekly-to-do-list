@@ -9,7 +9,9 @@ import {
 } from "@/app/actions/docs";
 import { DocProjectSelector } from "./DocProjectSelector";
 import { DocLinkedTasksSection } from "./DocLinkedTasksSection";
+import { DocAttachmentsSection } from "./DocAttachmentsSection";
 import { DocRichEditor } from "./DocRichEditor";
+import { AttachmentWithUrl } from "@/app/actions/attachments";
 import {
   Star,
   Trash2,
@@ -42,6 +44,9 @@ export function DocEditor({
   );
   const [isFavorite, setIsFavorite] = useState(doc.isFavorite);
   const [linkedTasks, setLinkedTasks] = useState(doc.tasks || []);
+  const [attachments, setAttachments] = useState<AttachmentWithUrl[]>(
+    doc.attachments || []
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -130,6 +135,15 @@ export function DocEditor({
       ...doc,
       tasks: remaining,
       taskCount: remaining.length,
+    });
+  };
+
+  const handleAttachmentsChange = (updated: AttachmentWithUrl[]) => {
+    setAttachments(updated);
+    onDocUpdated({
+      ...doc,
+      attachments: updated,
+      attachmentCount: updated.length,
     });
   };
 
@@ -249,8 +263,17 @@ export function DocEditor({
       />
 
       {/* Rich Text Editor */}
-      <div className="flex-1 pb-8">
+      <div className="flex-1">
         <DocRichEditor value={content} onChange={handleContentChange} />
+      </div>
+
+      {/* Attachments Section (below text editor) */}
+      <div className="pt-2 pb-8">
+        <DocAttachmentsSection
+          docId={doc.id}
+          attachments={attachments}
+          onAttachmentsChange={handleAttachmentsChange}
+        />
       </div>
     </div>
   );

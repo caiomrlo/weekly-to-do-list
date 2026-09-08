@@ -1,7 +1,16 @@
 "use server";
 
 import { db } from "@/db";
-import { docs, taskDocs, tasks, projects, Doc, DocWithRelations } from "@/db/schema";
+import {
+  docs,
+  taskDocs,
+  tasks,
+  projects,
+  docAttachments,
+  attachments,
+  Doc,
+  DocWithRelations,
+} from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { and, eq, desc, ilike, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -38,7 +47,7 @@ export async function getUserDocsAction(filters?: {
       conditions.push(ilike(docs.title, `%${filters.search.trim()}%`));
     }
 
-    const [rawDocs, taskCounts] = await Promise.all([
+    const [rawDocs, taskCounts, attachmentCounts] = await Promise.all([
       db
         .select({
           doc: docs,
@@ -56,6 +65,14 @@ export async function getUserDocsAction(filters?: {
         .from(taskDocs)
         .where(eq(taskDocs.userId, session.userId))
         .groupBy(taskDocs.docId),
+      db
+        .select({
+          docId: docAttachments.docId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(docAttachments)
+        .where(eq(docAttachments.userId, session.userId))
+        .groupBy(docAttachments.docId),
     ]);
 
     const countMap = new Map<string, number>();
@@ -63,10 +80,16 @@ export async function getUserDocsAction(filters?: {
       countMap.set(item.docId, Number(item.total) || 0);
     }
 
+    const attCountMap = new Map<string, number>();
+    for (const item of attachmentCounts) {
+      attCountMap.set(item.docId, Number(item.total) || 0);
+    }
+
     const result: DocWithRelations[] = rawDocs.map((r) => ({
       ...r.doc,
       project: r.project || null,
       taskCount: countMap.get(r.doc.id) || 0,
+      attachmentCount: attCountMap.get(r.doc.id) || 0,
     }));
 
     return { docs: result };
@@ -99,23 +122,45 @@ export async function getDocByIdAction(
       return { error: "Document not found or access denied." };
     }
 
-    const linkedTasks = await db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        completed: tasks.completed,
-        date: tasks.date,
-      })
-      .from(taskDocs)
-      .innerJoin(tasks, eq(taskDocs.taskId, tasks.id))
-      .where(and(eq(taskDocs.docId, docId), eq(taskDocs.userId, session.userId)))
-      .orderBy(desc(tasks.createdAt));
+    const [linkedTasks, linkedAttachments] = await Promise.all([
+      db
+        .select({
+          id: tasks.id,
+          title: tasks.title,
+          completed: tasks.completed,
+          date: tasks.date,
+        })
+        .from(taskDocs)
+        .innerJoin(tasks, eq(taskDocs.taskId, tasks.id))
+        .where(and(eq(taskDocs.docId, docId), eq(taskDocs.userId, session.userId)))
+        .orderBy(desc(tasks.createdAt)),
+      db
+        .select({
+          attachment: attachments,
+        })
+        .from(docAttachments)
+        .innerJoin(attachments, eq(docAttachments.attachmentId, attachments.id))
+        .where(
+          and(eq(docAttachments.docId, docId), eq(docAttachments.userId, session.userId))
+        )
+        .orderBy(desc(docAttachments.createdAt)),
+    ]);
+
+    const formattedAttachments = linkedAttachments.map(({ attachment }) => ({
+      ...attachment,
+      url: `/api/attachments/${attachment.id}`,
+      thumbUrl: attachment.thumbnailPath
+        ? `/api/attachments/${attachment.id}?thumb=1`
+        : null,
+    }));
 
     const docWithRel: DocWithRelations = {
       ...row.doc,
       project: row.project || null,
       taskCount: linkedTasks.length,
       tasks: linkedTasks,
+      attachmentCount: formattedAttachments.length,
+      attachments: formattedAttachments,
     };
 
     return { doc: docWithRel };
@@ -175,6 +220,8 @@ export async function createDocAction(data: {
         project,
         taskCount: 0,
         tasks: [],
+        attachmentCount: 0,
+        attachments: [],
       },
     };
   } catch (err: unknown) {
@@ -471,6 +518,8 @@ export async function createAndLinkDocAction(
         ...newDoc,
         project,
         taskCount: 1,
+        attachmentCount: 0,
+        attachments: [],
       },
     };
   } catch (err: unknown) {

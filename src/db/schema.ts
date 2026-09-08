@@ -67,9 +67,7 @@ export const attachments = pgTable(
   "attachments",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    taskId: uuid("task_id")
-      .notNull()
-      .references(() => tasks.id, { onDelete: "cascade" }),
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "set null" }),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -133,6 +131,58 @@ export const taskDocs = pgTable(
   ]
 );
 
+export const taskAttachments = pgTable(
+  "task_attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    attachmentId: uuid("attachment_id")
+      .notNull()
+      .references(() => attachments.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("task_attachments_task_attachment_unique_idx").on(
+      table.taskId,
+      table.attachmentId
+    ),
+    index("task_attachments_task_id_idx").on(table.taskId),
+    index("task_attachments_attachment_id_idx").on(table.attachmentId),
+    index("task_attachments_user_id_idx").on(table.userId),
+  ]
+);
+
+export const docAttachments = pgTable(
+  "doc_attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    docId: uuid("doc_id")
+      .notNull()
+      .references(() => docs.id, { onDelete: "cascade" }),
+    attachmentId: uuid("attachment_id")
+      .notNull()
+      .references(() => attachments.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("doc_attachments_doc_attachment_unique_idx").on(
+      table.docId,
+      table.attachmentId
+    ),
+    index("doc_attachments_doc_id_idx").on(table.docId),
+    index("doc_attachments_attachment_id_idx").on(table.attachmentId),
+    index("doc_attachments_user_id_idx").on(table.userId),
+  ]
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
@@ -153,6 +203,12 @@ export type NewDoc = typeof docs.$inferInsert;
 
 export type TaskDoc = typeof taskDocs.$inferSelect;
 export type NewTaskDoc = typeof taskDocs.$inferInsert;
+
+export type TaskAttachment = typeof taskAttachments.$inferSelect;
+export type NewTaskAttachment = typeof taskAttachments.$inferInsert;
+
+export type DocAttachment = typeof docAttachments.$inferSelect;
+export type NewDocAttachment = typeof docAttachments.$inferInsert;
 
 export type TaskWithTag = Task & {
   tag?: Tag | null;
@@ -176,6 +232,8 @@ export type DocWithRelations = Doc & {
     completed: boolean;
     date?: string | null;
   }>;
+  attachmentCount?: number;
+  attachments?: Array<Attachment & { url: string; thumbUrl?: string | null }>;
 };
 
 

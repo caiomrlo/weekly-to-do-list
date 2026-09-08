@@ -1,10 +1,19 @@
 "use server";
 
 import { db } from "@/db";
-import { tasks, tags, projects, attachments, taskDocs, TaskWithTag } from "@/db/schema";
+import {
+  tasks,
+  tags,
+  projects,
+  attachments,
+  taskDocs,
+  docAttachments,
+  taskAttachments,
+  TaskWithTag,
+} from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { deleteManyFromR2 } from "@/lib/r2";
-import { and, eq, gte, lte, asc, isNotNull, sql, or, isNull, inArray } from "drizzle-orm";
+import { and, eq, gte, lte, asc, isNotNull, sql, or, isNull, inArray, notInArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
 
@@ -63,12 +72,12 @@ export async function getWeekTasksAction(
         .groupBy(tasks.parentId),
       db
         .select({
-          taskId: attachments.taskId,
+          taskId: taskAttachments.taskId,
           total: sql<number>`count(*)::int`,
         })
-        .from(attachments)
-        .where(eq(attachments.userId, session.userId))
-        .groupBy(attachments.taskId),
+        .from(taskAttachments)
+        .where(eq(taskAttachments.userId, session.userId))
+        .groupBy(taskAttachments.taskId),
       db
         .select({
           taskId: taskDocs.taskId,
@@ -430,8 +439,8 @@ export async function updateTaskAction(
         .select({
           total: sql<number>`count(*)::int`,
         })
-        .from(attachments)
-        .where(and(eq(attachments.userId, session.userId), eq(attachments.taskId, taskId))),
+        .from(taskAttachments)
+        .where(and(eq(taskAttachments.userId, session.userId), eq(taskAttachments.taskId, taskId))),
     ]);
 
     if (!rows.length) {
@@ -475,30 +484,75 @@ export async function deleteTaskAction(
       ).map((t) => t.id),
     ];
 
-    const taskAttachments = await db
+    const taskAttachmentRows = await db
       .select({
+        id: attachments.id,
         filePath: attachments.filePath,
         thumbnailPath: attachments.thumbnailPath,
       })
-      .from(attachments)
+      .from(taskAttachments)
+      .innerJoin(attachments, eq(taskAttachments.attachmentId, attachments.id))
       .where(
         and(
-          inArray(attachments.taskId, taskIdsToDelete),
-          eq(attachments.userId, session.userId)
+          inArray(taskAttachments.taskId, taskIdsToDelete),
+          eq(taskAttachments.userId, session.userId)
         )
       );
 
-    if (taskAttachments.length > 0) {
-      const keysToDelete = taskAttachments
-        .flatMap((a) => [a.filePath, a.thumbnailPath])
-        .filter((k): k is string => Boolean(k));
+    if (taskAttachmentRows.length > 0) {
+      const candidateIds = taskAttachmentRows.map((a) => a.id);
 
-      await deleteManyFromR2(keysToDelete).catch((r2Err) =>
-        console.error("Warning: Failed to delete R2 files during deleteTaskAction:", r2Err)
+      const [linkedToOtherTasks, linkedToDocs] = await Promise.all([
+        db
+          .select({ attachmentId: taskAttachments.attachmentId })
+          .from(taskAttachments)
+          .where(
+            and(
+              inArray(taskAttachments.attachmentId, candidateIds),
+              notInArray(taskAttachments.taskId, taskIdsToDelete),
+              eq(taskAttachments.userId, session.userId)
+            )
+          ),
+        db
+          .select({ attachmentId: docAttachments.attachmentId })
+          .from(docAttachments)
+          .where(
+            and(
+              inArray(docAttachments.attachmentId, candidateIds),
+              eq(docAttachments.userId, session.userId)
+            )
+          ),
+      ]);
+
+      const otherTaskLinkedSet = new Set(linkedToOtherTasks.map((r) => r.attachmentId));
+      const docLinkedSet = new Set(linkedToDocs.map((r) => r.attachmentId));
+
+      const attachmentsToDelete = taskAttachmentRows.filter(
+        (a) => !otherTaskLinkedSet.has(a.id) && !docLinkedSet.has(a.id)
       );
+
+      if (attachmentsToDelete.length > 0) {
+        const keysToDelete = attachmentsToDelete
+          .flatMap((a) => [a.filePath, a.thumbnailPath])
+          .filter((k): k is string => Boolean(k));
+
+        await deleteManyFromR2(keysToDelete).catch((r2Err) =>
+          console.error("Warning: Failed to delete R2 files during deleteTaskAction:", r2Err)
+        );
+
+        await db.delete(attachments).where(
+          and(
+            inArray(
+              attachments.id,
+              attachmentsToDelete.map((a) => a.id)
+            ),
+            eq(attachments.userId, session.userId)
+          )
+        );
+      }
     }
 
-    // Cascade deletes child subtasks and attachment records via DB foreign key
+    // Cascade deletes child subtasks and taskAttachments via DB foreign key
     await db
       .delete(tasks)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
