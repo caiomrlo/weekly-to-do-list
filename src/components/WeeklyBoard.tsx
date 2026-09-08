@@ -21,7 +21,9 @@ import { updateUserPreferencesAction } from "@/app/actions/user";
 import { useTodayDateStr } from "@/lib/hooks/useTodayDateStr";
 import { useDarkMode } from "@/lib/hooks/useDarkMode";
 import { useBoardDnD } from "./board/hooks/useBoardDnD";
-import { WeeklyHeader } from "./board/WeeklyHeader";
+import { AppHeader } from "./AppHeader";
+import { WeekNavControls } from "./board/WeekNavControls";
+import { formatMonthYear } from "@/lib/date-utils";
 import { DayColumn } from "./board/DayColumn";
 import { UnscheduledSection } from "./board/UnscheduledSection";
 import { TaskModal } from "./TaskModal";
@@ -400,19 +402,22 @@ export function WeeklyBoard({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Glassmorphic Navigation Bar */}
-      <WeeklyHeader
-        currentMonday={currentMonday}
+      <AppHeader
+        title={formatMonthYear(currentMonday)}
         userEmail={userEmail}
-        isNavigating={isNavigating}
         isDarkMode={isDarkMode}
-        preferences={preferences}
-        visibleDaysCount={visibleWeekDays.length}
-        onPrevWeek={handlePrevWeek}
-        onNextWeek={handleNextWeek}
-        onGoToday={handleGoToday}
         onToggleTheme={handleToggleTheme}
-        onToggleDay={handleToggleDay}
-      />
+      >
+        <WeekNavControls
+          isNavigating={isNavigating}
+          preferences={preferences}
+          visibleDaysCount={visibleWeekDays.length}
+          onPrevWeek={handlePrevWeek}
+          onNextWeek={handleNextWeek}
+          onGoToday={handleGoToday}
+          onToggleDay={handleToggleDay}
+        />
+      </AppHeader>
 
       {/* Main Board Container */}
       <main className="flex-1 px-3 sm:px-6 pb-8 w-full">

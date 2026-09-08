@@ -10,7 +10,7 @@ import {
 } from "@/app/actions/docs";
 import { updateUserPreferencesAction } from "@/app/actions/user";
 import { useDarkMode } from "@/lib/hooks/useDarkMode";
-import { DocsHeader } from "./DocsHeader";
+import { AppHeader } from "@/components/AppHeader";
 import { DocsSidebar } from "./DocsSidebar";
 import { DocEditor } from "./DocEditor";
 import { FileText, Plus, Loader2 } from "lucide-react";
@@ -165,7 +165,7 @@ export function DocsWorkspace({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Header */}
-      <DocsHeader
+      <AppHeader
         userEmail={userEmail}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}

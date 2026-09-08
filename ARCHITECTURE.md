@@ -38,14 +38,13 @@ weekly-to-do-list/
 │   │   │   ├── TaskCard.tsx      # Reusable task card with badges, drag handles and subtask hierarchy
 │   │   │   ├── UnscheduledSection.tsx # Collapsible backlog panel for unscheduled tasks
 │   │   │   ├── ViewSettingsMenu.tsx # Popover menu for toggling Saturday/Sunday visibility
-│   │   │   └── WeeklyHeader.tsx  # Board navigation header, date display, theme and logout
+│   │   │   └── WeekNavControls.tsx # Week navigation controls (< Today >) and view settings popover
 │   │   ├── docs/                 # Document management components and editor
 │   │   │   ├── DocAttachmentsSection.tsx # Document attachments dropzone, multi-doc link picker & manager
 │   │   │   ├── DocEditor.tsx     # Active document editor with title, project picker and autosave
 │   │   │   ├── DocLinkedTasksSection.tsx # Linked tasks chips, jump and unlinking
 │   │   │   ├── DocProjectSelector.tsx # Project picker dropdown for documents
 │   │   │   ├── DocRichEditor.tsx # Full WYSIWYG editor with rich formatting toolbar via Tiptap
-│   │   │   ├── DocsHeader.tsx    # Header with navigation tabs, theme toggle and logout
 │   │   │   ├── DocsSidebar.tsx   # Sidebar with search, favorite/project filtering and doc list
 │   │   │   └── DocsWorkspace.tsx # Responsive master-detail split-pane orchestrator
 │   │   ├── task-modal/           # Task details modal specialized subcomponents
@@ -57,6 +56,7 @@ weekly-to-do-list/
 │   │   │   ├── TaskSubtasksSection.tsx # Subtasks list, toggles, inline creation and deep links
 │   │   │   ├── TaskProjectSelector.tsx # Project picker dropdown and inline project creator with color palette
 │   │   │   └── TaskTagSelector.tsx # Tag picker dropdown (preserved for backend compatibility)
+│   │   ├── AppHeader.tsx         # Unified glassmorphic application header with navigation tabs, theme toggle and logout
 │   │   ├── TaskDescriptionEditor.tsx # WYSIWYG rich text editor powered by Tiptap with formatting toolbar
 │   │   ├── TaskModal.tsx         # Task details modal orchestrator (< 500 lines)
 │   │   └── WeeklyBoard.tsx       # Interactive weekly board orchestrator (< 500 lines)
