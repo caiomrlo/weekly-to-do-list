@@ -15,11 +15,11 @@ async function runMigrations() {
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
-    console.warn("⚠️  DATABASE_URL não configurada. Ignorando migrações automáticas.");
+    console.warn("DATABASE_URL is not set. Skipping automatic migrations.");
     return;
   }
 
-  console.log("🚀 Iniciando verificação e aplicação de migrações no banco de dados...");
+  console.log("Checking and applying database migrations...");
 
   let pool = null;
   let success = false;
@@ -38,12 +38,12 @@ async function runMigrations() {
       const db = drizzle(pool);
       await migrate(db, { migrationsFolder: "./drizzle" });
 
-      console.log("✅ Migrações aplicadas/verificadas com sucesso!");
+      console.log("Database migrations applied successfully.");
       success = true;
       break;
     } catch (error) {
       console.warn(
-        `⏳ Tentativa ${attempt}/${MAX_RETRIES} de conexão ou migração falhou (${error.message}). Tentando novamente em ${RETRY_DELAY_MS / 1000}s...`
+        `Connection/migration attempt ${attempt}/${MAX_RETRIES} failed (${error.message}). Retrying in ${RETRY_DELAY_MS / 1000}s...`
       );
       if (pool) {
         try {
@@ -67,7 +67,7 @@ async function runMigrations() {
   }
 
   if (!success) {
-    console.error("❌ Não foi possível conectar ao banco de dados ou aplicar as migrações após as tentativas.");
+    console.error("Failed to connect to the database or apply migrations after maximum retry attempts.");
     process.exit(1);
   }
 }
