@@ -48,4 +48,11 @@ Always validate your changes before considering a task completed:
   - **Allowed**: Non-obvious workarounds, browser quirks, external API edge cases, performance trade-offs, and critical security/regex constraints.
   - **Forbidden**: Comments that narrate *what* the code does, redundant descriptions, and dead/commented-out code. Always write retained comments in English.
 
+## 7. Mandatory UI/UX Design Principles
+Strictly adhere to cognitive load reduction and clean interface rules across all frontend views and components:
+- **Inline Grouping Over Deep Card Nesting**: Prevent "card-inside-card" fatigue and heavy border stacking. Group related metadata, pills, and controls into compact, cohesive horizontal rows instead of wrapping them in nested containers.
+- **Zero Redundant Labels / Clutter**: Eliminate obvious static meta-labels (e.g. "Description:", "Tags:") and explicit optionality markers like "(Optional)" whenever semantic icons, clean typography, formatted values, or contextual placeholders make the element self-explanatory.
+- **Progressive Disclosure via Popovers**: Keep primary views high-signal and distraction-free. Secondary controls, advanced configurations, and tag/project pickers must be revealed on-demand through compact inline triggers and lightweight popovers rather than occupying permanent screen real estate.
+- **Transient-Only Mutation Feedback**: Never leave static status indicators (e.g. permanent "Saved" text) polluting the layout. Feedback must be strictly transient and visible exclusively during active state transitions (e.g. animated `"Saving..."`), silently fading back to a clean state once resolved.
+
 
