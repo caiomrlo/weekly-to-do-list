@@ -221,7 +221,7 @@ export function DocAttachmentsSection({
   );
 
   return (
-    <div className="max-w-xl sm:max-w-2xl rounded-xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/80 p-2.5 sm:p-3 space-y-2">
+    <div className="w-full rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/80 p-3 sm:p-4 space-y-2.5">
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -424,7 +424,7 @@ export function DocAttachmentsSection({
 
         {/* Attachments List */}
         {attachments.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {attachments.map((attachment) => {
               const isImage = attachment.contentType.startsWith("image/");
               const isUnlinkingThis = unlinkingId === attachment.id;

@@ -255,6 +255,13 @@ export function DocEditor({
         />
       </div>
 
+      {/* Attachments Section */}
+      <DocAttachmentsSection
+        docId={doc.id}
+        attachments={attachments}
+        onAttachmentsChange={handleAttachmentsChange}
+      />
+
       {/* Linked Tasks Section */}
       <DocLinkedTasksSection
         docId={doc.id}
@@ -263,17 +270,8 @@ export function DocEditor({
       />
 
       {/* Rich Text Editor */}
-      <div className="flex-1">
+      <div className="flex-1 pb-8">
         <DocRichEditor value={content} onChange={handleContentChange} />
-      </div>
-
-      {/* Attachments Section (below text editor) */}
-      <div className="pt-2 pb-8">
-        <DocAttachmentsSection
-          docId={doc.id}
-          attachments={attachments}
-          onAttachmentsChange={handleAttachmentsChange}
-        />
       </div>
     </div>
   );

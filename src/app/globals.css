@@ -273,3 +273,23 @@ body {
   color: #64748b;
 }
 
+.tiptap a {
+  color: #4f46e5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.tiptap a:hover {
+  color: #3730a3;
+}
+
+.dark .tiptap a {
+  color: #818cf8;
+}
+
+.dark .tiptap a:hover {
+  color: #a5b4fc;
+}
+
