@@ -71,6 +71,17 @@ export function TaskCard({
       task.date === draggedTask.date
   );
 
+  const hasBadges = Boolean(
+    task.project ||
+      task.tag ||
+      task.time ||
+      scheduledDate ||
+      (task.duration != null && task.duration > 0) ||
+      (task.subtaskCount != null && task.subtaskCount > 0) ||
+      (task.attachmentCount != null && task.attachmentCount > 0) ||
+      (task.docCount != null && task.docCount > 0)
+  );
+
   const cardDateStr = task.date || "unscheduled";
 
   return (
@@ -164,14 +175,8 @@ export function TaskCard({
           </div>
         )}
 
-        {/* Tag, Time, Duration, Scheduled Date & Subtask Progress Badges row */}
-        {Boolean(
-          task.tag ||
-            task.time ||
-            scheduledDate ||
-            (task.duration != null && task.duration > 0) ||
-            (task.subtaskCount != null && task.subtaskCount > 0)
-        ) && (
+        {/* Project, Tag, Time, Duration, Scheduled Date & Badges row */}
+        {hasBadges && (
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             {/* Scheduled Date Badge (when displayed in unscheduled card) */}
             {scheduledDate && (

@@ -220,6 +220,11 @@ function TaskModalDialog({
   const handleSelectProject = (project: Project | null) => {
     setSelectedProject(project);
     triggerAutoSave({ projectId: project ? project.id : null });
+    onTaskUpdated({
+      ...task,
+      project: project || null,
+      projectId: project ? project.id : null,
+    });
   };
 
   const handleProjectCreated = (newProject: Project) => {

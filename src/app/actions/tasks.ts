@@ -412,7 +412,7 @@ export async function updateTaskAction(
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
 
     const parentTasks = alias(tasks, "parent_task");
-    const [rows, [stats], [attachmentStat]] = await Promise.all([
+    const [rows, [stats], [attachmentStat], [docStat]] = await Promise.all([
       db
         .select({
           task: tasks,
@@ -441,6 +441,12 @@ export async function updateTaskAction(
         })
         .from(taskAttachments)
         .where(and(eq(taskAttachments.userId, session.userId), eq(taskAttachments.taskId, taskId))),
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+        })
+        .from(taskDocs)
+        .where(and(eq(taskDocs.userId, session.userId), eq(taskDocs.taskId, taskId))),
     ]);
 
     if (!rows.length) {
@@ -455,6 +461,7 @@ export async function updateTaskAction(
       subtaskCount: stats?.total || 0,
       completedSubtaskCount: stats?.completed || 0,
       attachmentCount: attachmentStat?.total || 0,
+      docCount: docStat?.total || 0,
     };
 
     revalidatePath("/");
