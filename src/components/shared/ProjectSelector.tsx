@@ -6,19 +6,19 @@ import { createProjectAction } from "@/app/actions/projects";
 import { PROJECT_COLORS, getProjectColorStyles } from "@/lib/project-utils";
 import { Folder, Plus, ChevronDown, Check, X, Loader2 } from "lucide-react";
 
-interface DocProjectSelectorProps {
+export interface ProjectSelectorProps {
   selectedProject: Project | null;
   userProjects: Project[];
   onSelectProject: (project: Project | null) => void;
   onProjectCreated: (project: Project) => void;
 }
 
-export function DocProjectSelector({
+export function ProjectSelector({
   selectedProject,
   userProjects,
   onSelectProject,
   onProjectCreated,
-}: DocProjectSelectorProps) {
+}: ProjectSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");

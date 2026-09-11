@@ -5,6 +5,9 @@ import {
   AttachmentWithUrl,
   uploadAttachmentAction,
   deleteAttachmentAction,
+  linkAttachmentToTaskAction,
+  unlinkAttachmentFromTaskAction,
+  getUserAvailableTaskAttachmentsAction,
   linkAttachmentToDocAction,
   unlinkAttachmentFromDocAction,
   getUserAvailableAttachmentsAction,
@@ -24,10 +27,16 @@ import {
   X,
 } from "lucide-react";
 
-interface DocAttachmentsSectionProps {
-  docId: string;
+export type AttachmentEntityTarget =
+  | { type: "task"; id: string }
+  | { type: "doc"; id: string };
+
+export interface AttachmentsSectionProps {
+  target: AttachmentEntityTarget;
   attachments: AttachmentWithUrl[];
   onAttachmentsChange: (updated: AttachmentWithUrl[]) => void;
+  isLoading?: boolean;
+  variant?: "modal" | "card";
 }
 
 function formatBytes(bytes: number, decimals = 1): string {
@@ -39,11 +48,13 @@ function formatBytes(bytes: number, decimals = 1): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
-export function DocAttachmentsSection({
-  docId,
+export function AttachmentsSection({
+  target,
   attachments,
   onAttachmentsChange,
-}: DocAttachmentsSectionProps) {
+  isLoading = false,
+  variant = "modal",
+}: AttachmentsSectionProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -62,6 +73,9 @@ export function DocAttachmentsSection({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
 
+  const isCardVariant = variant === "card";
+  const entityLabel = target.type === "task" ? "task" : "document";
+
   // Close picker on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -79,7 +93,11 @@ export function DocAttachmentsSection({
     setPickerSearch("");
     setIsLoadingAvailable(true);
     try {
-      const res = await getUserAvailableAttachmentsAction(docId);
+      const res =
+        target.type === "task"
+          ? await getUserAvailableTaskAttachmentsAction(target.id)
+          : await getUserAvailableAttachmentsAction(target.id);
+
       if (res.attachments) {
         setAvailableAttachments(res.attachments);
       }
@@ -93,7 +111,11 @@ export function DocAttachmentsSection({
   const handleLinkExisting = async (attachment: AttachmentWithUrl) => {
     setLinkingId(attachment.id);
     try {
-      const res = await linkAttachmentToDocAction(docId, attachment.id);
+      const res =
+        target.type === "task"
+          ? await linkAttachmentToTaskAction(target.id, attachment.id)
+          : await linkAttachmentToDocAction(target.id, attachment.id);
+
       if (res.attachment) {
         onAttachmentsChange([res.attachment, ...attachments]);
         setAvailableAttachments((prev) => prev.filter((a) => a.id !== attachment.id));
@@ -101,8 +123,8 @@ export function DocAttachmentsSection({
         setUploadError(res.error);
       }
     } catch (err) {
-      console.error("Failed to link attachment:", err);
-      setUploadError("Could not link attachment to this document.");
+      console.error(`Failed to link attachment to ${entityLabel}:`, err);
+      setUploadError(`Could not link attachment to this ${entityLabel}.`);
     } finally {
       setLinkingId(null);
     }
@@ -119,7 +141,11 @@ export function DocAttachmentsSection({
     try {
       for (const file of fileList) {
         const formData = new FormData();
-        formData.append("docId", docId);
+        if (target.type === "task") {
+          formData.append("taskId", target.id);
+        } else {
+          formData.append("docId", target.id);
+        }
         formData.append("file", file);
 
         const res = await uploadAttachmentAction(formData);
@@ -137,7 +163,7 @@ export function DocAttachmentsSection({
         onAttachmentsChange([...newAttachments, ...attachments]);
       }
     } catch (err: unknown) {
-      console.error("Failed to upload document attachment:", err);
+      console.error(`Failed to upload ${entityLabel} attachment:`, err);
       setUploadError("Failed to upload file. Please try again.");
     } finally {
       setIsUploading(false);
@@ -175,20 +201,24 @@ export function DocAttachmentsSection({
     }
   };
 
-  // Unlink from this document (leaves file and other document links intact)
+  // Unlink from this entity (leaves file and other task/doc links intact)
   const handleUnlink = (attachmentId: string) => {
     setUnlinkingId(attachmentId);
     startTransition(async () => {
       try {
-        const res = await unlinkAttachmentFromDocAction(docId, attachmentId);
+        const res =
+          target.type === "task"
+            ? await unlinkAttachmentFromTaskAction(target.id, attachmentId)
+            : await unlinkAttachmentFromDocAction(target.id, attachmentId);
+
         if (res.success) {
           onAttachmentsChange(attachments.filter((a) => a.id !== attachmentId));
         } else if (res.error) {
           setUploadError(res.error);
         }
       } catch (err) {
-        console.error("Could not unlink attachment:", err);
-        setUploadError("Could not unlink attachment from this document.");
+        console.error(`Could not unlink attachment from ${entityLabel}:`, err);
+        setUploadError(`Could not unlink attachment from this ${entityLabel}.`);
       } finally {
         setUnlinkingId(null);
       }
@@ -208,7 +238,7 @@ export function DocAttachmentsSection({
           setUploadError(res.error);
         }
       } catch (err) {
-        console.error("Could not delete attachment:", err);
+        console.error("Could not permanently delete attachment:", err);
         setUploadError("Could not permanently delete attachment.");
       } finally {
         setDeletingId(null);
@@ -221,22 +251,40 @@ export function DocAttachmentsSection({
   );
 
   return (
-    <div className="w-full rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/80 p-3 sm:p-4 space-y-2.5">
+    <div
+      className={
+        isCardVariant
+          ? "w-full rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/80 p-3 sm:p-4 space-y-2.5"
+          : "space-y-3"
+      }
+    >
       {/* Header Bar */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Paperclip className="w-3.5 h-3.5 text-indigo-500" />
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <label
+            className={`${
+              isCardVariant ? "text-[11px]" : "text-xs"
+            } font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5`}
+          >
+            <Paperclip
+              className={`w-3.5 h-3.5 ${isCardVariant ? "text-indigo-500" : ""}`}
+            />
             Attachments
           </label>
           {attachments.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-medium border ${
+                isCardVariant
+                  ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-800/60"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/60"
+              }`}
+            >
               {attachments.length}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-1.5">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Link Existing Popover Button */}
           <div className="relative" ref={pickerRef}>
             <button
@@ -248,8 +296,10 @@ export function DocAttachmentsSection({
                   handleOpenPicker();
                 }
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-              title="Link an existing file to this document"
+              className={`inline-flex items-center gap-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer ${
+                isCardVariant ? "px-2 py-0.5 rounded-md" : "px-2.5 py-1 rounded-lg"
+              }`}
+              title={`Link an existing file to this ${entityLabel}`}
             >
               <Link2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Link Existing</span>
@@ -346,7 +396,6 @@ export function DocAttachmentsSection({
             )}
           </div>
 
-          {/* Native File Input Trigger */}
           <input
             ref={fileInputRef}
             type="file"
@@ -360,8 +409,10 @@ export function DocAttachmentsSection({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer disabled:opacity-50"
-            title="Upload a new file to this document"
+            className={`inline-flex items-center gap-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer disabled:opacity-50 ${
+              isCardVariant ? "px-2 py-0.5 rounded-md" : "px-2.5 py-1 rounded-lg"
+            }`}
+            title={`Upload a new file to this ${entityLabel}`}
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Attach</span>
@@ -371,7 +422,7 @@ export function DocAttachmentsSection({
 
       {/* Error Notice */}
       {uploadError && (
-        <div className="flex items-center gap-2 p-2 rounded-lg text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">
+        <div className="flex items-center gap-2 p-2.5 rounded-xl text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span className="flex-1">{uploadError}</span>
           <button
@@ -384,7 +435,7 @@ export function DocAttachmentsSection({
         </div>
       )}
 
-      {/* Dropzone & Attachments List */}
+      {/* Dropzone & Loading State */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -394,37 +445,63 @@ export function DocAttachmentsSection({
             fileInputRef.current?.click();
           }
         }}
-        className={`relative transition-all rounded-xl border ${
+        className={`relative transition-all ${
+          isCardVariant ? "rounded-xl" : "rounded-2xl"
+        } border ${
           isDraggingOver
-            ? "border-dashed border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40"
+            ? "border-dashed border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40 scale-[1.01]"
             : attachments.length === 0
-            ? "border-dashed border-slate-200/90 dark:border-slate-800/90 hover:border-indigo-400 dark:hover:border-indigo-500/70 bg-white/40 dark:bg-slate-900/30 cursor-pointer"
+            ? isCardVariant
+              ? "border-dashed border-slate-200/90 dark:border-slate-800/90 hover:border-indigo-400 dark:hover:border-indigo-500/70 bg-white/40 dark:bg-slate-900/30 cursor-pointer"
+              : "border-dashed border-slate-300/80 dark:border-slate-700/80 hover:border-indigo-400 dark:hover:border-indigo-500/70 bg-slate-50/40 dark:bg-slate-900/30 p-4 text-center cursor-pointer"
             : "border-transparent"
         }`}
       >
         {isUploading && (
-          <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-800/70 text-indigo-600 dark:text-indigo-400 text-xs font-medium animate-pulse mb-2">
+          <div
+            className={`flex items-center justify-center gap-2 ${
+              isCardVariant ? "py-2 px-3 mb-2 rounded-lg" : "py-3 px-4 mb-3 rounded-xl"
+            } bg-indigo-50/70 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-800/70 text-indigo-600 dark:text-indigo-400 text-xs font-medium animate-pulse`}
+          >
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>Uploading attachment...</span>
+            <span>Uploading attachment to Cloudflare R2...</span>
           </div>
         )}
 
-        {/* Compact Empty state */}
+        {/* Empty state */}
         {attachments.length === 0 && !isUploading && (
-          <div className="py-2.5 px-3 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
-            <UploadCloud className="w-4 h-4 text-indigo-500 shrink-0" />
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              Drag files here or click to browse
-            </span>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-              (Images, PDF up to 20MB)
-            </span>
-          </div>
+          isCardVariant ? (
+            <div className="py-2.5 px-3 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+              <UploadCloud className="w-4 h-4 text-indigo-500 shrink-0" />
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                Drag files here or click to browse
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+                (Images, PDF up to 20MB)
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400 dark:text-slate-500">
+              <UploadCloud className="w-6 h-6 stroke-[1.5] text-slate-400 dark:text-slate-500" />
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                Drag images or PDFs here, or click to browse
+              </p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                PNG, JPG, WebP, GIF or PDF up to 20MB
+              </p>
+            </div>
+          )
         )}
 
         {/* Attachments List */}
         {attachments.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div
+            className={`grid ${
+              isCardVariant
+                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+                : "grid-cols-1 sm:grid-cols-2 gap-2.5"
+            }`}
+          >
             {attachments.map((attachment) => {
               const isImage = attachment.contentType.startsWith("image/");
               const isUnlinkingThis = unlinkingId === attachment.id;
@@ -434,13 +511,19 @@ export function DocAttachmentsSection({
               return (
                 <div
                   key={attachment.id}
-                  className="group relative flex items-center gap-2.5 p-1.5 rounded-lg border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-xs overflow-hidden"
+                  className={`group relative flex items-center border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-xs overflow-hidden ${
+                    isCardVariant
+                      ? "gap-2.5 p-1.5 rounded-lg"
+                      : "gap-3 p-2 rounded-xl"
+                  }`}
                 >
                   <a
                     href={attachment.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="relative w-9 h-9 rounded-md overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90"
+                    className={`relative rounded-${
+                      isCardVariant ? "md w-9 h-9" : "lg w-11 h-11"
+                    } overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90`}
                     title="Open original file"
                   >
                     {isImage ? (
@@ -453,8 +536,12 @@ export function DocAttachmentsSection({
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center text-rose-500">
-                        <FileText className="w-4 h-4" />
-                        <span className="text-[8px] font-bold tracking-tighter uppercase mt-[-2px]">
+                        <FileText className={isCardVariant ? "w-4 h-4" : "w-5 h-5"} />
+                        <span
+                          className={`${
+                            isCardVariant ? "text-[8px]" : "text-[9px]"
+                          } font-bold tracking-tighter uppercase mt-[-2px]`}
+                        >
                           PDF
                         </span>
                       </div>
@@ -478,25 +565,24 @@ export function DocAttachmentsSection({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    {/* View */}
+                  <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                     <a
                       href={attachment.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Open file in new tab"
+                      className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Open original file in new tab"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
 
-                    {/* Unlink from this doc */}
+                    {/* Unlink from this entity */}
                     <button
                       type="button"
                       onClick={() => handleUnlink(attachment.id)}
                       disabled={isUnlinkingThis || isDeletingThis}
-                      className="p-1 rounded-md text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer disabled:opacity-50"
-                      title="Unlink from this document (keeps file intact)"
+                      className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                      title={`Unlink from this ${entityLabel} (keeps file intact)`}
                     >
                       {isUnlinkingThis ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
@@ -505,9 +591,9 @@ export function DocAttachmentsSection({
                       )}
                     </button>
 
-                    {/* Delete Permanently (with confirmation) */}
+                    {/* Delete permanently (with confirmation) */}
                     {isConfirmingDelete ? (
-                      <div className="flex items-center gap-1 bg-rose-50/95 dark:bg-rose-950/90 border border-rose-200 dark:border-rose-900 px-1.5 py-0.5 rounded-md">
+                      <div className="flex items-center gap-1 bg-rose-50/95 dark:bg-rose-950/90 border border-rose-200 dark:border-rose-900 px-1.5 py-0.5 rounded-lg">
                         <button
                           type="button"
                           disabled={isDeletingThis}
@@ -531,8 +617,8 @@ export function DocAttachmentsSection({
                         type="button"
                         onClick={() => setConfirmDeleteId(attachment.id)}
                         disabled={isUnlinkingThis || isDeletingThis}
-                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
-                        title="Delete file permanently from all docs and tasks"
+                        className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                        title="Delete file permanently from all tasks and docs"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -544,6 +630,13 @@ export function DocAttachmentsSection({
           </div>
         )}
       </div>
+
+      {isLoading && attachments.length === 0 && (
+        <div className="flex items-center justify-center py-2 text-slate-400 text-xs">
+          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+          Loading attachments...
+        </div>
+      )}
     </div>
   );
 }

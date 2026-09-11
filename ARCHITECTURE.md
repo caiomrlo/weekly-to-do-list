@@ -40,21 +40,20 @@ weekly-to-do-list/
 │   │   │   ├── ViewSettingsMenu.tsx # Popover menu for toggling Saturday/Sunday visibility
 │   │   │   └── WeekNavControls.tsx # Week navigation controls (< Today >) and view settings popover
 │   │   ├── docs/                 # Document management components and editor
-│   │   │   ├── DocAttachmentsSection.tsx # Document attachments dropzone, multi-doc link picker & manager
 │   │   │   ├── DocEditor.tsx     # Active document editor with title, project picker and autosave
 │   │   │   ├── DocLinkedTasksSection.tsx # Linked tasks chips, jump and unlinking
-│   │   │   ├── DocProjectSelector.tsx # Project picker dropdown for documents
 │   │   │   ├── DocRichEditor.tsx # Full WYSIWYG editor with rich formatting toolbar via Tiptap
 │   │   │   ├── DocsSidebar.tsx   # Sidebar with search, favorite/project filtering and doc list
 │   │   │   └── DocsWorkspace.tsx # Responsive master-detail split-pane orchestrator
+│   │   ├── shared/               # Universal polymorphic components shared across modules
+│   │   │   ├── AttachmentsSection.tsx # Polymorphic attachment manager, R2 upload & cross-entity linker
+│   │   │   └── ProjectSelector.tsx # Unified project picker dropdown and inline project creator
 │   │   ├── task-modal/           # Task details modal specialized subcomponents
-│   │   │   ├── TaskAttachmentsSection.tsx # Dropzone, image/PDF cards and attachment management
 │   │   │   ├── TaskDocsSection.tsx # Linked docs chips, quick doc creation and doc linker popover
 │   │   │   ├── TaskModalFooter.tsx # Modal footer with cascade delete confirmation
 │   │   │   ├── TaskParentBanner.tsx # Visual banner for subtask parent linkage
 │   │   │   ├── TaskScheduleInputs.tsx # Inline date, time, and natural duration inputs
 │   │   │   ├── TaskSubtasksSection.tsx # Subtasks list, toggles, inline creation and deep links
-│   │   │   ├── TaskProjectSelector.tsx # Project picker dropdown and inline project creator with color palette
 │   │   │   └── TaskTagSelector.tsx # Tag picker dropdown (preserved for backend compatibility)
 │   │   ├── AppHeader.tsx         # Unified glassmorphic application header with navigation tabs, theme toggle and logout
 │   │   ├── TaskDescriptionEditor.tsx # WYSIWYG rich text editor powered by Tiptap with formatting toolbar

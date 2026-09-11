@@ -7,9 +7,9 @@ import {
   deleteDocAction,
   toggleDocFavoriteAction,
 } from "@/app/actions/docs";
-import { DocProjectSelector } from "./DocProjectSelector";
+import { ProjectSelector } from "@/components/shared/ProjectSelector";
 import { DocLinkedTasksSection } from "./DocLinkedTasksSection";
-import { DocAttachmentsSection } from "./DocAttachmentsSection";
+import { AttachmentsSection } from "@/components/shared/AttachmentsSection";
 import { DocRichEditor } from "./DocRichEditor";
 import { AttachmentWithUrl } from "@/app/actions/attachments";
 import {
@@ -163,7 +163,7 @@ export function DocEditor({
             </button>
           )}
 
-          <DocProjectSelector
+          <ProjectSelector
             selectedProject={selectedProject}
             userProjects={userProjects}
             onSelectProject={handleSelectProject}
@@ -256,10 +256,11 @@ export function DocEditor({
       </div>
 
       {/* Attachments Section */}
-      <DocAttachmentsSection
-        docId={doc.id}
+      <AttachmentsSection
+        target={{ type: "doc", id: doc.id }}
         attachments={attachments}
         onAttachmentsChange={handleAttachmentsChange}
+        variant="card"
       />
 
       {/* Linked Tasks Section */}

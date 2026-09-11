@@ -14,9 +14,9 @@ import { formatDuration, parseNaturalDuration } from "@/lib/date-utils";
 import { TaskDescriptionEditor } from "./TaskDescriptionEditor";
 import { TaskParentBanner } from "./task-modal/TaskParentBanner";
 import { TaskScheduleInputs } from "./task-modal/TaskScheduleInputs";
-import { TaskProjectSelector } from "./task-modal/TaskProjectSelector";
+import { ProjectSelector } from "./shared/ProjectSelector";
 import { TaskSubtasksSection } from "./task-modal/TaskSubtasksSection";
-import { TaskAttachmentsSection } from "./task-modal/TaskAttachmentsSection";
+import { AttachmentsSection } from "./shared/AttachmentsSection";
 import { TaskDocsSection } from "./task-modal/TaskDocsSection";
 import { TaskModalFooter } from "./task-modal/TaskModalFooter";
 import { getTaskAttachmentsAction, AttachmentWithUrl } from "@/app/actions/attachments";
@@ -409,7 +409,7 @@ function TaskModalDialog({
             onClearDuration={handleClearDuration}
           />
 
-          <TaskProjectSelector
+          <ProjectSelector
             selectedProject={selectedProject}
             userProjects={userProjects}
             onSelectProject={handleSelectProject}
@@ -426,11 +426,12 @@ function TaskModalDialog({
             />
           </div>
 
-          <TaskAttachmentsSection
-            taskId={task.id}
+          <AttachmentsSection
+            target={{ type: "task", id: task.id }}
             attachments={attachments}
             isLoading={isLoadingAttachments}
             onAttachmentsChange={handleAttachmentsChange}
+            variant="modal"
           />
 
           <TaskDocsSection
