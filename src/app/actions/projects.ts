@@ -54,7 +54,7 @@ export async function createProjectAction(data: {
     "orange",
     "slate",
   ];
-  const color = data.color && validColors.includes(data.color) ? data.color : "indigo";
+  const color = data.color && validColors.includes(data.color) ? data.color : "amber";
 
   try {
     const now = new Date();

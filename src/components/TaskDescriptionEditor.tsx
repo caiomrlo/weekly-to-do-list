@@ -108,7 +108,7 @@ export function TaskDescriptionEditor({
 
   const btnBase =
     "p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center";
-  const btnActive = "bg-indigo-100/90 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-semibold shadow-2xs";
+  const btnActive = "bg-amber-100/90 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-semibold shadow-2xs";
   const btnInactive = "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60";
 
   const handleToggleLink = () => {
@@ -171,7 +171,7 @@ export function TaskDescriptionEditor({
   };
 
   return (
-    <div className="w-full rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 overflow-hidden shadow-2xs">
+    <div className="w-full rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 overflow-hidden shadow-2xs">
       <div className="flex flex-wrap items-center gap-0.5 px-2.5 py-1.5 border-b border-slate-200/60 dark:border-slate-800/60 bg-slate-50/70 dark:bg-slate-800/50 text-xs">
         <button
           type="button"
@@ -359,9 +359,9 @@ export function TaskDescriptionEditor({
 
       {/* Inline Link Toolbar Bar */}
       {isLinkOpen && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50/60 dark:bg-slate-800/80 border-b border-slate-200/60 dark:border-slate-800/80 text-xs animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50/60 dark:bg-slate-800/80 border-b border-slate-200/60 dark:border-slate-800/80 text-xs animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="relative flex-1 flex items-center">
-            <Link2 className="w-3.5 h-3.5 absolute left-2.5 text-indigo-500 shrink-0 pointer-events-none" />
+            <Link2 className="w-3.5 h-3.5 absolute left-2.5 text-amber-500 shrink-0 pointer-events-none" />
             <input
               ref={linkInputRef}
               type="url"
@@ -377,14 +377,14 @@ export function TaskDescriptionEditor({
                 }
               }}
               placeholder="Enter URL (e.g. https://example.com)..."
-              className="w-full pl-8 pr-3 py-1 text-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all"
+              className="w-full pl-8 pr-3 py-1 text-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all"
             />
           </div>
 
           <button
             type="button"
             onClick={handleApplyLink}
-            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
+            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
             title="Apply link (Enter)"
           >
             <Check className="w-3.5 h-3.5" />

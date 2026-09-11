@@ -367,7 +367,7 @@ function TaskModalDialog({
         <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-200/50 dark:border-slate-800/60">
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 min-h-[20px]">
             {isSaving && (
-              <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-medium animate-in fade-in duration-150">
+              <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium animate-in fade-in duration-150">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Saving...
               </span>
@@ -399,13 +399,13 @@ function TaskModalDialog({
             <button
               type="button"
               onClick={handleToggleCompleted}
-              className="mt-1 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors cursor-pointer flex-shrink-0"
+              className="mt-1 text-slate-400 hover:text-amber-600 dark:text-slate-500 dark:hover:text-amber-400 transition-colors cursor-pointer flex-shrink-0"
               title={completed ? "Mark as pending" : "Mark as completed"}
             >
               {completed ? (
                 <CheckCircle2 className="w-6 h-6 text-emerald-500" />
               ) : (
-                <Circle className="w-6 h-6 text-slate-400 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400" />
+                <Circle className="w-6 h-6 text-slate-400 dark:text-slate-600 hover:text-amber-500 dark:hover:text-amber-400" />
               )}
             </button>
 
@@ -414,7 +414,7 @@ function TaskModalDialog({
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Task title..."
-              className={`w-full text-lg sm:text-xl font-semibold bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 focus:outline-none transition-colors px-1 py-0.5 text-slate-800 dark:text-slate-100 ${
+              className={`w-full text-lg sm:text-xl font-semibold bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-amber-500 focus:outline-none transition-colors px-1 py-0.5 text-slate-800 dark:text-slate-100 ${
                 completed ? "line-through text-slate-400 dark:text-slate-500" : ""
               }`}
             />

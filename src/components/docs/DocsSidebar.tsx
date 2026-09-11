@@ -62,7 +62,7 @@ export function DocsSidebar({
           <button
             type="button"
             onClick={onCreateDoc}
-            className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-semibold shadow-sm shadow-amber-500/20 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Document</span>
@@ -77,7 +77,7 @@ export function DocsSidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search documents..."
-            className="w-full pl-9 pr-7 py-1.5 rounded-xl text-xs bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            className="w-full pl-9 pr-7 py-1.5 rounded-xl text-xs bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
           />
           {searchQuery && (
             <button
@@ -100,7 +100,7 @@ export function DocsSidebar({
             }}
             className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer shrink-0 ${
               !filterFavorite && !filterProjectId
-                ? "bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-semibold"
+                ? "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-semibold"
                 : "text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
             }`}
           >
@@ -153,7 +153,7 @@ export function DocsSidebar({
             <button
               type="button"
               onClick={onCreateDoc}
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              className="text-xs text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
             >
               Create your first document
             </button>
@@ -171,7 +171,7 @@ export function DocsSidebar({
                 onClick={() => onSelectDoc(doc)}
                 className={`group relative p-3 rounded-2xl border transition-all cursor-pointer select-none ${
                   isSelected
-                    ? "bg-white dark:bg-slate-800/90 border-indigo-500/40 shadow-sm ring-1 ring-indigo-500/20"
+                    ? "bg-white dark:bg-slate-800/90 border-amber-500/40 shadow-sm ring-1 ring-amber-500/20"
                     : "bg-white/60 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/70 hover:bg-white dark:hover:bg-slate-800/70 hover:shadow-2xs"
                 }`}
               >
@@ -180,7 +180,7 @@ export function DocsSidebar({
                     <h3
                       className={`text-xs font-semibold truncate ${
                         isSelected
-                          ? "text-indigo-700 dark:text-indigo-300"
+                          ? "text-amber-800 dark:text-amber-300"
                           : "text-slate-800 dark:text-slate-200"
                       }`}
                     >

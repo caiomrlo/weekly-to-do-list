@@ -94,29 +94,29 @@ export function TaskCard({
       onClick={() => onOpenTask(task)}
       className={`group relative flex items-start gap-2 p-2.5 rounded-xl border transition-all select-none cursor-pointer ${
         isDragging
-          ? "opacity-35 scale-[0.98] border-dashed border-indigo-400 dark:border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/30 shadow-none cursor-grabbing"
+          ? "opacity-35 scale-[0.98] border-dashed border-amber-400 dark:border-amber-500 bg-amber-50/20 dark:bg-amber-950/30 shadow-none cursor-grabbing"
           : isNestTarget
-            ? "ring-2 ring-indigo-500 bg-indigo-50/85 dark:bg-indigo-950/85 border-indigo-400 dark:border-indigo-500 shadow-md cursor-grabbing"
+            ? "ring-2 ring-amber-500 bg-amber-50/85 dark:bg-amber-950/85 border-amber-400 dark:border-amber-500 shadow-md cursor-grabbing"
             : isAttachedToDragged
-              ? "opacity-60 border-dashed border-indigo-300 dark:border-indigo-600 bg-indigo-50/10 dark:bg-indigo-950/20"
+              ? "opacity-60 border-dashed border-amber-300 dark:border-amber-600 bg-amber-50/10 dark:bg-amber-950/20"
               : task.completed
                 ? "bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 text-slate-400 dark:text-slate-500"
                 : isSameDaySubtask
-                  ? "bg-white/95 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-indigo-300 dark:hover:border-indigo-500/50"
-                  : "bg-white/85 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200/60 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-indigo-200 dark:hover:border-indigo-500/40"
+                  ? "bg-white/95 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-amber-300 dark:hover:border-amber-500/50"
+                  : "bg-white/85 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200/60 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-amber-200 dark:hover:border-amber-500/40"
       }`}
     >
       {/* Drop Indicator Line: Before */}
       {isBeforeTarget && (
-        <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
-          <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
+        <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-amber-500 rounded-full z-30 pointer-events-none flex items-center">
+          <div className="w-2.5 h-2.5 rounded-full bg-amber-500 -ml-1 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
         </div>
       )}
 
       {/* Drop Indicator Line: After */}
       {isAfterTarget && (
-        <div className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-indigo-600 rounded-full z-30 pointer-events-none flex items-center">
-          <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 -ml-1 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
+        <div className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-amber-500 rounded-full z-30 pointer-events-none flex items-center">
+          <div className="w-2.5 h-2.5 rounded-full bg-amber-500 -ml-1 ring-2 ring-white dark:ring-slate-900 shadow-xs" />
         </div>
       )}
 
@@ -133,12 +133,12 @@ export function TaskCard({
         type="button"
         draggable={false}
         onClick={(e) => onToggleCompleted(e, task)}
-        className="mt-0.5 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors cursor-pointer flex-shrink-0"
+        className="mt-0.5 text-slate-400 hover:text-amber-600 dark:text-slate-500 dark:hover:text-amber-400 transition-colors cursor-pointer flex-shrink-0"
       >
         {task.completed ? (
           <CheckCircle2 className="w-4 h-4 text-emerald-500" />
         ) : (
-          <Circle className="w-4 h-4 text-slate-300 hover:text-indigo-500 dark:text-slate-600 dark:hover:text-indigo-400" />
+          <Circle className="w-4 h-4 text-slate-300 hover:text-amber-500 dark:text-slate-600 dark:hover:text-amber-400" />
         )}
       </button>
 
@@ -148,10 +148,10 @@ export function TaskCard({
         {isDiffDaySubtask && task.parent && (
           <div className="flex items-center gap-1 mb-1">
             <span
-              className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-900/60 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
+              className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 dark:text-amber-300 bg-amber-50/90 dark:bg-amber-950/70 border border-amber-100 dark:border-amber-900/60 px-1.5 py-0.5 rounded-md max-w-[170px] truncate"
               title={`Subtask of: ${task.parent.title}`}
             >
-              <CornerDownRight className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+              <CornerDownRight className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />
               <span className="truncate">{task.parent.title}</span>
             </span>
           </div>
@@ -169,8 +169,8 @@ export function TaskCard({
 
         {/* Nest Target Indicator Pill */}
         {isNestTarget && (
-          <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100/90 dark:bg-indigo-950/90 px-1.5 py-0.5 rounded-md animate-pulse">
-            <CornerDownRight className="w-2.5 h-2.5 text-indigo-600 flex-shrink-0" />
+          <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/90 px-1.5 py-0.5 rounded-md animate-pulse">
+            <CornerDownRight className="w-2.5 h-2.5 text-amber-600 flex-shrink-0" />
             <span>Drop to make subtask</span>
           </div>
         )}
@@ -200,7 +200,7 @@ export function TaskCard({
                   task.completed ||
                   task.completedSubtaskCount === task.subtaskCount
                     ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                    : "bg-indigo-50/90 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/60"
+                    : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                 }`}
                 title={`Subtasks: ${task.completedSubtaskCount || 0} of ${
                   task.subtaskCount
@@ -210,7 +210,7 @@ export function TaskCard({
                   className={`w-2.5 h-2.5 ${
                     task.completed
                       ? "text-slate-400 dark:text-slate-500"
-                      : "text-indigo-500"
+                      : "text-amber-500"
                   }`}
                 />
                 <span>
@@ -282,7 +282,7 @@ export function TaskCard({
             {/* Time badge */}
             {task.time && (
               <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                <Clock className="w-2.5 h-2.5 text-indigo-400" />
+                <Clock className="w-2.5 h-2.5 text-amber-500" />
                 {task.time}
               </span>
             )}

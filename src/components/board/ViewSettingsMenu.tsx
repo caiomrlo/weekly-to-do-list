@@ -46,7 +46,7 @@ export function ViewSettingsMenu({
         onClick={() => setIsOpen((prev) => !prev)}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium shadow-xs transition-all cursor-pointer ${
           isOpen || hasCustomDays
-            ? "bg-indigo-50/90 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/80"
+            ? "bg-amber-50/90 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/80"
             : "bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-slate-200/70 dark:border-slate-700/70"
         }`}
         title="Day view settings"
@@ -55,7 +55,7 @@ export function ViewSettingsMenu({
         <SlidersHorizontal className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">View</span>
         {hasCustomDays && (
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
         )}
       </button>
 
@@ -91,7 +91,7 @@ export function ViewSettingsMenu({
               <div
                 className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
                   preferences.showSaturday
-                    ? "bg-indigo-600"
+                    ? "bg-amber-500"
                     : "bg-slate-300 dark:bg-slate-700"
                 }`}
               >
@@ -117,7 +117,7 @@ export function ViewSettingsMenu({
               <div
                 className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
                   preferences.showSunday
-                    ? "bg-indigo-600"
+                    ? "bg-amber-500"
                     : "bg-slate-300 dark:bg-slate-700"
                 }`}
               >

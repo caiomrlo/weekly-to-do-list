@@ -24,7 +24,7 @@ export function ProjectSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
-  const [newProjectColor, setNewProjectColor] = useState("indigo");
+  const [newProjectColor, setNewProjectColor] = useState("amber");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -138,12 +138,12 @@ export function ProjectSelector({
               }}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border shadow-2xs hover:opacity-90 transition-all cursor-pointer ${
                 selectedProjectStyles?.badgeClass ||
-                "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800/60"
+                "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/60"
               }`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  selectedProjectStyles?.dotClass || "bg-indigo-500"
+                  selectedProjectStyles?.dotClass || "bg-amber-500"
                 }`}
               />
               <span>{selectedProject.name}</span>
@@ -168,7 +168,7 @@ export function ProjectSelector({
               setError("");
               setRenameError("");
             }}
-            className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium py-1 px-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium py-1 px-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add project</span>
@@ -186,7 +186,7 @@ export function ProjectSelector({
                 <button
                   type="button"
                   onClick={() => setIsCreating(true)}
-                  className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
+                  className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   New Project
@@ -210,7 +210,7 @@ export function ProjectSelector({
                         <div
                           key={project.id}
                           onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-indigo-400/60 shadow-xs space-y-1"
+                          className="p-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-amber-400/60 shadow-xs space-y-1"
                         >
                           <div className="flex items-center gap-1.5">
                             <span
@@ -279,7 +279,7 @@ export function ProjectSelector({
                         key={project.id}
                         className={`group w-full rounded-xl text-xs font-medium flex items-center justify-between transition-all ${
                           isSelected
-                            ? `${styles.badgeClass} ring-1 ring-indigo-400/40 font-semibold`
+                            ? `${styles.badgeClass} ring-1 ring-amber-400/40 font-semibold`
                             : "hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200"
                         }`}
                       >
@@ -315,14 +315,14 @@ export function ProjectSelector({
                               setRenameValue(project.name);
                               setRenameError("");
                             }}
-                            className="p-1 rounded-md text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
+                            className="p-1 rounded-md text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
                             title="Rename project"
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
 
                           {isSelected && (
-                            <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 ml-0.5" />
+                            <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 ml-0.5" />
                           )}
                         </div>
                       </div>
@@ -361,7 +361,7 @@ export function ProjectSelector({
                 placeholder="Project name..."
                 maxLength={50}
                 autoFocus
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
               />
 
               {/* Color swatches */}
@@ -376,7 +376,7 @@ export function ProjectSelector({
                       title={c.label}
                       className={`w-5 h-5 rounded-full ${c.dotClass} transition-all cursor-pointer flex items-center justify-center ${
                         newProjectColor === key
-                          ? "ring-2 ring-offset-2 ring-indigo-500 scale-110"
+                          ? "ring-2 ring-offset-2 ring-amber-500 scale-110"
                           : "hover:scale-105 opacity-80 hover:opacity-100"
                       }`}
                     >
@@ -402,7 +402,7 @@ export function ProjectSelector({
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
                 >
                   {isLoading ? (
                     <>

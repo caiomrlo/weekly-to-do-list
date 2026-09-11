@@ -38,7 +38,7 @@ export function AppHeader({
         {/* Left: Brand Icon & Title + Nav Tabs */}
         <div className="flex items-center gap-3 sm:gap-6">
           <div className="flex items-center gap-3 w-48 sm:w-52 shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-500/20 flex-shrink-0">
               <CalendarDays className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -57,7 +57,7 @@ export function AppHeader({
               href="/"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all ${
                 isPlannerActive
-                  ? "font-semibold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs"
+                  ? "font-semibold bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
                   : "font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
@@ -68,7 +68,7 @@ export function AppHeader({
               href="/docs"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all ${
                 isDocsActive
-                  ? "font-semibold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs"
+                  ? "font-semibold bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
                   : "font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
@@ -102,7 +102,7 @@ export function AppHeader({
 
           {/* User Avatar Circle */}
           <div
-            className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-bold text-xs flex items-center justify-center shadow-xs select-none uppercase flex-shrink-0"
+            className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-white font-bold text-xs flex items-center justify-center shadow-xs select-none uppercase flex-shrink-0"
             title={userEmail}
           >
             {userEmail ? userEmail.charAt(0).toUpperCase() : "U"}

@@ -41,7 +41,7 @@ export function WeekNavControls({
           type="button"
           onClick={onGoToday}
           disabled={isNavigating}
-          className="px-3.5 py-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/60 shadow-xs transition-all cursor-pointer"
+          className="px-3.5 py-1.5 rounded-xl bg-amber-50/80 hover:bg-amber-100/90 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-semibold text-xs border border-amber-200/60 dark:border-amber-800/60 shadow-xs transition-all cursor-pointer"
         >
           Today
         </button>

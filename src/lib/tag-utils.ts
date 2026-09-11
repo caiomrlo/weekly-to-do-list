@@ -65,7 +65,7 @@ export const TAG_COLORS: Record<string, TagColorOption> = {
   },
 };
 
-export const DEFAULT_TAG_COLOR = TAG_COLORS.indigo;
+export const DEFAULT_TAG_COLOR = TAG_COLORS.amber;
 
 export function getTagColorStyles(colorKey?: string | null): TagColorOption {
   if (!colorKey || !TAG_COLORS[colorKey]) {

@@ -222,7 +222,7 @@ export function DocsWorkspace({
           >
             {isLoadingDoc && !selectedDoc ? (
               <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2">
-                <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
                 <span className="text-xs">Loading document...</span>
               </div>
             ) : selectedDoc ? (
@@ -241,7 +241,7 @@ export function DocsWorkspace({
             ) : (
               /* Empty State when no document exists or none is selected */
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-slate-500">
-                <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/60 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 shadow-sm">
+                <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4 shadow-sm">
                   <FileText className="w-8 h-8" />
                 </div>
                 <h2 className="text-lg font-bold text-slate-700 dark:text-slate-200">
@@ -254,7 +254,7 @@ export function DocsWorkspace({
                   type="button"
                   onClick={handleCreateDoc}
                   disabled={isCreating}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-semibold shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-semibold shadow-md shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Create New Document</span>

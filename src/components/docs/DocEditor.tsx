@@ -231,7 +231,7 @@ export function DocEditor({
           {/* Transient Saving Status */}
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400 min-w-[70px] text-right">
             {isSaving && (
-              <span className="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-medium animate-in fade-in duration-150">
+              <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium animate-in fade-in duration-150">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Saving...
               </span>
@@ -307,7 +307,7 @@ export function DocEditor({
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled Document"
-          className="w-full text-2xl sm:text-3xl font-bold bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-indigo-500 focus:outline-none transition-colors px-1 py-1 text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600"
+          className="w-full text-2xl sm:text-3xl font-bold bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-amber-500 focus:outline-none transition-colors px-1 py-1 text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600"
         />
       </div>
 

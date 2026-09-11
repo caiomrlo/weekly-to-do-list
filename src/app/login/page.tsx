@@ -44,13 +44,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-indigo-300/30 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-300/25 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-amber-200/20 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-amber-300/25 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-amber-400/20 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-orange-200/20 rounded-full blur-3xl pointer-events-none -z-10" />
 
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-lg shadow-indigo-500/25 mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25 mb-4">
             <CalendarDays className="w-7 h-7" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
@@ -71,7 +71,7 @@ export default function LoginPage() {
               }}
               className={`py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                 tab === "login"
-                  ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold"
+                  ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-semibold"
                   : "hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -85,7 +85,7 @@ export default function LoginPage() {
               }}
               className={`py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                 tab === "register"
-                  ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold"
+                  ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-semibold"
                   : "hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -162,7 +162,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium text-sm shadow-md shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium text-sm shadow-md shadow-amber-500/20 hover:shadow-amber-500/30 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isPending ? (
                 <>
@@ -180,7 +180,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               Simple and distraction-free weekly planning
             </span>
           </div>

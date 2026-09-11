@@ -65,7 +65,7 @@ export const PROJECT_COLORS: Record<string, ProjectColorOption> = {
   },
 };
 
-export const DEFAULT_PROJECT_COLOR = PROJECT_COLORS.indigo;
+export const DEFAULT_PROJECT_COLOR = PROJECT_COLORS.amber;
 
 export function getProjectColorStyles(colorKey?: string | null): ProjectColorOption {
   if (!colorKey || !PROJECT_COLORS[colorKey]) {

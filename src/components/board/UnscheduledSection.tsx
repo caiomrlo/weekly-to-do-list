@@ -51,7 +51,7 @@ export function UnscheduledSection({
       {/* Section Header */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200/50 dark:border-slate-800/60">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-2xs">
+          <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-900/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-2xs">
             <CalendarOff className="w-4 h-4" />
           </div>
           <div className="flex items-center gap-2">
@@ -90,8 +90,8 @@ export function UnscheduledSection({
               onDrop={(e) => handleDrop(e, "unscheduled")}
               className={`h-12 border-2 border-dashed rounded-2xl flex items-center justify-center text-xs font-medium transition-all ${
                 isUnscheduledDropTarget
-                  ? "border-indigo-400 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 shadow-xs"
-                  : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-indigo-300 hover:text-indigo-500 bg-white/30 dark:bg-slate-800/30"
+                  ? "border-amber-400 dark:border-amber-500 bg-amber-50/70 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 shadow-xs"
+                  : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-amber-300 hover:text-amber-600 bg-white/30 dark:bg-slate-800/30"
               }`}
             >
               <span>Move to Unscheduled</span>
@@ -123,7 +123,7 @@ export function UnscheduledSection({
 
                     {/* Subtasks */}
                     {subtasksOfMain.length > 0 && (
-                      <div className="ml-5 pl-2.5 border-l-2 border-indigo-200/60 dark:border-indigo-800/60 space-y-1.5 my-1">
+                      <div className="ml-5 pl-2.5 border-l-2 border-amber-200/60 dark:border-amber-800/60 space-y-1.5 my-1">
                         {subtasksOfMain.map((sub) => (
                           <TaskCard
                             key={sub.id}
@@ -167,13 +167,13 @@ export function UnscheduledSection({
                   }
                 }}
                 placeholder="+ New unscheduled task... (Press Enter to add)"
-                className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/70 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-400 dark:focus:border-indigo-500 transition-all shadow-2xs"
+                className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/70 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-500/30 focus:border-amber-400 dark:focus:border-amber-500 transition-all shadow-2xs"
               />
               {Boolean(quickAddTitle.trim()) && (
                 <button
                   type="button"
                   onClick={onQuickAddSubmit}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 p-0.5 cursor-pointer"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 p-0.5 cursor-pointer"
                   title="Add"
                 >
                   <Plus className="w-4 h-4" />

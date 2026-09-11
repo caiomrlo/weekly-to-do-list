@@ -196,7 +196,7 @@ export function TaskDocsSection({
           <button
             type="button"
             onClick={handleOpenPopover}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Link Doc</span>
@@ -212,7 +212,7 @@ export function TaskDocsSection({
                     <button
                       type="button"
                       onClick={() => setIsCreatingNew(true)}
-                      className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium cursor-pointer"
+                      className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>New Doc</span>
@@ -228,7 +228,7 @@ export function TaskDocsSection({
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search existing docs..."
                       autoFocus
-                      className="w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                     />
                   </div>
 
@@ -245,7 +245,7 @@ export function TaskDocsSection({
                         <button
                           type="button"
                           onClick={() => setIsCreatingNew(true)}
-                          className="text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer font-medium"
+                          className="text-amber-600 dark:text-amber-400 hover:underline cursor-pointer font-medium"
                         >
                           Create a new doc
                         </button>
@@ -264,7 +264,7 @@ export function TaskDocsSection({
                             className="w-full text-left px-2.5 py-2 rounded-xl text-xs hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors flex items-center justify-between gap-2 cursor-pointer group"
                           >
                             <div className="min-w-0 flex-1">
-                              <span className="font-medium text-slate-700 dark:text-slate-200 truncate block group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                              <span className="font-medium text-slate-700 dark:text-slate-200 truncate block group-hover:text-amber-600 dark:group-hover:text-amber-400">
                                 {doc.title || "Untitled Document"}
                               </span>
                               {doc.project && projectStyles && (
@@ -278,7 +278,7 @@ export function TaskDocsSection({
                                 </span>
                               )}
                             </div>
-                            <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 shrink-0" />
+                            <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600 shrink-0" />
                           </button>
                         );
                       })
@@ -306,7 +306,7 @@ export function TaskDocsSection({
                     placeholder="Document title..."
                     autoFocus
                     required
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                   />
 
                   {/* Optional project dropdown */}
@@ -342,7 +342,7 @@ export function TaskDocsSection({
                     <button
                       type="submit"
                       disabled={isSubmitting || !newTitle.trim()}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
                     >
                       {isSubmitting ? (
                         <>
@@ -370,7 +370,7 @@ export function TaskDocsSection({
       ) : linkedDocs.length === 0 ? (
         <div
           onClick={handleOpenPopover}
-          className="border border-dashed border-slate-300/80 dark:border-slate-700/80 hover:border-indigo-400 dark:hover:border-indigo-500/70 rounded-2xl p-3 bg-slate-50/40 dark:bg-slate-900/30 text-center cursor-pointer transition-colors"
+          className="border border-dashed border-slate-300/80 dark:border-slate-700/80 hover:border-amber-400 dark:hover:border-amber-500/70 rounded-2xl p-3 bg-slate-50/40 dark:bg-slate-900/30 text-center cursor-pointer transition-colors"
         >
           <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
             No documents linked yet. Click to link or create a note.
@@ -390,7 +390,7 @@ export function TaskDocsSection({
                 className="group flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-2xs overflow-hidden"
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                     <FileText className="w-3.5 h-3.5" />
                   </div>
 
@@ -399,7 +399,7 @@ export function TaskDocsSection({
                       href={`/docs/${doc.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate block hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate block hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
                       title={doc.title}
                     >
                       {doc.title || "Untitled Document"}
@@ -425,7 +425,7 @@ export function TaskDocsSection({
                     href={`/docs/${doc.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="p-1 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     title="Open document in new tab"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />

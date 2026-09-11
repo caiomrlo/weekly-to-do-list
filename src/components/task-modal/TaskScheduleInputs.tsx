@@ -27,7 +27,7 @@ export function TaskScheduleInputs({
     <div className="flex flex-wrap items-center gap-2 text-xs">
       {/* Date Pill */}
       <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
-        <Calendar className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
+        <Calendar className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 pointer-events-none" />
         <span className="pointer-events-none">
           {date ? date.split("-").reverse().join("/") : "No date (Fixed)"}
         </span>
@@ -62,7 +62,7 @@ export function TaskScheduleInputs({
 
       {/* Time Pill */}
       <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
-        <Clock className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0 pointer-events-none" />
+        <Clock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 pointer-events-none" />
         {time ? (
           <>
             <span className="pointer-events-none">{time}</span>

@@ -28,7 +28,7 @@ export const tags = pgTable("tags", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 50 }).notNull(),
-  color: varchar("color", { length: 30 }).default("indigo").notNull(),
+  color: varchar("color", { length: 30 }).default("amber").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -39,7 +39,7 @@ export const projects = pgTable("projects", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 50 }).notNull(),
-  color: varchar("color", { length: 30 }).default("indigo").notNull(),
+  color: varchar("color", { length: 30 }).default("amber").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
