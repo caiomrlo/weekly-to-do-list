@@ -27,6 +27,7 @@ interface DocEditorProps {
   onDocDeleted: (docId: string) => void;
   onBackToList?: () => void;
   onProjectCreated: (project: Project) => void;
+  onProjectUpdated?: (project: Project) => void;
 }
 
 export function DocEditor({
@@ -36,6 +37,7 @@ export function DocEditor({
   onDocDeleted,
   onBackToList,
   onProjectCreated,
+  onProjectUpdated,
 }: DocEditorProps) {
   const [title, setTitle] = useState(doc.title);
   const [content, setContent] = useState(doc.content || "");
@@ -52,7 +54,6 @@ export function DocEditor({
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
 
   // Debounced auto-save function
   const triggerAutoSave = (updates: {
@@ -103,6 +104,17 @@ export function DocEditor({
       projectId: project ? project.id : null,
       project,
     });
+  };
+
+  const handleProjectUpdated = (updatedProject: Project) => {
+    onProjectUpdated?.(updatedProject);
+    if (selectedProject?.id === updatedProject.id) {
+      setSelectedProject(updatedProject);
+      onDocUpdated({
+        ...doc,
+        project: updatedProject,
+      });
+    }
   };
 
   const handleToggleFavorite = async () => {
@@ -168,6 +180,7 @@ export function DocEditor({
             userProjects={userProjects}
             onSelectProject={handleSelectProject}
             onProjectCreated={onProjectCreated}
+            onProjectUpdated={handleProjectUpdated}
           />
         </div>
 

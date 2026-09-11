@@ -162,6 +162,24 @@ export function DocsWorkspace({
     setUserProjects((prev) => [...prev, newProj]);
   };
 
+  const handleProjectUpdated = (updatedProject: Project) => {
+    setUserProjects((prev) =>
+      prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+    );
+    if (selectedDoc?.projectId === updatedProject.id) {
+      setSelectedDoc((prev) =>
+        prev ? { ...prev, project: updatedProject } : null
+      );
+    }
+    setDocs((prev) =>
+      prev.map((d) =>
+        d.projectId === updatedProject.id
+          ? { ...d, project: updatedProject }
+          : d
+      )
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Header */}
@@ -213,6 +231,7 @@ export function DocsWorkspace({
                   router.push("/docs");
                 }}
                 onProjectCreated={handleProjectCreated}
+                onProjectUpdated={handleProjectUpdated}
               />
             ) : (
               /* Empty State when no document exists or none is selected */

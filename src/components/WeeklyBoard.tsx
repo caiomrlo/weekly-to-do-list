@@ -5,6 +5,7 @@ import {
   TaskWithTag,
   UserPreferences,
   DEFAULT_USER_PREFERENCES,
+  Project,
 } from "@/db/schema";
 import {
   getMondayOfWeek,
@@ -399,6 +400,26 @@ export function WeeklyBoard({
     }
   };
 
+  // Project updated (e.g. renamed inside modal)
+  const handleProjectUpdated = useCallback((updatedProject: Project) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.projectId === updatedProject.id) {
+          return {
+            ...t,
+            project: updatedProject,
+          };
+        }
+        return t;
+      })
+    );
+    setSelectedTask((prev) =>
+      prev && prev.projectId === updatedProject.id
+        ? { ...prev, project: updatedProject }
+        : prev
+    );
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Glassmorphic Navigation Bar */}
@@ -471,6 +492,7 @@ export function WeeklyBoard({
         onTaskDeleted={handleTaskDeleted}
         onOpenTask={handleOpenTask}
         onSubtaskCreated={handleSubtaskCreated}
+        onProjectUpdated={handleProjectUpdated}
       />
     </div>
   );

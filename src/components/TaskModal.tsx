@@ -30,6 +30,7 @@ export interface TaskModalProps {
   onTaskDeleted: (taskId: string) => void;
   onOpenTask?: (task: TaskWithTag | string) => void;
   onSubtaskCreated?: (subtask: TaskWithTag) => void;
+  onProjectUpdated?: (project: Project) => void;
 }
 
 interface TaskModalDialogProps {
@@ -39,6 +40,7 @@ interface TaskModalDialogProps {
   onTaskDeleted: (taskId: string) => void;
   onOpenTask?: (task: TaskWithTag | string) => void;
   onSubtaskCreated?: (subtask: TaskWithTag) => void;
+  onProjectUpdated?: (project: Project) => void;
 }
 
 function TaskModalDialog({
@@ -48,6 +50,7 @@ function TaskModalDialog({
   onTaskDeleted,
   onOpenTask,
   onSubtaskCreated,
+  onProjectUpdated,
 }: TaskModalDialogProps) {
   const [title, setTitle] = useState(task.title);
   const [content, setContent] = useState(task.content || "");
@@ -229,6 +232,25 @@ function TaskModalDialog({
 
   const handleProjectCreated = (newProject: Project) => {
     setUserProjects((prev) => [...prev, newProject]);
+  };
+
+  const handleProjectUpdated = (updatedProject: Project) => {
+    setUserProjects((prev) =>
+      prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+    );
+    if (selectedProject?.id === updatedProject.id || task.projectId === updatedProject.id) {
+      setSelectedProject(updatedProject);
+      onTaskUpdated({
+        ...task,
+        project: updatedProject,
+      });
+    }
+    setSubtasks((prev) =>
+      prev.map((s) =>
+        s.projectId === updatedProject.id ? { ...s, project: updatedProject } : s
+      )
+    );
+    onProjectUpdated?.(updatedProject);
   };
 
   const handleToggleCompleted = async () => {
@@ -414,6 +436,7 @@ function TaskModalDialog({
             userProjects={userProjects}
             onSelectProject={handleSelectProject}
             onProjectCreated={handleProjectCreated}
+            onProjectUpdated={handleProjectUpdated}
           />
 
           <div>
@@ -471,6 +494,7 @@ export function TaskModal({
   onTaskDeleted,
   onOpenTask,
   onSubtaskCreated,
+  onProjectUpdated,
 }: TaskModalProps) {
   if (!isOpen || !task) return null;
 
@@ -483,6 +507,7 @@ export function TaskModal({
       onTaskDeleted={onTaskDeleted}
       onOpenTask={onOpenTask}
       onSubtaskCreated={onSubtaskCreated}
+      onProjectUpdated={onProjectUpdated}
     />
   );
 }

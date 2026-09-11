@@ -97,3 +97,69 @@ export async function deleteProjectAction(
     return { error: "Failed to delete project." };
   }
 }
+
+export async function updateProjectAction(
+  projectId: string,
+  data: {
+    name?: string;
+    color?: string;
+  }
+): Promise<{ project?: Project; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  const updates: Partial<{ name: string; color: string; updatedAt: Date }> = {
+    updatedAt: new Date(),
+  };
+
+  if (data.name !== undefined) {
+    const trimmed = data.name.trim();
+    if (!trimmed) {
+      return { error: "Project name cannot be empty." };
+    }
+    if (trimmed.length > 50) {
+      return { error: "Project name must be at most 50 characters." };
+    }
+    updates.name = trimmed;
+  }
+
+  if (data.color !== undefined) {
+    const validColors = [
+      "indigo",
+      "violet",
+      "emerald",
+      "amber",
+      "rose",
+      "sky",
+      "orange",
+      "slate",
+    ];
+    if (validColors.includes(data.color)) {
+      updates.color = data.color;
+    }
+  }
+
+  try {
+    const [updated] = await db
+      .update(projects)
+      .set(updates)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, session.userId)))
+      .returning();
+
+    if (!updated) {
+      return { error: "Project not found or access denied." };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/docs");
+
+    return { project: updated };
+  } catch (err: unknown) {
+    console.error("Error updating project:", err);
+    return { error: "Failed to update project." };
+  }
+}
+
+
