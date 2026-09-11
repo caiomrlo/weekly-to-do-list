@@ -20,6 +20,7 @@ interface DocsWorkspaceProps {
   userProjects: Project[];
   userEmail: string;
   activeDocIdFromRoute?: string | null;
+  initialSelectedDoc?: DocWithRelations | null;
 }
 
 export function DocsWorkspace({
@@ -27,6 +28,7 @@ export function DocsWorkspace({
   userProjects: initialProjects,
   userEmail,
   activeDocIdFromRoute,
+  initialSelectedDoc,
 }: DocsWorkspaceProps) {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -52,6 +54,9 @@ export function DocsWorkspace({
       : routeParamId || (docs.length > 0 ? docs[0].id : null);
 
   const [selectedDoc, setSelectedDoc] = useState<DocWithRelations | null>(() => {
+    if (initialSelectedDoc && initialSelectedDoc.id === activeDocId) {
+      return initialSelectedDoc;
+    }
     return docs.find((d) => d.id === activeDocId) || null;
   });
   const [isLoadingDoc, setIsLoadingDoc] = useState(false);
@@ -60,7 +65,7 @@ export function DocsWorkspace({
   // Dark mode hook
   const isDarkMode = useDarkMode();
 
-  // Load detailed doc (with linked tasks) whenever activeDocId changes
+  // Load detailed doc (with linked tasks & attachments) whenever activeDocId changes
   useEffect(() => {
     if (!activeDocId) return;
 

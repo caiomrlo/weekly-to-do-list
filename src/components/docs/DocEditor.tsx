@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, useEffect, useTransition } from "react";
 import { DocWithRelations, Project } from "@/db/schema";
 import {
   updateDocAction,
@@ -11,7 +11,10 @@ import { ProjectSelector } from "@/components/shared/ProjectSelector";
 import { DocLinkedTasksSection } from "./DocLinkedTasksSection";
 import { AttachmentsSection } from "@/components/shared/AttachmentsSection";
 import { DocRichEditor } from "./DocRichEditor";
-import { AttachmentWithUrl } from "@/app/actions/attachments";
+import {
+  AttachmentWithUrl,
+  getDocAttachmentsAction,
+} from "@/app/actions/attachments";
 import {
   Star,
   Trash2,
@@ -45,15 +48,55 @@ export function DocEditor({
     doc.project || null
   );
   const [isFavorite, setIsFavorite] = useState(doc.isFavorite);
+  const [prevTasks, setPrevTasks] = useState(doc.tasks);
   const [linkedTasks, setLinkedTasks] = useState(doc.tasks || []);
+
+  const [prevDocAttachments, setPrevDocAttachments] = useState(doc.attachments);
   const [attachments, setAttachments] = useState<AttachmentWithUrl[]>(
     doc.attachments || []
   );
+  const [isLoadingAttachments, setIsLoadingAttachments] = useState(!doc.attachments);
+
+  // Sync state if doc.tasks changes from parent
+  if (doc.tasks !== prevTasks) {
+    setPrevTasks(doc.tasks);
+    setLinkedTasks(doc.tasks || []);
+  }
+
+  // Sync state if doc.attachments changes from parent
+  if (doc.attachments !== prevDocAttachments) {
+    setPrevDocAttachments(doc.attachments);
+    if (doc.attachments) {
+      setAttachments(doc.attachments);
+      setIsLoadingAttachments(false);
+    }
+  }
+
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch attachments for this document if not already provided
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!doc.attachments) {
+      getDocAttachmentsAction(doc.id).then((res) => {
+        if (isMounted) {
+          if (res.attachments) {
+            setAttachments(res.attachments);
+          }
+          setIsLoadingAttachments(false);
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [doc.id, doc.attachments]);
 
   // Debounced auto-save function
   const triggerAutoSave = (updates: {
@@ -272,6 +315,7 @@ export function DocEditor({
       <AttachmentsSection
         target={{ type: "doc", id: doc.id }}
         attachments={attachments}
+        isLoading={isLoadingAttachments}
         onAttachmentsChange={handleAttachmentsChange}
         variant="card"
       />

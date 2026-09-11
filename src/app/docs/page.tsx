@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getUserDocsAction } from "@/app/actions/docs";
+import { getUserDocsAction, getDocByIdAction } from "@/app/actions/docs";
 import { getUserProjectsAction } from "@/app/actions/projects";
 import { DocsWorkspace } from "@/components/docs/DocsWorkspace";
 import { Metadata } from "next";
@@ -25,11 +25,18 @@ export default async function DocsPage() {
   const initialDocs = docsRes.docs || [];
   const userProjects = projectsRes.projects || [];
 
+  let initialSelectedDoc = null;
+  if (initialDocs.length > 0) {
+    const firstDocRes = await getDocByIdAction(initialDocs[0].id);
+    initialSelectedDoc = firstDocRes.doc || null;
+  }
+
   return (
     <DocsWorkspace
       initialDocs={initialDocs}
       userProjects={userProjects}
       userEmail={session.email}
+      initialSelectedDoc={initialSelectedDoc}
     />
   );
 }
