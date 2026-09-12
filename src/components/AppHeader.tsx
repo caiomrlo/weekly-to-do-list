@@ -10,12 +10,18 @@ import {
   Moon,
   LogOut,
 } from "lucide-react";
+import { BackgroundThemeId, UserPreferences } from "@/db/schema";
+import { SettingsMenu } from "./board/SettingsMenu";
 
 export interface AppHeaderProps {
   title?: React.ReactNode;
   userEmail: string;
   isDarkMode: boolean;
   onToggleTheme: () => void;
+  preferences?: UserPreferences;
+  visibleDaysCount?: number;
+  onToggleDay?: (dayKey: "showSaturday" | "showSunday") => void;
+  onSelectBackground?: (bgId: BackgroundThemeId) => void;
   children?: React.ReactNode;
 }
 
@@ -24,6 +30,10 @@ export function AppHeader({
   userEmail,
   isDarkMode,
   onToggleTheme,
+  preferences,
+  visibleDaysCount,
+  onToggleDay,
+  onSelectBackground,
   children,
 }: AppHeaderProps) {
   const pathname = usePathname();
@@ -78,9 +88,19 @@ export function AppHeader({
           </nav>
         </div>
 
-        {/* Right Controls: Context Actions + Theme Toggle + User Avatar + Logout */}
+        {/* Right Controls: Context Actions + Settings + Theme Toggle + User Avatar + Logout */}
         <div className="flex items-center gap-2 sm:gap-3">
           {children}
+
+          {/* Settings Menu Button */}
+          {preferences && onSelectBackground && (
+            <SettingsMenu
+              preferences={preferences}
+              visibleDaysCount={visibleDaysCount}
+              onToggleDay={onToggleDay}
+              onSelectBackground={onSelectBackground}
+            />
+          )}
 
           {/* Quick Dark Mode Toggle Button */}
           <button

@@ -5,6 +5,7 @@ import {
   TaskWithTag,
   UserPreferences,
   DEFAULT_USER_PREFERENCES,
+  BackgroundThemeId,
   Project,
 } from "@/db/schema";
 import {
@@ -105,6 +106,30 @@ export function WeeklyBoard({
       console.error("Error saving day visibility preference:", err);
     }
   };
+
+  const handleSelectBackground = async (bgId: BackgroundThemeId) => {
+    const updated = { ...preferences, background: bgId };
+    setPreferences(updated);
+    document.documentElement.setAttribute("data-theme-bg", bgId);
+    try {
+      localStorage.setItem("theme_bg", bgId);
+    } catch {}
+
+    try {
+      await updateUserPreferencesAction({ background: bgId });
+    } catch (err) {
+      console.error("Error saving background preference:", err);
+    }
+  };
+
+  // Synchronize background theme on initial mount
+  useEffect(() => {
+    const bg = (preferences.background as BackgroundThemeId) || "default";
+    document.documentElement.setAttribute("data-theme-bg", bg);
+    try {
+      localStorage.setItem("theme_bg", bg);
+    } catch {}
+  }, [preferences.background]);
 
   // Client-side today date string from synchronized store
   const todayStr = useTodayDateStr();
@@ -428,15 +453,16 @@ export function WeeklyBoard({
         userEmail={userEmail}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
+        preferences={preferences}
+        visibleDaysCount={visibleWeekDays.length}
+        onToggleDay={handleToggleDay}
+        onSelectBackground={handleSelectBackground}
       >
         <WeekNavControls
           isNavigating={isNavigating}
-          preferences={preferences}
-          visibleDaysCount={visibleWeekDays.length}
           onPrevWeek={handlePrevWeek}
           onNextWeek={handleNextWeek}
           onGoToday={handleGoToday}
-          onToggleDay={handleToggleDay}
         />
       </AppHeader>
 

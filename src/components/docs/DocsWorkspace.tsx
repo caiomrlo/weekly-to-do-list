@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { DocWithRelations, Project } from "@/db/schema";
+import {
+  DocWithRelations,
+  Project,
+  UserPreferences,
+  DEFAULT_USER_PREFERENCES,
+  BackgroundThemeId,
+} from "@/db/schema";
 import {
   createDocAction,
   toggleDocFavoriteAction,
@@ -21,6 +27,7 @@ interface DocsWorkspaceProps {
   userEmail: string;
   activeDocIdFromRoute?: string | null;
   initialSelectedDoc?: DocWithRelations | null;
+  initialPreferences?: UserPreferences;
 }
 
 export function DocsWorkspace({
@@ -29,6 +36,7 @@ export function DocsWorkspace({
   userEmail,
   activeDocIdFromRoute,
   initialSelectedDoc,
+  initialPreferences,
 }: DocsWorkspaceProps) {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -36,6 +44,9 @@ export function DocsWorkspace({
 
   const [docs, setDocs] = useState<DocWithRelations[]>(initialDocs);
   const [userProjects, setUserProjects] = useState<Project[]>(initialProjects);
+  const [preferences, setPreferences] = useState<UserPreferences>(
+    initialPreferences || DEFAULT_USER_PREFERENCES
+  );
 
   // Backward compatibility: gracefully redirect legacy /docs?docId=xyz to clean /docs/xyz
   useEffect(() => {
@@ -108,6 +119,41 @@ export function DocsWorkspace({
       console.error("Error saving theme preference:", err);
     }
   };
+
+  const handleSelectBackground = async (bgId: BackgroundThemeId) => {
+    const updated = { ...preferences, background: bgId };
+    setPreferences(updated);
+    document.documentElement.setAttribute("data-theme-bg", bgId);
+    try {
+      localStorage.setItem("theme_bg", bgId);
+    } catch {}
+
+    try {
+      await updateUserPreferencesAction({ background: bgId });
+    } catch (err) {
+      console.error("Error saving background preference:", err);
+    }
+  };
+
+  const handleToggleDay = async (dayKey: "showSaturday" | "showSunday") => {
+    const nextVal = !preferences[dayKey];
+    const updated = { ...preferences, [dayKey]: nextVal };
+    setPreferences(updated);
+
+    try {
+      await updateUserPreferencesAction({ [dayKey]: nextVal });
+    } catch (err) {
+      console.error("Error saving day visibility preference:", err);
+    }
+  };
+
+  useEffect(() => {
+    const bg = (preferences.background as BackgroundThemeId) || "default";
+    document.documentElement.setAttribute("data-theme-bg", bg);
+    try {
+      localStorage.setItem("theme_bg", bg);
+    } catch {}
+  }, [preferences.background]);
 
   const handleCreateDoc = () => {
     startCreateTransition(async () => {
@@ -192,6 +238,9 @@ export function DocsWorkspace({
         userEmail={userEmail}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
+        preferences={preferences}
+        onToggleDay={handleToggleDay}
+        onSelectBackground={handleSelectBackground}
       />
 
       {/* Main Workspace Frame */}

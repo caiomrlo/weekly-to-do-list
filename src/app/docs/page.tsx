@@ -2,6 +2,8 @@ import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getUserDocsAction, getDocByIdAction } from "@/app/actions/docs";
 import { getUserProjectsAction } from "@/app/actions/projects";
+import { getUserPreferencesAction } from "@/app/actions/user";
+import { DEFAULT_USER_PREFERENCES } from "@/db/schema";
 import { DocsWorkspace } from "@/components/docs/DocsWorkspace";
 import { Metadata } from "next";
 
@@ -17,13 +19,15 @@ export default async function DocsPage() {
     redirect("/login");
   }
 
-  const [docsRes, projectsRes] = await Promise.all([
+  const [docsRes, projectsRes, prefRes] = await Promise.all([
     getUserDocsAction(),
     getUserProjectsAction(),
+    getUserPreferencesAction(),
   ]);
 
   const initialDocs = docsRes.docs || [];
   const userProjects = projectsRes.projects || [];
+  const initialPreferences = prefRes.preferences || DEFAULT_USER_PREFERENCES;
 
   let initialSelectedDoc = null;
   if (initialDocs.length > 0) {
@@ -37,6 +41,7 @@ export default async function DocsPage() {
       userProjects={userProjects}
       userEmail={session.email}
       initialSelectedDoc={initialSelectedDoc}
+      initialPreferences={initialPreferences}
     />
   );
 }

@@ -27,6 +27,10 @@ const themeScript = `
     } else {
       document.documentElement.classList.remove('dark');
     }
+    var storedBg = localStorage.getItem('theme_bg');
+    if (storedBg) {
+      document.documentElement.setAttribute('data-theme-bg', storedBg);
+    }
   } catch (e) {}
 })();
 `;

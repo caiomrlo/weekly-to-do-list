@@ -2,6 +2,8 @@ import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getUserDocsAction, getDocByIdAction } from "@/app/actions/docs";
 import { getUserProjectsAction } from "@/app/actions/projects";
+import { getUserPreferencesAction } from "@/app/actions/user";
+import { DEFAULT_USER_PREFERENCES } from "@/db/schema";
 import { DocsWorkspace } from "@/components/docs/DocsWorkspace";
 import { Metadata } from "next";
 
@@ -23,15 +25,17 @@ export default async function DocDetailPage({
 
   const { id } = await params;
 
-  const [docsRes, projectsRes, docDetailRes] = await Promise.all([
+  const [docsRes, projectsRes, docDetailRes, prefRes] = await Promise.all([
     getUserDocsAction(),
     getUserProjectsAction(),
     getDocByIdAction(id),
+    getUserPreferencesAction(),
   ]);
 
   const initialDocs = docsRes.docs || [];
   const userProjects = projectsRes.projects || [];
   const initialSelectedDoc = docDetailRes.doc || null;
+  const initialPreferences = prefRes.preferences || DEFAULT_USER_PREFERENCES;
 
   return (
     <DocsWorkspace
@@ -40,6 +44,7 @@ export default async function DocDetailPage({
       userEmail={session.email}
       activeDocIdFromRoute={id}
       initialSelectedDoc={initialSelectedDoc}
+      initialPreferences={initialPreferences}
     />
   );
 }

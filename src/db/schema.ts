@@ -1,9 +1,12 @@
 import { pgTable, uuid, varchar, text, timestamp, boolean, date, integer, jsonb, index, uniqueIndex, AnyPgColumn } from "drizzle-orm/pg-core";
 
+export type BackgroundThemeId = "default" | "sunset" | "ocean" | "aurora" | "lavender" | "slate";
+
 export interface UserPreferences {
   showSaturday?: boolean;
   showSunday?: boolean;
   theme?: "light" | "dark" | "system";
+  background?: BackgroundThemeId;
   [key: string]: unknown;
 }
 
@@ -11,6 +14,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   showSaturday: false,
   showSunday: false,
   theme: "light",
+  background: "default",
 };
 
 export const users = pgTable("users", {

@@ -88,4 +88,32 @@ describe("Integration: User Preferences Actions", () => {
       theme: "light",
     });
   });
+
+  it("should successfully persist background theme preference", async () => {
+    testUser = await createTestUser({
+      preferences: {
+        showSaturday: false,
+        showSunday: false,
+        theme: "light",
+        background: "default",
+      },
+    });
+    await loginAsTestUser(testUser);
+
+    const updateRes = await updateUserPreferencesAction({
+      background: "sunset",
+    });
+
+    expect(updateRes.error).toBeUndefined();
+    expect(updateRes.success).toBe(true);
+    expect(updateRes.preferences?.background).toBe("sunset");
+
+    // Verify directly in DB
+    const [saved] = await db
+      .select({ preferences: users.preferences })
+      .from(users)
+      .where(eq(users.id, testUser.id));
+
+    expect(saved.preferences?.background).toBe("sunset");
+  });
 });

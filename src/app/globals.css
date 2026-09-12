@@ -44,6 +44,111 @@ body {
     radial-gradient(at 20% 90%, rgba(15, 23, 42, 0.5) 0px, transparent 50%);
 }
 
+/* Sunset Theme */
+[data-theme-bg="sunset"] body {
+  background-color: #fff9f6;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(254, 205, 211, 0.6) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(254, 215, 170, 0.55) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(255, 241, 242, 0.4) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(253, 164, 175, 0.45) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(254, 240, 138, 0.35) 0px, transparent 50%);
+}
+.dark[data-theme-bg="sunset"] body,
+.dark [data-theme-bg="sunset"] body {
+  background-color: #120c14;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(136, 19, 55, 0.4) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(124, 45, 18, 0.35) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(24, 15, 30, 0.65) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(131, 24, 67, 0.35) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(30, 27, 75, 0.25) 0px, transparent 50%);
+}
+
+/* Ocean Theme */
+[data-theme-bg="ocean"] body {
+  background-color: #f6fbfe;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(186, 230, 253, 0.65) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(199, 210, 254, 0.5) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(240, 249, 255, 0.4) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(165, 243, 252, 0.5) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(219, 234, 254, 0.45) 0px, transparent 50%);
+}
+.dark[data-theme-bg="ocean"] body,
+.dark [data-theme-bg="ocean"] body {
+  background-color: #07101e;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(22, 78, 99, 0.4) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(30, 58, 138, 0.45) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(8, 22, 40, 0.7) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(12, 74, 110, 0.4) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(49, 46, 129, 0.35) 0px, transparent 50%);
+}
+
+/* Aurora Theme */
+[data-theme-bg="aurora"] body {
+  background-color: #f7fbf8;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(167, 243, 208, 0.6) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(153, 246, 228, 0.5) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(240, 253, 244, 0.4) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(187, 247, 208, 0.45) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(204, 251, 241, 0.4) 0px, transparent 50%);
+}
+.dark[data-theme-bg="aurora"] body,
+.dark [data-theme-bg="aurora"] body {
+  background-color: #071612;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(6, 78, 59, 0.45) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(19, 78, 74, 0.4) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(8, 28, 23, 0.7) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(20, 83, 45, 0.35) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(8, 51, 68, 0.3) 0px, transparent 50%);
+}
+
+/* Lavender Theme */
+[data-theme-bg="lavender"] body {
+  background-color: #faf8fd;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(233, 213, 255, 0.65) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(245, 208, 254, 0.5) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(250, 245, 255, 0.4) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(221, 214, 254, 0.5) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(252, 231, 243, 0.4) 0px, transparent 50%);
+}
+.dark[data-theme-bg="lavender"] body,
+.dark [data-theme-bg="lavender"] body {
+  background-color: #110d1c;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(88, 28, 135, 0.45) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(112, 26, 117, 0.35) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(22, 16, 36, 0.7) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(76, 29, 149, 0.4) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(30, 27, 75, 0.3) 0px, transparent 50%);
+}
+
+/* Slate Theme */
+[data-theme-bg="slate"] body {
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(226, 232, 240, 0.7) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(228, 228, 231, 0.5) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(241, 245, 249, 0.4) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(229, 231, 235, 0.5) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(241, 245, 249, 0.6) 0px, transparent 50%);
+}
+.dark[data-theme-bg="slate"] body,
+.dark [data-theme-bg="slate"] body {
+  background-color: #090d14;
+  background-image:
+    radial-gradient(at 10% 15%, rgba(30, 41, 59, 0.5) 0px, transparent 50%),
+    radial-gradient(at 85% 10%, rgba(39, 39, 42, 0.35) 0px, transparent 50%),
+    radial-gradient(at 50% 55%, rgba(15, 23, 42, 0.7) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(30, 41, 59, 0.4) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(23, 23, 23, 0.5) 0px, transparent 50%);
+}
+
 /* Glassmorphism Classes */
 .glass-panel {
   background: rgba(255, 255, 255, 0.75);
