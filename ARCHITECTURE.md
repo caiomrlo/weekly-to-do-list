@@ -241,10 +241,11 @@ flowchart TD
     - `tests/unit/lib/date-utils.test.ts`: Timezone-immune date conversions, calendar range boundaries, and natural language duration parsing.
     - `tests/unit/lib/r2.test.ts`: Object storage key generation and filename sanitization against path traversal vulnerabilities.
     - `tests/unit/lib/auth.test.ts`: Bcrypt cryptographic hashing, salt generation, and JWT issuance/verification lifecycle.
-  - **`tests/integration/`** *(Future)*: Planned tier for database transaction checks and Next.js Server Action mutations.
-  - **`tests/e2e/`** *(Future)*: Planned tier for browser workflows via Playwright.
+  - **`tests/integration/`**: Integration tests verifying database transactions (Drizzle ORM + PostgreSQL 17), Next.js Server Actions, session isolation, and API route handlers. Features automated test user generation, atomic cascade cleanup, and Next.js/R2 mocks.
 - **Execution Commands**:
-  - `npm test`: Single-run suite execution (`vitest run`).
+  - `npm test`: Single-run complete suite execution (`vitest run`).
+  - `npm run test:unit`: Single-run unit tests (`vitest run tests/unit`).
+  - `npm run test:integration`: Single-run integration tests (`vitest run tests/integration`).
   - `npm run test:watch`: Interactive live development watch mode (`vitest`).
 
 
