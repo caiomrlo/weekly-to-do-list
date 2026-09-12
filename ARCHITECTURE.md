@@ -72,6 +72,10 @@ weekly-to-do-list/
 │   │   ├── r2.ts                 # Cloudflare R2 S3 client, file path generator, and presigned URLs
 │   │   └── tag-utils.ts          # Tag color tokens and visual badge style helpers
 │   └── middleware.ts             # Edge middleware for route protection and auth redirection
+├── tests/                       # Automated test suites and testing tiers
+│   ├── README.md                 # Test suite documentation & architectural guide
+│   └── unit/                     # Isolated unit tests (pure functions, zero I/O)
+│       └── lib/                  # Unit tests for date-utils, r2, and auth
 ├── drizzle/                      # Drizzle Kit migration files and metadata
 ├── public/                       # Static public assets (SVG icons, logos)
 ├── compose.yaml                  # Multi-container Docker Compose orchestration (app, db)
@@ -82,7 +86,8 @@ weekly-to-do-list/
 ├── next.config.ts                # Next.js framework configuration
 ├── package.json                  # Node.js dependencies, scripts, and package metadata
 ├── postcss.config.mjs            # PostCSS configuration for Tailwind CSS v4
-└── tsconfig.json                 # TypeScript strict compiler configuration with '@/*' alias
+├── tsconfig.json                 # TypeScript strict compiler configuration with '@/*' alias
+└── vitest.config.ts              # Vitest test runner configuration with path aliases
 ```
 
 ---
@@ -225,4 +230,21 @@ flowchart TD
 - **Token Signing**: JSON Web Tokens (JWT) signed and verified using `jose` with `HS256` symmetric algorithm and a configurable `AUTH_SECRET`.
 - **Password Security**: One-way cryptographic hashing using `bcryptjs` (salt rounds = 10).
 - **Data Protection & Isolation**: All task and tag queries and mutations strictly verify user session ownership via `session.userId` and enforce cascade deletion upon user removal.
+
+---
+
+## 8. Testing Strategy & Quality Assurance
+
+- **Test Runner**: Vitest (`vitest@^3.2.7`) with `vite-tsconfig-paths` for native TypeScript execution, ESM compatibility, and `@/*` path alias resolution.
+- **Architectural Tiers**:
+  - **`tests/unit/`**: Fast, deterministic, zero-I/O unit tests executing in a lightweight Node environment. Focuses on mission-critical utilities:
+    - `tests/unit/lib/date-utils.test.ts`: Timezone-immune date conversions, calendar range boundaries, and natural language duration parsing.
+    - `tests/unit/lib/r2.test.ts`: Object storage key generation and filename sanitization against path traversal vulnerabilities.
+    - `tests/unit/lib/auth.test.ts`: Bcrypt cryptographic hashing, salt generation, and JWT issuance/verification lifecycle.
+  - **`tests/integration/`** *(Future)*: Planned tier for database transaction checks and Next.js Server Action mutations.
+  - **`tests/e2e/`** *(Future)*: Planned tier for browser workflows via Playwright.
+- **Execution Commands**:
+  - `npm test`: Single-run suite execution (`vitest run`).
+  - `npm run test:watch`: Interactive live development watch mode (`vitest`).
+
 
