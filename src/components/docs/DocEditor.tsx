@@ -9,7 +9,7 @@ import {
 } from "@/app/actions/docs";
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
 import { DocLinkedTasksSection } from "./DocLinkedTasksSection";
-import { AttachmentsSection } from "@/components/shared/AttachmentsSection";
+import { AttachmentsAndDocsSection } from "@/components/shared/AttachmentsAndDocsSection";
 import { DocRichEditor } from "./DocRichEditor";
 import {
   AttachmentWithUrl,
@@ -312,7 +312,7 @@ export function DocEditor({
       </div>
 
       {/* Attachments Section */}
-      <AttachmentsSection
+      <AttachmentsAndDocsSection
         target={{ type: "doc", id: doc.id }}
         attachments={attachments}
         isLoading={isLoadingAttachments}

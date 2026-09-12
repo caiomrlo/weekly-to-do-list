@@ -16,8 +16,7 @@ import { TaskParentBanner } from "./task-modal/TaskParentBanner";
 import { TaskScheduleInputs } from "./task-modal/TaskScheduleInputs";
 import { ProjectSelector } from "./shared/ProjectSelector";
 import { TaskSubtasksSection } from "./task-modal/TaskSubtasksSection";
-import { AttachmentsSection } from "./shared/AttachmentsSection";
-import { TaskDocsSection } from "./task-modal/TaskDocsSection";
+import { AttachmentsAndDocsSection } from "./shared/AttachmentsAndDocsSection";
 import { TaskModalFooter } from "./task-modal/TaskModalFooter";
 import { getTaskAttachmentsAction, AttachmentWithUrl } from "@/app/actions/attachments";
 import { X, CheckCircle2, Circle, Loader2 } from "lucide-react";
@@ -449,17 +448,13 @@ function TaskModalDialog({
             />
           </div>
 
-          <AttachmentsSection
+          <AttachmentsAndDocsSection
             target={{ type: "task", id: task.id }}
             attachments={attachments}
             isLoading={isLoadingAttachments}
             onAttachmentsChange={handleAttachmentsChange}
-            variant="modal"
-          />
-
-          <TaskDocsSection
-            taskId={task.id}
             onDocsCountChange={handleDocsCountChange}
+            variant="modal"
           />
 
           {!task.parentId && (
