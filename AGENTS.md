@@ -23,6 +23,10 @@ Whenever a task requires changes to the database structure (adding tables, alter
 
 ## 3. Post-Task Verification Commands
 Always validate your changes before considering a task completed:
+- **`npm run test:unit`**:
+  - **When to use**: After modifying utilities in `src/lib/` (date arithmetic, auth helpers, R2 client). Fast, zero-I/O validation.
+- **`npm run test:integration`**:
+  - **When to use**: After editing Server Actions, database queries, schemas, or API routes. Validates transactions against PostgreSQL and Next.js/R2 mocks.
 - **`npm run lint`**:
   - **When to use**: After finishing code edits in TypeScript/TSX/JavaScript files.
   - **Purpose**: Checks for ESLint errors, code quality issues, unused variables, and Next.js lint rules.
