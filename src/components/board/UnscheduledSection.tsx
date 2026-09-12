@@ -123,7 +123,7 @@ export function UnscheduledSection({
 
                     {/* Subtasks */}
                     {subtasksOfMain.length > 0 && (
-                      <div className="ml-5 pl-2.5 border-l-2 border-amber-200/60 dark:border-amber-800/60 space-y-1.5 my-1">
+                      <div className="ml-4 space-y-1.5 my-1">
                         {subtasksOfMain.map((sub) => (
                           <TaskCard
                             key={sub.id}

@@ -35,13 +35,13 @@ body {
 }
 
 .dark body {
-  background-color: #0c0a09;
+  background-color: #0a0e17;
   background-image: 
-    radial-gradient(at 10% 10%, rgba(120, 53, 15, 0.25) 0px, transparent 50%),
-    radial-gradient(at 90% 15%, rgba(180, 83, 9, 0.16) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(28, 25, 23, 0.7) 0px, transparent 60%),
-    radial-gradient(at 80% 85%, rgba(120, 53, 15, 0.2) 0px, transparent 50%),
-    radial-gradient(at 20% 90%, rgba(41, 37, 36, 0.4) 0px, transparent 50%);
+    radial-gradient(at 10% 10%, rgba(30, 41, 59, 0.45) 0px, transparent 50%),
+    radial-gradient(at 90% 15%, rgba(51, 65, 85, 0.25) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.65) 0px, transparent 60%),
+    radial-gradient(at 80% 85%, rgba(30, 41, 59, 0.35) 0px, transparent 50%),
+    radial-gradient(at 20% 90%, rgba(15, 23, 42, 0.5) 0px, transparent 50%);
 }
 
 /* Glassmorphism Classes */
@@ -82,15 +82,15 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1.5px solid rgba(245, 158, 11, 0.5);
-  box-shadow: 0 12px 30px -5px rgba(245, 158, 11, 0.14), 0 4px 10px -2px rgba(245, 158, 11, 0.06);
+  box-shadow: 0 4px 16px 0 rgba(148, 163, 184, 0.12);
 }
 
 .dark .glass-card-today {
-  background: rgba(41, 37, 36, 0.55);
+  background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1.5px solid rgba(245, 158, 11, 0.45);
-  box-shadow: 0 12px 30px -5px rgba(245, 158, 11, 0.22), 0 4px 10px -2px rgba(245, 158, 11, 0.1);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.35);
 }
 
 .glass-input {

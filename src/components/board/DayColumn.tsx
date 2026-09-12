@@ -66,7 +66,7 @@ export function DayColumn({
         isColumnDropTarget
           ? "ring-2 ring-amber-400/50 bg-amber-50/25 dark:bg-amber-950/30"
           : day.isToday
-            ? "glass-card-today ring-1 ring-amber-500/20"
+            ? "glass-card-today"
             : "glass-card"
       }`}
     >
@@ -118,9 +118,9 @@ export function DayColumn({
                 onToggleCompleted={onToggleCompleted}
               />
 
-              {/* Same day subtasks nested with left indent and connector guide line */}
+              {/* Same day subtasks nested with left indent */}
               {sameDaySubtasks.length > 0 && (
-                <div className="ml-5 pl-2.5 border-l-2 border-amber-200/60 dark:border-amber-800/60 space-y-1.5 my-1">
+                <div className="ml-4 space-y-1.5 my-1">
                   {sameDaySubtasks.map((sub) => (
                     <TaskCard
                       key={sub.id}
