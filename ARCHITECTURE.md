@@ -9,12 +9,12 @@
 High-signal architectural boundaries and folder responsibilities:
 
 - **`src/app/actions/`**: Typed Next.js Server Actions acting as the primary RPC layer for queries, mutations, and business logic.
-- **`src/app/api/`**: Next.js Route Handlers reserved exclusively for streaming, webhooks, or authenticated binary transfers (e.g. presigned Cloudflare R2 attachment redirects).
+- **`src/app/api/`**: Next.js Route Handlers reserved for streaming, webhooks, authenticated binary transfers (e.g. presigned Cloudflare R2 attachment redirects), and Better Auth endpoints (`api/auth/[...all]`).
 - **`src/app/(routes)/`**: Next.js App Router pages, dynamic routes, and layouts.
 - **`src/components/`**: Reusable React 19 UI components modularized by domain.
 - **`src/db/`**: Persistence configuration with PostgreSQL connection pooling (`index.ts`) and Drizzle ORM schemas and relations (`schema.ts`).
-- **`src/lib/`**: Core utilities, cryptographic helpers, timezone-immune date arithmetic, Cloudflare R2 client, and shared React hooks.
-- **`src/middleware.ts`**: Edge runtime middleware enforcing JWT session authentication and route protection.
+- **`src/lib/`**: Core utilities, Better Auth configuration, timezone-immune date arithmetic, Cloudflare R2 client, and shared React hooks.
+- **`src/middleware.ts`**: Edge runtime middleware enforcing session cookie validation via Better Auth and route protection.
 - **`tests/`**: Automated test suites.
 - **`drizzle/`**: Auto-generated Drizzle Kit migration SQL files and schema snapshots.
 
@@ -29,7 +29,7 @@ flowchart TD
     User["👤 User (Web Browser)"]
 
     subgraph EdgeLayer["Edge / Middleware Layer"]
-        Middleware["🛡️ Next.js Middleware (middleware.ts)\nJWT Verification via jose"]
+        Middleware["🛡️ Next.js Middleware (middleware.ts)\nSession Cookie Verification via Better Auth"]
     end
 
     subgraph AppLayer["Next.js 16 Application Layer"]
@@ -50,7 +50,7 @@ flowchart TD
         end
 
         subgraph Lib["Core Utilities (src/lib/*)"]
-            AuthLib["Auth Lib (jose + bcryptjs)"]
+            AuthLib["Auth Lib (Better Auth + Drizzle Adapter)"]
             DateUtils["Date Utils (ISO YYYY-MM-DD)"]
             ProjectUtils["Project Utils (Palette Styles & Tokens)"]
             TagUtils["Tag Utils (Palette Styles & Tokens)"]
@@ -101,9 +101,9 @@ flowchart TD
 - **UX Principles**: Inline grouping over deep card nesting, zero redundant labels/clutter, progressive disclosure via popovers, and transient mutation feedback (`Saving...`).
 
 ### 3.2. Backend & API (`src/app/actions/`, `src/app/api/`)
-- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `tasks`, `docs`, `attachments`, `projects`, `tags`, `auth`, and `user` preferences.
-- **Route Handlers (`src/app/api/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access.
-- **Middleware (`src/middleware.ts`)**: Edge runtime JWT session validation protecting root and authentication routes.
+- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `tasks`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` preferences.
+- **Route Handlers (`src/app/api/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`.
+- **Middleware (`src/middleware.ts`)**: Edge runtime session cookie validation (`better-auth/cookies`) protecting root and authentication routes.
 - *For detailed action signatures or component props, refer directly to the respective files in `src/app/actions/` and `src/components/`.*
 
 ---
@@ -117,7 +117,8 @@ flowchart TD
 
 ### 4.2. Domain Models & Schema
 
-The data model is user-scoped (`session.userId`), centered around two primary aggregates:
+The data model is user-scoped (`session.userId`), centered around three primary aggregates:
+- **Authentication & Sessions**: Better Auth managed tables (`users`, `sessions`, `accounts`, `verifications`) with custom user fields (`preferences`, `last_login_at`) and UUID primary keys.
 - **Tasks**: Weekly scheduled or backlog items supporting a 1-level subtask hierarchy (`parent_id`), natural duration, and project/tag relations.
 - **Documents & Attachments**: Rich-text workspace notes and Cloudflare R2 file attachments linked polymorphically to tasks and docs.
 
@@ -138,9 +139,10 @@ The data model is user-scoped (`session.userId`), centered around two primary ag
 
 ## 6. Security & Authentication
 
-- **Authentication Mechanism**: Session token encapsulated in an HTTP-only, `SameSite=Lax`, secure cookie (`auth_token`).
-- **Token Signing**: JSON Web Tokens (JWT) signed and verified using `jose` with `HS256` symmetric algorithm and a configurable `AUTH_SECRET`.
-- **Password Security**: One-way cryptographic hashing using `bcryptjs` (salt rounds = 10).
-- **Data Protection & Isolation**: All task and tag queries and mutations strictly verify user session ownership via `session.userId` and enforce cascade deletion upon user removal.
+- **Authentication Mechanism**: Session-based authentication managed by **Better Auth** (`better-auth` + `@better-auth/drizzle-adapter`). Session tokens stored in signed, HTTP-only, `SameSite=Lax`, secure cookies (`better-auth.session_token`).
+- **Session & Account Storage**: Persisted in PostgreSQL database tables (`sessions`, `accounts`, `verifications`, and `users`), using UUID primary keys and standard Drizzle schema relations.
+- **Password Security**: Managed internally by Better Auth via standard one-way password hashing (Scrypt/bcrypt).
+- **Edge Middleware Protection**: Fast cookie presence check via `getSessionCookie(request)` from `better-auth/cookies` without cold-start database roundtrips on edge route transitions.
+- **Multi-Tenant Data Protection & Isolation**: All task, document, and tag queries and mutations strictly verify user session ownership via `getSessionUser()` (`session.userId`) and enforce cascade deletion upon user removal.
 
 

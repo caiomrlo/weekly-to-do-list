@@ -1,14 +1,31 @@
 import { db } from "@/db";
-import { users, DEFAULT_USER_PREFERENCES, UserPreferences } from "@/db/schema";
-import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import {
+  users,
+  sessions,
+  accounts,
+  DEFAULT_USER_PREFERENCES,
+  UserPreferences,
+} from "@/db/schema";
+import { AUTH_COOKIE_NAME } from "@/lib/auth";
 import { mockCookieStore } from "./mocks";
-import { randomUUID } from "crypto";
+import { randomUUID, createHmac } from "crypto";
+import { hashPassword } from "better-auth/crypto";
 
 export interface TestUserData {
   id: string;
   email: string;
   plainPassword: string;
   preferences: UserPreferences;
+}
+
+const AUTH_SECRET =
+  process.env.BETTER_AUTH_SECRET ||
+  process.env.AUTH_SECRET ||
+  "weekly-todo-jwt-auth-super-secret-key-2026";
+
+function signCookieValue(value: string, secret: string): string {
+  const signature = createHmac("sha256", secret).update(value).digest("base64");
+  return `${value}.${signature}`;
 }
 
 /**
@@ -22,19 +39,32 @@ export async function createTestUser(overrides?: {
   const email =
     overrides?.email || `test-${randomUUID().slice(0, 8)}@integration.test`;
   const plainPassword = overrides?.password || "TestSecret123!";
-  const passwordHash = await hashPassword(plainPassword);
   const now = new Date();
 
   const [newUser] = await db
     .insert(users)
     .values({
+      name: email.split("@")[0],
       email,
-      passwordHash,
+      emailVerified: false,
       preferences: overrides?.preferences || DEFAULT_USER_PREFERENCES,
       createdAt: now,
+      updatedAt: now,
       lastLoginAt: now,
     })
     .returning();
+
+  const hashedPassword = await hashPassword(plainPassword);
+
+  await db.insert(accounts).values({
+    id: randomUUID(),
+    accountId: newUser.id,
+    providerId: "credential",
+    userId: newUser.id,
+    password: hashedPassword,
+    createdAt: now,
+    updatedAt: now,
+  });
 
   return {
     id: newUser.id,
@@ -45,14 +75,27 @@ export async function createTestUser(overrides?: {
 }
 
 /**
- * Signs a session JWT for the test user and writes it to the mock cookie store.
+ * Creates an active session for the test user and writes the signed session cookie to mockCookieStore.
  */
 export async function loginAsTestUser(user: {
   id: string;
   email: string;
 }): Promise<string> {
-  const token = await signToken({ userId: user.id, email: user.email });
-  mockCookieStore.set(AUTH_COOKIE_NAME, token);
+  const token = randomUUID();
+  const now = new Date();
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+
+  await db.insert(sessions).values({
+    id: randomUUID(),
+    token,
+    userId: user.id,
+    expiresAt,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const signedCookie = signCookieValue(token, AUTH_SECRET);
+  mockCookieStore.set(AUTH_COOKIE_NAME, signedCookie);
   return token;
 }
 

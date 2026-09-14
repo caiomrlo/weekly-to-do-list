@@ -1,78 +1,77 @@
-import { describe, it, expect } from "vitest";
-import {
-  hashPassword,
-  comparePassword,
-  signToken,
-  verifyToken,
-} from "@/lib/auth";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { getSessionUser, AUTH_COOKIE_NAME, auth } from "@/lib/auth";
 
-describe("auth cryptography & token utils", () => {
-  describe("password hashing", () => {
-    it("should hash passwords using bcrypt and verify correctly", async () => {
-      const plain = "SecretPassword123!";
-      const hash = await hashPassword(plain);
+describe("Better Auth configuration & session helpers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-      expect(hash).not.toBe(plain);
-      expect(hash.startsWith("$2")).toBe(true);
-
-      const isValid = await comparePassword(plain, hash);
-      expect(isValid).toBe(true);
+  describe("constants & instance", () => {
+    it("should export the correct Better Auth cookie name", () => {
+      expect(AUTH_COOKIE_NAME).toBe("better-auth.session_token");
     });
 
-    it("should reject incorrect passwords against hash", async () => {
-      const plain = "SecretPassword123!";
-      const wrong = "WrongPassword456!";
-      const hash = await hashPassword(plain);
-
-      const isValid = await comparePassword(wrong, hash);
-      expect(isValid).toBe(false);
-    });
-
-    it("should generate distinct salt hashes for the same password", async () => {
-      const plain = "CommonPassword99";
-      const hash1 = await hashPassword(plain);
-      const hash2 = await hashPassword(plain);
-
-      expect(hash1).not.toBe(hash2);
-      expect(await comparePassword(plain, hash1)).toBe(true);
-      expect(await comparePassword(plain, hash2)).toBe(true);
+    it("should export an initialized Better Auth instance with api endpoints", () => {
+      expect(auth).toBeDefined();
+      expect(typeof auth.api.getSession).toBe("function");
+      expect(typeof auth.api.signInEmail).toBe("function");
+      expect(typeof auth.api.signUpEmail).toBe("function");
+      expect(typeof auth.api.signOut).toBe("function");
     });
   });
 
-  describe("jwt tokens", () => {
-    it("should sign a valid JWT and decode the exact session payload", async () => {
-      const payload = {
-        userId: "user-uuid-1234",
-        email: "developer@example.com",
+  describe("getSessionUser", () => {
+    it("should extract userId and email from a valid session", async () => {
+      const mockUser = {
+        id: "user-uuid-1234",
+        email: "user@example.com",
+        name: "user",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        emailVerified: false,
       };
 
-      const token = await signToken(payload);
-      expect(typeof token).toBe("string");
-      expect(token.split(".").length).toBe(3);
-
-      const verified = await verifyToken(token);
-      expect(verified).not.toBeNull();
-      expect(verified?.userId).toBe(payload.userId);
-      expect(verified?.email).toBe(payload.email);
-    });
-
-    it("should return null when verifying a malformed token string", async () => {
-      const verified = await verifyToken("malformed.jwt.token");
-      expect(verified).toBeNull();
-    });
-
-    it("should return null when verifying a tampered token signature", async () => {
-      const payload = {
-        userId: "user-uuid-1234",
-        email: "developer@example.com",
+      const mockSession = {
+        id: "session-1",
+        token: "token-1",
+        userId: mockUser.id,
+        expiresAt: new Date(Date.now() + 100000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
-      const token = await signToken(payload);
-      const parts = token.split(".");
-      // Tamper payload segment
-      const tamperedToken = `${parts[0]}.eyJob2dndXJ1Ijoicm9vdCJ9.${parts[2]}`;
 
-      const verified = await verifyToken(tamperedToken);
-      expect(verified).toBeNull();
+      const spy = vi
+        .spyOn(auth.api, "getSession")
+        .mockResolvedValueOnce({ user: mockUser, session: mockSession });
+
+      const result = await getSessionUser();
+      expect(result).not.toBeNull();
+      expect(result?.userId).toBe("user-uuid-1234");
+      expect(result?.email).toBe("user@example.com");
+
+      spy.mockRestore();
+    });
+
+    it("should return null when auth.api.getSession resolves without a user", async () => {
+      const spy = vi
+        .spyOn(auth.api, "getSession")
+        .mockResolvedValueOnce(null as unknown as Awaited<ReturnType<typeof auth.api.getSession>>);
+
+      const result = await getSessionUser();
+      expect(result).toBeNull();
+
+      spy.mockRestore();
+    });
+
+    it("should return null when auth.api.getSession throws an exception", async () => {
+      const spy = vi
+        .spyOn(auth.api, "getSession")
+        .mockRejectedValueOnce(new Error("Network or database failure"));
+
+      const result = await getSessionUser();
+      expect(result).toBeNull();
+
+      spy.mockRestore();
     });
   });
 });

@@ -1,28 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
-
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "weekly-todo-jwt-auth-super-secret-key-2026"
-);
-
-const AUTH_COOKIE_NAME = "auth_token";
+import { getSessionCookie } from "better-auth/cookies";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-
-  let isAuthenticated = false;
-  if (token) {
-    try {
-      const { payload } = await jwtVerify(token, SECRET_KEY);
-      if (payload.sub) {
-        isAuthenticated = true;
-      }
-    } catch {
-      isAuthenticated = false;
-    }
-  }
+  const sessionCookie = getSessionCookie(request);
+  const isAuthenticated = Boolean(sessionCookie);
 
   const isLoginPage = pathname === "/login" || pathname === "/login/";
 
@@ -41,6 +24,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -1,72 +1,82 @@
-import { SignJWT, jwtVerify } from "jose";
-import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { nextCookies } from "better-auth/next-js";
+import { headers } from "next/headers";
+import { db } from "@/db";
+import * as schema from "@/db/schema";
+import { DEFAULT_USER_PREFERENCES } from "@/db/schema";
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "weekly-todo-jwt-auth-super-secret-key-2026"
-);
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    usePlural: true,
+    schema: {
+      users: schema.users,
+      sessions: schema.sessions,
+      accounts: schema.accounts,
+      verifications: schema.verifications,
+    },
+  }),
+  secret:
+    process.env.BETTER_AUTH_SECRET ||
+    process.env.AUTH_SECRET ||
+    "weekly-todo-jwt-auth-super-secret-key-2026",
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 6,
+  },
+  user: {
+    additionalFields: {
+      preferences: {
+        type: "json",
+        defaultValue: DEFAULT_USER_PREFERENCES,
+        required: false,
+      },
+      lastLoginAt: {
+        type: "date",
+        required: false,
+      },
+    },
+  },
+  advanced: {
+    database: {
+      generateId: "uuid",
+    },
+  },
+  plugins: [nextCookies()],
+});
 
-export const AUTH_COOKIE_NAME = "auth_token";
+export const AUTH_COOKIE_NAME = "better-auth.session_token";
 
 export interface SessionPayload {
   userId: string;
   email: string;
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  return await bcrypt.hash(password, 10);
-}
-
-export async function comparePassword(
-  password: string,
-  hash: string
-): Promise<boolean> {
-  return await bcrypt.compare(password, hash);
-}
-
-export async function signToken(payload: SessionPayload): Promise<string> {
-  return await new SignJWT({ email: payload.email })
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(payload.userId)
-    .setIssuedAt()
-    .setExpirationTime("30d")
-    .sign(SECRET_KEY);
-}
-
-export async function verifyToken(token: string): Promise<SessionPayload | null> {
+export async function getSessionUser(): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY);
-    if (!payload.sub || typeof payload.email !== "string") {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
       return null;
     }
+
     return {
-      userId: payload.sub,
-      email: payload.email,
+      userId: session.user.id,
+      email: session.user.email,
     };
-  } catch {
+  } catch (err: unknown) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "digest" in err &&
+      (err as { digest?: string }).digest === "DYNAMIC_SERVER_USAGE"
+    ) {
+      throw err;
+    }
+    console.error("Error retrieving session in getSessionUser:", err);
     return null;
   }
-}
-
-export async function setSessionCookie(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(AUTH_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-    path: "/",
-  });
-}
-
-export async function clearSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(AUTH_COOKIE_NAME);
-}
-
-export async function getSessionUser(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-  if (!token) return null;
-  return await verifyToken(token);
 }

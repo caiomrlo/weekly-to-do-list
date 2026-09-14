@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 import { registerAction, loginAction, logoutAction } from "@/app/actions/auth";
 import { db, cleanupTestUser } from "../setup/test-db";
 import { createTestUser, clearAllCookies } from "../setup/auth-helper";
-import { users } from "@/db/schema";
+import { users, accounts } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, getSessionUser } from "@/lib/auth";
 import { mockCookieStore } from "../setup/mocks";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
@@ -62,18 +62,25 @@ describe("Integration: Auth Actions (registerAction, loginAction, logoutAction)"
 
       expect(saved).toBeDefined();
       expect(saved.email).toBe(uniqueEmail);
-      expect(saved.passwordHash).not.toBe("SecurePassword123!");
-      expect(saved.passwordHash.startsWith("$2")).toBe(true);
       userIdsToCleanup.push(saved.id);
+
+      // Verify account password record
+      const [savedAccount] = await db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.userId, saved.id));
+      expect(savedAccount).toBeDefined();
+      expect(savedAccount.password).toBeDefined();
+      expect(savedAccount.password).not.toBe("SecurePassword123!");
 
       // Verify session cookie
       const cookieObj = mockCookieStore.get(AUTH_COOKIE_NAME);
       expect(cookieObj).toBeDefined();
       expect(cookieObj?.value).toBeDefined();
 
-      const decoded = await verifyToken(cookieObj!.value);
-      expect(decoded?.userId).toBe(saved.id);
-      expect(decoded?.email).toBe(uniqueEmail);
+      const sessionUser = await getSessionUser();
+      expect(sessionUser?.userId).toBe(saved.id);
+      expect(sessionUser?.email).toBe(uniqueEmail);
     });
 
     it("should reject registration if email is already registered", async () => {
@@ -138,8 +145,8 @@ describe("Integration: Auth Actions (registerAction, loginAction, logoutAction)"
       // Verify cookie was set
       const cookieObj = mockCookieStore.get(AUTH_COOKIE_NAME);
       expect(cookieObj).toBeDefined();
-      const decoded = await verifyToken(cookieObj!.value);
-      expect(decoded?.userId).toBe(testUser.id);
+      const sessionUser = await getSessionUser();
+      expect(sessionUser?.userId).toBe(testUser.id);
 
       // Verify lastLoginAt updated in DB
       const [updatedUser] = await db

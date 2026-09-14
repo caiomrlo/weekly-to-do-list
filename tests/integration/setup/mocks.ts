@@ -8,11 +8,19 @@ export const mockCookieStore = {
     const val = cookieMap.get(name);
     return val !== undefined ? { name, value: val } : undefined;
   }),
-  set: vi.fn((name: string, value: string) => {
-    cookieMap.set(name, value);
+  set: vi.fn((nameOrObj: string | { name: string; value: string }, value?: string) => {
+    if (typeof nameOrObj === "object") {
+      cookieMap.set(nameOrObj.name, nameOrObj.value);
+    } else {
+      cookieMap.set(nameOrObj, value!);
+    }
   }),
-  delete: vi.fn((name: string) => {
-    cookieMap.delete(name);
+  delete: vi.fn((nameOrObj: string | { name: string }) => {
+    if (typeof nameOrObj === "object") {
+      cookieMap.delete(nameOrObj.name);
+    } else {
+      cookieMap.delete(nameOrObj);
+    }
   }),
   has: vi.fn((name: string) => cookieMap.has(name)),
   clear: () => {
@@ -20,9 +28,18 @@ export const mockCookieStore = {
   },
 };
 
-vi.mock("next/headers", () => ({
+const nextHeadersMock = {
   cookies: vi.fn(async () => mockCookieStore),
-}));
+  headers: vi.fn(async () => {
+    const cookieHeader = Array.from(cookieMap.entries())
+      .map(([k, v]) => `${k}=${v}`)
+      .join("; ");
+    return new Headers(cookieHeader ? { cookie: cookieHeader } : {});
+  }),
+};
+
+vi.mock("next/headers", () => nextHeadersMock);
+vi.mock("next/headers.js", () => nextHeadersMock);
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
