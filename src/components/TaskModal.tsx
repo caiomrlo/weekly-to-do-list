@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { TaskWithTag, Project } from "@/db/schema";
+import { useEffect, useRef, useState, useTransition, useCallback } from "react";
+import { TaskWithTag, Project, RecurringRule, RecurrenceFrequency } from "@/db/schema";
 import {
   updateTaskAction,
   deleteTaskAction,
   createTaskAction,
   getSubtasksAction,
   toggleTaskStatusAction,
+  updateTaskRecurrenceAction,
 } from "@/app/actions/tasks";
 import { getUserProjectsAction } from "@/app/actions/projects";
 import { formatDuration, parseNaturalDuration } from "@/lib/date-utils";
@@ -18,6 +19,8 @@ import { ProjectSelector } from "./shared/ProjectSelector";
 import { TaskSubtasksSection } from "./task-modal/TaskSubtasksSection";
 import { AttachmentsAndDocsSection } from "./shared/AttachmentsAndDocsSection";
 import { TaskModalFooter } from "./task-modal/TaskModalFooter";
+import { RecurrenceSelector } from "./task-modal/RecurrenceSelector";
+import { EditRecurringTaskModal } from "./task-modal/EditRecurringTaskModal";
 import { getTaskAttachmentsAction, AttachmentWithUrl } from "@/app/actions/attachments";
 import { X, CheckCircle2, Circle, Loader2 } from "lucide-react";
 
@@ -30,6 +33,12 @@ export interface TaskModalProps {
   onOpenTask?: (task: TaskWithTag | string) => void;
   onSubtaskCreated?: (subtask: TaskWithTag) => void;
   onProjectUpdated?: (project: Project) => void;
+  currentWeekRange?: { startDate: string; endDate: string };
+  onTasksBatchSync?: (params: {
+    updatedTask?: TaskWithTag;
+    newTasks?: TaskWithTag[];
+    deletedTaskIds?: string[];
+  }) => void;
 }
 
 interface TaskModalDialogProps {
@@ -40,6 +49,12 @@ interface TaskModalDialogProps {
   onOpenTask?: (task: TaskWithTag | string) => void;
   onSubtaskCreated?: (subtask: TaskWithTag) => void;
   onProjectUpdated?: (project: Project) => void;
+  currentWeekRange?: { startDate: string; endDate: string };
+  onTasksBatchSync?: (params: {
+    updatedTask?: TaskWithTag;
+    newTasks?: TaskWithTag[];
+    deletedTaskIds?: string[];
+  }) => void;
 }
 
 function TaskModalDialog({
@@ -50,6 +65,8 @@ function TaskModalDialog({
   onOpenTask,
   onSubtaskCreated,
   onProjectUpdated,
+  currentWeekRange,
+  onTasksBatchSync,
 }: TaskModalDialogProps) {
   const [title, setTitle] = useState(task.title);
   const [content, setContent] = useState(task.content || "");
@@ -61,6 +78,13 @@ function TaskModalDialog({
   );
   const [completed, setCompleted] = useState(task.completed);
   const [selectedProject, setSelectedProject] = useState<Project | null>(task.project || null);
+  const [currentRule, setCurrentRule] = useState<RecurringRule | null>(
+    task.recurringRule || null
+  );
+  const [isRecurrenceSelectorOpen, setIsRecurrenceSelectorOpen] = useState(false);
+  const [isEditRecurringModalOpen, setIsEditRecurringModalOpen] = useState(false);
+  const [hasFieldEdits, setHasFieldEdits] = useState(false);
+  const [isSavingRecurrence, setIsSavingRecurrence] = useState(false);
 
   // Subtasks state
   const [subtasks, setSubtasks] = useState<TaskWithTag[]>([]);
@@ -122,16 +146,24 @@ function TaskModalDialog({
     loadProjects();
   }, []);
 
+  const handleCloseAttempt = useCallback(() => {
+    if ((task.recurringRuleId || currentRule) && hasFieldEdits) {
+      setIsEditRecurringModalOpen(true);
+    } else {
+      onClose();
+    }
+  }, [task.recurringRuleId, currentRule, hasFieldEdits, onClose]);
+
   // Handle escape key to close modal
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        handleCloseAttempt();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [handleCloseAttempt]);
 
   // Debounced auto-save function
   const triggerAutoSave = (updates: {
@@ -143,6 +175,7 @@ function TaskModalDialog({
     tagId?: string | null;
     projectId?: string | null;
   }) => {
+    setHasFieldEdits(true);
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -343,9 +376,71 @@ function TaskModalDialog({
     });
   };
 
-  const handleDelete = () => {
+  const handleConfirmEditScope = async (scope: "this" | "future") => {
+    if (scope === "future") {
+      setIsSaving(true);
+      try {
+        const res = await updateTaskAction(task.id, {
+          title,
+          content,
+          date: date || null,
+          time: time || null,
+          duration,
+          projectId: selectedProject ? selectedProject.id : null,
+          editScope: "future",
+        });
+        if (res.task) {
+          onTaskUpdated(res.task);
+        }
+      } catch (err) {
+        console.error("Failed to apply future updates:", err);
+      } finally {
+        setIsSaving(false);
+        setIsEditRecurringModalOpen(false);
+        onClose();
+      }
+    } else {
+      setIsEditRecurringModalOpen(false);
+      onClose();
+    }
+  };
+
+  const handleSaveRecurrence = async (params: {
+    frequency: RecurrenceFrequency | "none";
+    interval: number;
+    daysOfWeek?: number[];
+    dayOfMonth?: number;
+    monthOfYear?: number;
+    endDate?: string | null;
+  }) => {
+    setIsSavingRecurrence(true);
+    try {
+      const res = await updateTaskRecurrenceAction({
+        taskId: task.id,
+        ...params,
+        currentWeekRange,
+      });
+      if (res.task) {
+        setCurrentRule(res.task.recurringRule || null);
+        onTaskUpdated(res.task);
+        if (onTasksBatchSync) {
+          onTasksBatchSync({
+            updatedTask: res.task,
+            newTasks: res.newTasks,
+            deletedTaskIds: res.deletedTaskIds,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update recurrence:", err);
+    } finally {
+      setIsSavingRecurrence(false);
+    }
+  };
+
+  const handleDelete = (scope: "this" | "future" | "all" = "this") => {
     startDeleteTransition(async () => {
-      const res = await deleteTaskAction(task.id);
+      const res = await deleteTaskAction(task.id, scope);
       if (res.success) {
         onTaskDeleted(task.id);
         onClose();
@@ -359,7 +454,7 @@ function TaskModalDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div
         className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
+        onClick={handleCloseAttempt}
       />
 
       <div className="relative w-full max-w-xl glass-panel rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col max-h-[90vh] overflow-hidden z-10 border border-white/80 dark:border-slate-800">
@@ -376,7 +471,7 @@ function TaskModalDialog({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               title="Close (Esc)"
             >
@@ -423,11 +518,14 @@ function TaskModalDialog({
             date={date}
             time={time}
             durationText={durationText}
+            isSubtask={Boolean(task.parentId)}
+            recurringRule={currentRule}
             onDateChange={handleDateChange}
             onTimeChange={handleTimeChange}
             onDurationInputChange={handleDurationInputChange}
             onDurationBlur={handleDurationBlur}
             onClearDuration={handleClearDuration}
+            onOpenRecurrence={() => setIsRecurrenceSelectorOpen(true)}
           />
 
           <ProjectSelector
@@ -472,11 +570,31 @@ function TaskModalDialog({
 
         <TaskModalFooter
           totalSubtasksToDelete={totalSubtasksToDelete}
+          isRecurring={Boolean(task.recurringRuleId || currentRule)}
           isDeleting={isDeleting}
           onDelete={handleDelete}
-          onClose={onClose}
+          onClose={handleCloseAttempt}
         />
       </div>
+
+      <RecurrenceSelector
+        isOpen={isRecurrenceSelectorOpen}
+        onClose={() => setIsRecurrenceSelectorOpen(false)}
+        currentRule={currentRule}
+        taskDate={date}
+        onSave={handleSaveRecurrence}
+        isSaving={isSavingRecurrence}
+      />
+
+      <EditRecurringTaskModal
+        isOpen={isEditRecurringModalOpen}
+        onClose={() => {
+          setIsEditRecurringModalOpen(false);
+          onClose();
+        }}
+        onConfirm={handleConfirmEditScope}
+        isSaving={isSaving}
+      />
     </div>
   );
 }
@@ -490,6 +608,8 @@ export function TaskModal({
   onOpenTask,
   onSubtaskCreated,
   onProjectUpdated,
+  currentWeekRange,
+  onTasksBatchSync,
 }: TaskModalProps) {
   if (!isOpen || !task) return null;
 
@@ -503,6 +623,8 @@ export function TaskModal({
       onOpenTask={onOpenTask}
       onSubtaskCreated={onSubtaskCreated}
       onProjectUpdated={onProjectUpdated}
+      currentWeekRange={currentWeekRange}
+      onTasksBatchSync={onTasksBatchSync}
     />
   );
 }

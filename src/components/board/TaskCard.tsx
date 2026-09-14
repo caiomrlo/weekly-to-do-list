@@ -15,6 +15,7 @@ import {
   Timer,
   Paperclip,
   FileText,
+  Repeat,
 } from "lucide-react";
 
 interface TaskCardProps {
@@ -76,6 +77,7 @@ export function TaskCard({
       task.tag ||
       task.time ||
       scheduledDate ||
+      task.recurringRuleId ||
       (task.duration != null && task.duration > 0) ||
       (task.subtaskCount != null && task.subtaskCount > 0) ||
       (task.attachmentCount != null && task.attachmentCount > 0) ||
@@ -284,6 +286,16 @@ export function TaskCard({
               <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                 <Clock className="w-2.5 h-2.5 text-amber-500" />
                 {task.time}
+              </span>
+            )}
+
+            {/* Recurrence badge */}
+            {task.recurringRuleId && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium"
+                title="Recurring task"
+              >
+                <Repeat className="w-2.5 h-2.5 text-amber-500" />
               </span>
             )}
 

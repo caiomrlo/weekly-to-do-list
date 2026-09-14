@@ -279,6 +279,9 @@ export function WeeklyBoard({
       parent: null,
       tag: null,
       project: null,
+      recurringRuleId: null,
+      originalDate: null,
+      recurringRule: null,
       title,
       content: "",
       date: targetDate,
@@ -445,6 +448,49 @@ export function WeeklyBoard({
     );
   }, []);
 
+  const currentWeekRange = useMemo(() => {
+    const start = toDateString(currentMonday);
+    const end = toDateString(
+      new Date(currentMonday.getFullYear(), currentMonday.getMonth(), currentMonday.getDate() + 6)
+    );
+    return { startDate: start, endDate: end };
+  }, [currentMonday]);
+
+  const handleTasksBatchSync = useCallback(
+    (params: {
+      updatedTask?: TaskWithTag;
+      newTasks?: TaskWithTag[];
+      deletedTaskIds?: string[];
+    }) => {
+      setTasks((prev) => {
+        let next = [...prev];
+        if (params.deletedTaskIds && params.deletedTaskIds.length > 0) {
+          const delSet = new Set(params.deletedTaskIds);
+          next = next.filter((t) => !delSet.has(t.id));
+        }
+        if (params.updatedTask) {
+          next = next.map((t) =>
+            t.id === params.updatedTask!.id ? params.updatedTask! : t
+          );
+        }
+        if (params.newTasks && params.newTasks.length > 0) {
+          const existingIds = new Set(next.map((t) => t.id));
+          for (const nt of params.newTasks) {
+            if (!existingIds.has(nt.id)) {
+              next.push(nt);
+            }
+          }
+        }
+        return next;
+      });
+
+      if (params.updatedTask && selectedTask?.id === params.updatedTask.id) {
+        setSelectedTask(params.updatedTask);
+      }
+    },
+    [selectedTask?.id]
+  );
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Glassmorphic Navigation Bar */}
@@ -519,6 +565,8 @@ export function WeeklyBoard({
         onOpenTask={handleOpenTask}
         onSubtaskCreated={handleSubtaskCreated}
         onProjectUpdated={handleProjectUpdated}
+        currentWeekRange={currentWeekRange}
+        onTasksBatchSync={handleTasksBatchSync}
       />
     </div>
   );

@@ -120,24 +120,70 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const tasks = pgTable("tasks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  tagId: uuid("tag_id").references(() => tags.id, { onDelete: "set null" }),
-  projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
-  parentId: uuid("parent_id").references((): AnyPgColumn => tasks.id, { onDelete: "cascade" }),
-  title: varchar("title", { length: 500 }).notNull(),
-  content: text("content").default("").notNull(),
-  date: date("date"), // 'YYYY-MM-DD' 
-  time: varchar("time", { length: 5 }), // 'HH:mm'
-  duration: integer("duration"), // (ex: 30, 60, 90)
-  completed: boolean("completed").default(false).notNull(),
-  order: integer("order").default(0).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export type RecurrenceFrequency = "daily" | "weekly" | "monthly" | "yearly";
+
+export const recurringRules = pgTable(
+  "recurring_rules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    frequency: varchar("frequency", { length: 20 }).$type<RecurrenceFrequency>().notNull(),
+    interval: integer("interval").default(1).notNull(),
+    daysOfWeek: jsonb("days_of_week").$type<number[]>(),
+    dayOfMonth: integer("day_of_month"),
+    monthOfYear: integer("month_of_year"),
+    startDate: date("start_date").notNull(),
+    endDate: date("end_date"),
+    exceptions: jsonb("exceptions").$type<string[]>().default([]).notNull(),
+
+    // Master template attributes
+    title: varchar("title", { length: 500 }).notNull(),
+    content: text("content").default("").notNull(),
+    time: varchar("time", { length: 5 }),
+    duration: integer("duration"),
+    tagId: uuid("tag_id").references(() => tags.id, { onDelete: "set null" }),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("recurring_rules_user_id_idx").on(table.userId),
+    index("recurring_rules_start_date_idx").on(table.startDate),
+  ]
+);
+
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id").references(() => tags.id, { onDelete: "set null" }),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    parentId: uuid("parent_id").references((): AnyPgColumn => tasks.id, { onDelete: "cascade" }),
+    recurringRuleId: uuid("recurring_rule_id").references(() => recurringRules.id, { onDelete: "set null" }),
+    title: varchar("title", { length: 500 }).notNull(),
+    content: text("content").default("").notNull(),
+    date: date("date"), // 'YYYY-MM-DD' 
+    originalDate: date("original_date"), // 'YYYY-MM-DD'
+    time: varchar("time", { length: 5 }), // 'HH:mm'
+    duration: integer("duration"), // (ex: 30, 60, 90)
+    completed: boolean("completed").default(false).notNull(),
+    order: integer("order").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("tasks_user_id_idx").on(table.userId),
+    index("tasks_date_idx").on(table.date),
+    index("tasks_parent_id_idx").on(table.parentId),
+    index("tasks_recurring_rule_id_idx").on(table.recurringRuleId),
+  ]
+);
 
 export const attachments = pgTable(
   "attachments",
@@ -295,10 +341,14 @@ export type NewTaskAttachment = typeof taskAttachments.$inferInsert;
 export type DocAttachment = typeof docAttachments.$inferSelect;
 export type NewDocAttachment = typeof docAttachments.$inferInsert;
 
+export type RecurringRule = typeof recurringRules.$inferSelect;
+export type NewRecurringRule = typeof recurringRules.$inferInsert;
+
 export type TaskWithTag = Task & {
   tag?: Tag | null;
   project?: Project | null;
   parent?: { id: string; title: string } | null;
+  recurringRule?: RecurringRule | null;
   subtaskCount?: number;
   completedSubtaskCount?: number;
   attachmentCount?: number;

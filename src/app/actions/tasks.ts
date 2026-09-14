@@ -9,13 +9,35 @@ import {
   taskDocs,
   docAttachments,
   taskAttachments,
+  recurringRules,
   TaskWithTag,
+  RecurrenceFrequency,
 } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { deleteManyFromR2 } from "@/lib/r2";
-import { and, eq, gte, lte, asc, isNotNull, sql, or, isNull, inArray, notInArray } from "drizzle-orm";
+import {
+  and,
+  eq,
+  ne,
+  gte,
+  lte,
+  asc,
+  isNotNull,
+  sql,
+  or,
+  isNull,
+  inArray,
+  notInArray,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
+import {
+  calculateProjectedDates,
+  addDaysToStr,
+  getDayOfWeekFromStr,
+  parseDateParts,
+} from "@/lib/recurrence-utils";
+import { toDateString } from "@/lib/date-utils";
 
 export async function getWeekTasksAction(
   startDate: string,
@@ -27,6 +49,95 @@ export async function getWeekTasksAction(
   }
 
   try {
+    // 1. On-demand window projection for recurring tasks
+    const activeRules = await db
+      .select()
+      .from(recurringRules)
+      .where(
+        and(
+          eq(recurringRules.userId, session.userId),
+          lte(recurringRules.startDate, endDate),
+          or(isNull(recurringRules.endDate), gte(recurringRules.endDate, startDate))
+        )
+      );
+
+    if (activeRules.length > 0) {
+      const ruleProjections: Array<{ rule: typeof activeRules[0]; dates: string[] }> = [];
+      const allProjectedDatesSet = new Set<string>();
+      const activeRuleIds = activeRules.map((r) => r.id);
+
+      for (const rule of activeRules) {
+        const dates = calculateProjectedDates(rule, startDate, endDate);
+        if (dates.length > 0) {
+          ruleProjections.push({ rule, dates });
+          for (const d of dates) allProjectedDatesSet.add(d);
+        }
+      }
+
+      if (ruleProjections.length > 0) {
+        const allProjectedDates = Array.from(allProjectedDatesSet);
+
+        // Find existing tasks matching recurringRuleId and dates
+        const existingTasks = await db
+          .select({
+            id: tasks.id,
+            recurringRuleId: tasks.recurringRuleId,
+            date: tasks.date,
+            originalDate: tasks.originalDate,
+          })
+          .from(tasks)
+          .where(
+            and(
+              eq(tasks.userId, session.userId),
+              inArray(tasks.recurringRuleId, activeRuleIds),
+              or(
+                inArray(tasks.date, allProjectedDates),
+                inArray(tasks.originalDate, allProjectedDates)
+              )
+            )
+          );
+
+        const existingKeySet = new Set<string>();
+        for (const t of existingTasks) {
+          if (t.recurringRuleId) {
+            if (t.originalDate) existingKeySet.add(`${t.recurringRuleId}_${t.originalDate}`);
+            if (t.date) existingKeySet.add(`${t.recurringRuleId}_${t.date}`);
+          }
+        }
+
+        const tasksToInsert: Array<typeof tasks.$inferInsert> = [];
+        const now = new Date();
+
+        for (const { rule, dates } of ruleProjections) {
+          for (const pDate of dates) {
+            if (!existingKeySet.has(`${rule.id}_${pDate}`)) {
+              tasksToInsert.push({
+                userId: session.userId,
+                recurringRuleId: rule.id,
+                originalDate: pDate,
+                date: pDate,
+                title: rule.title,
+                content: rule.content,
+                time: rule.time,
+                duration: rule.duration,
+                tagId: rule.tagId,
+                projectId: rule.projectId,
+                completed: false,
+                order: 0,
+                createdAt: now,
+                updatedAt: now,
+              });
+              existingKeySet.add(`${rule.id}_${pDate}`);
+            }
+          }
+        }
+
+        if (tasksToInsert.length > 0) {
+          await db.insert(tasks).values(tasksToInsert);
+        }
+      }
+    }
+
     const parentTasks = alias(tasks, "parent_task");
 
     const [rows, subtaskStats, attachmentStats, docStats] = await Promise.all([
@@ -39,11 +150,13 @@ export async function getWeekTasksAction(
             id: parentTasks.id,
             title: parentTasks.title,
           },
+          recurringRule: recurringRules,
         })
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
         .leftJoin(projects, eq(tasks.projectId, projects.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
+        .leftJoin(recurringRules, eq(tasks.recurringRuleId, recurringRules.id))
         .where(
           and(
             eq(tasks.userId, session.userId),
@@ -119,6 +232,7 @@ export async function getWeekTasksAction(
         tag: r.tag || null,
         project: r.project || null,
         parent: r.parent?.id ? r.parent : null,
+        recurringRule: r.recurringRule || null,
         subtaskCount: stats?.total || 0,
         completedSubtaskCount: stats?.completed || 0,
         attachmentCount: attachmentStatsMap.get(r.task.id) || 0,
@@ -201,11 +315,13 @@ export async function getTaskByIdAction(
             id: parentTasks.id,
             title: parentTasks.title,
           },
+          recurringRule: recurringRules,
         })
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
         .leftJoin(projects, eq(tasks.projectId, projects.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
+        .leftJoin(recurringRules, eq(tasks.recurringRuleId, recurringRules.id))
         .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
       db
         .select({
@@ -237,6 +353,7 @@ export async function getTaskByIdAction(
       tag: rows[0].tag || null,
       project: rows[0].project || null,
       parent: rows[0].parent?.id ? rows[0].parent : null,
+      recurringRule: rows[0].recurringRule || null,
       subtaskCount: stats?.total || 0,
       completedSubtaskCount: stats?.completed || 0,
       attachmentCount: attachmentStat?.total || 0,
@@ -376,6 +493,88 @@ export async function toggleTaskStatusAction(
   }
 }
 
+async function deleteTasksInternal(taskIds: string[], userId: string): Promise<void> {
+  if (taskIds.length === 0) return;
+
+  const childTasks = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(and(inArray(tasks.parentId, taskIds), eq(tasks.userId, userId)));
+  const allIdsToDelete = Array.from(new Set([...taskIds, ...childTasks.map((t) => t.id)]));
+
+  const taskAttachmentRows = await db
+    .select({
+      id: attachments.id,
+      filePath: attachments.filePath,
+      thumbnailPath: attachments.thumbnailPath,
+    })
+    .from(taskAttachments)
+    .innerJoin(attachments, eq(taskAttachments.attachmentId, attachments.id))
+    .where(
+      and(
+        inArray(taskAttachments.taskId, allIdsToDelete),
+        eq(taskAttachments.userId, userId)
+      )
+    );
+
+  if (taskAttachmentRows.length > 0) {
+    const candidateIds = taskAttachmentRows.map((a) => a.id);
+
+    const [linkedToOtherTasks, linkedToDocs] = await Promise.all([
+      db
+        .select({ attachmentId: taskAttachments.attachmentId })
+        .from(taskAttachments)
+        .where(
+          and(
+            inArray(taskAttachments.attachmentId, candidateIds),
+            notInArray(taskAttachments.taskId, allIdsToDelete),
+            eq(taskAttachments.userId, userId)
+          )
+        ),
+      db
+        .select({ attachmentId: docAttachments.attachmentId })
+        .from(docAttachments)
+        .where(
+          and(
+            inArray(docAttachments.attachmentId, candidateIds),
+            eq(docAttachments.userId, userId)
+          )
+        ),
+    ]);
+
+    const otherTaskLinkedSet = new Set(linkedToOtherTasks.map((r) => r.attachmentId));
+    const docLinkedSet = new Set(linkedToDocs.map((r) => r.attachmentId));
+
+    const attachmentsToDelete = taskAttachmentRows.filter(
+      (a) => !otherTaskLinkedSet.has(a.id) && !docLinkedSet.has(a.id)
+    );
+
+    if (attachmentsToDelete.length > 0) {
+      const keysToDelete = attachmentsToDelete
+        .flatMap((a) => [a.filePath, a.thumbnailPath])
+        .filter((k): k is string => Boolean(k));
+
+      await deleteManyFromR2(keysToDelete).catch((r2Err) =>
+        console.error("Warning: Failed to delete R2 files during deleteTask:", r2Err)
+      );
+
+      await db.delete(attachments).where(
+        and(
+          inArray(
+            attachments.id,
+            attachmentsToDelete.map((a) => a.id)
+          ),
+          eq(attachments.userId, userId)
+        )
+      );
+    }
+  }
+
+  await db
+    .delete(tasks)
+    .where(and(inArray(tasks.id, allIdsToDelete), eq(tasks.userId, userId)));
+}
+
 export async function updateTaskAction(
   taskId: string,
   data: {
@@ -386,6 +585,7 @@ export async function updateTaskAction(
     duration?: number | null;
     tagId?: string | null;
     projectId?: string | null;
+    editScope?: "this" | "future";
   }
 ): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
@@ -394,8 +594,18 @@ export async function updateTaskAction(
   }
 
   try {
+    const [currentTask] = await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
+
+    if (!currentTask) {
+      return { error: "Task not found." };
+    }
+
+    const now = new Date();
     const updateValues: Partial<typeof tasks.$inferInsert> = {
-      updatedAt: new Date(),
+      updatedAt: now,
     };
 
     if (data.title !== undefined) updateValues.title = data.title.trim();
@@ -405,6 +615,46 @@ export async function updateTaskAction(
     if (data.duration !== undefined) updateValues.duration = data.duration && data.duration > 0 ? data.duration : null;
     if (data.tagId !== undefined) updateValues.tagId = data.tagId ? data.tagId : null;
     if (data.projectId !== undefined) updateValues.projectId = data.projectId ? data.projectId : null;
+
+    if (data.editScope === "future" && currentTask.recurringRuleId) {
+      const currDate = currentTask.originalDate || currentTask.date;
+
+      const ruleUpdateValues: Partial<typeof recurringRules.$inferInsert> = {
+        updatedAt: now,
+      };
+      if (data.title !== undefined) ruleUpdateValues.title = data.title.trim();
+      if (data.content !== undefined) ruleUpdateValues.content = data.content;
+      if (data.time !== undefined) ruleUpdateValues.time = data.time ? data.time.trim() : null;
+      if (data.duration !== undefined) ruleUpdateValues.duration = data.duration && data.duration > 0 ? data.duration : null;
+      if (data.tagId !== undefined) ruleUpdateValues.tagId = data.tagId ? data.tagId : null;
+      if (data.projectId !== undefined) ruleUpdateValues.projectId = data.projectId ? data.projectId : null;
+
+      await db
+        .update(recurringRules)
+        .set(ruleUpdateValues)
+        .where(
+          and(
+            eq(recurringRules.id, currentTask.recurringRuleId),
+            eq(recurringRules.userId, session.userId)
+          )
+        );
+
+      const futureUpdates: Partial<typeof tasks.$inferInsert> = { ...updateValues };
+      delete futureUpdates.date;
+
+      if (currDate) {
+        await db
+          .update(tasks)
+          .set(futureUpdates)
+          .where(
+            and(
+              eq(tasks.recurringRuleId, currentTask.recurringRuleId),
+              eq(tasks.userId, session.userId),
+              or(gte(tasks.date, currDate), gte(tasks.originalDate, currDate))
+            )
+          );
+      }
+    }
 
     await db
       .update(tasks)
@@ -422,11 +672,13 @@ export async function updateTaskAction(
             id: parentTasks.id,
             title: parentTasks.title,
           },
+          recurringRule: recurringRules,
         })
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
         .leftJoin(projects, eq(tasks.projectId, projects.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
+        .leftJoin(recurringRules, eq(tasks.recurringRuleId, recurringRules.id))
         .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
       db
         .select({
@@ -458,6 +710,7 @@ export async function updateTaskAction(
       tag: rows[0].tag || null,
       project: rows[0].project || null,
       parent: rows[0].parent?.id ? rows[0].parent : null,
+      recurringRule: rows[0].recurringRule || null,
       subtaskCount: stats?.total || 0,
       completedSubtaskCount: stats?.completed || 0,
       attachmentCount: attachmentStat?.total || 0,
@@ -472,8 +725,263 @@ export async function updateTaskAction(
   }
 }
 
+export async function updateTaskRecurrenceAction(params: {
+  taskId: string;
+  frequency: RecurrenceFrequency | "none";
+  interval?: number;
+  daysOfWeek?: number[];
+  dayOfMonth?: number;
+  monthOfYear?: number;
+  endDate?: string | null;
+  currentWeekRange?: { startDate: string; endDate: string };
+}): Promise<{
+  task?: TaskWithTag;
+  newTasks?: TaskWithTag[];
+  deletedTaskIds?: string[];
+  error?: string;
+}> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const [currentTask] = await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, params.taskId), eq(tasks.userId, session.userId)));
+
+    if (!currentTask) {
+      return { error: "Task not found." };
+    }
+
+    const now = new Date();
+
+    if (params.frequency === "none") {
+      let deletedIds: string[] = [];
+      if (currentTask.recurringRuleId) {
+        const otherTasks = await db
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(
+            and(
+              eq(tasks.recurringRuleId, currentTask.recurringRuleId),
+              ne(tasks.id, currentTask.id),
+              eq(tasks.userId, session.userId)
+            )
+          );
+        deletedIds = otherTasks.map((t) => t.id);
+        if (deletedIds.length > 0) {
+          await deleteTasksInternal(deletedIds, session.userId);
+        }
+
+        await db
+          .delete(recurringRules)
+          .where(
+            and(
+              eq(recurringRules.id, currentTask.recurringRuleId),
+              eq(recurringRules.userId, session.userId)
+            )
+          );
+
+        await db
+          .update(tasks)
+          .set({
+            recurringRuleId: null,
+            originalDate: null,
+            updatedAt: now,
+          })
+          .where(eq(tasks.id, currentTask.id));
+      }
+
+      const updatedRes = await getTaskByIdAction(currentTask.id);
+      revalidatePath("/");
+      return { task: updatedRes.task, deletedTaskIds: deletedIds };
+    }
+
+    // Setting or updating recurrence
+    const baseDate = currentTask.date || toDateString(now);
+    const defaultDay = getDayOfWeekFromStr(baseDate);
+    const resolvedDays =
+      params.frequency === "weekly"
+        ? params.daysOfWeek && params.daysOfWeek.length > 0
+          ? params.daysOfWeek
+          : [defaultDay]
+        : null;
+    const resolvedDayOfMonth =
+      params.frequency === "monthly" || params.frequency === "yearly"
+        ? params.dayOfMonth || parseDateParts(baseDate).day
+        : null;
+    const resolvedMonthOfYear =
+      params.frequency === "yearly"
+        ? params.monthOfYear || parseDateParts(baseDate).month
+        : null;
+
+    let ruleId = currentTask.recurringRuleId;
+    let deletedIds: string[] = [];
+
+    if (ruleId) {
+      // Update existing recurring rule
+      await db
+        .update(recurringRules)
+        .set({
+          frequency: params.frequency,
+          interval: Math.max(1, params.interval || 1),
+          daysOfWeek: resolvedDays,
+          dayOfMonth: resolvedDayOfMonth,
+          monthOfYear: resolvedMonthOfYear,
+          startDate: baseDate,
+          endDate: params.endDate || null,
+          exceptions: [],
+          title: currentTask.title,
+          content: currentTask.content,
+          time: currentTask.time,
+          duration: currentTask.duration,
+          tagId: currentTask.tagId,
+          projectId: currentTask.projectId,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(recurringRules.id, ruleId),
+            eq(recurringRules.userId, session.userId)
+          )
+        );
+
+      // Delete other tasks created from the old recurrence pattern
+      const otherTasks = await db
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(
+          and(
+            eq(tasks.recurringRuleId, ruleId),
+            ne(tasks.id, currentTask.id),
+            eq(tasks.userId, session.userId)
+          )
+        );
+      deletedIds = otherTasks.map((t) => t.id);
+      if (deletedIds.length > 0) {
+        await deleteTasksInternal(deletedIds, session.userId);
+      }
+
+      // Update current task to reflect baseDate
+      await db
+        .update(tasks)
+        .set({
+          date: baseDate,
+          originalDate: baseDate,
+          updatedAt: now,
+        })
+        .where(eq(tasks.id, currentTask.id));
+    } else {
+      // Create new recurring rule
+      const [newRule] = await db
+        .insert(recurringRules)
+        .values({
+          userId: session.userId,
+          frequency: params.frequency,
+          interval: Math.max(1, params.interval || 1),
+          daysOfWeek: resolvedDays,
+          dayOfMonth: resolvedDayOfMonth,
+          monthOfYear: resolvedMonthOfYear,
+          startDate: baseDate,
+          endDate: params.endDate || null,
+          exceptions: [],
+          title: currentTask.title,
+          content: currentTask.content,
+          time: currentTask.time,
+          duration: currentTask.duration,
+          tagId: currentTask.tagId,
+          projectId: currentTask.projectId,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      ruleId = newRule.id;
+
+      // Update current task
+      await db
+        .update(tasks)
+        .set({
+          date: baseDate,
+          originalDate: baseDate,
+          recurringRuleId: ruleId,
+          updatedAt: now,
+        })
+        .where(eq(tasks.id, currentTask.id));
+    }
+
+    // Materialize occurrences for the current window if provided
+    let newlyCreatedTasks: TaskWithTag[] = [];
+    if (params.currentWeekRange && ruleId) {
+      const [rule] = await db
+        .select()
+        .from(recurringRules)
+        .where(eq(recurringRules.id, ruleId));
+
+      if (rule) {
+        const projectedDates = calculateProjectedDates(
+          rule,
+          params.currentWeekRange.startDate,
+          params.currentWeekRange.endDate
+        );
+        const datesToMaterialize = projectedDates.filter((d) => d !== baseDate);
+
+        if (datesToMaterialize.length > 0) {
+          const inserted = await db
+            .insert(tasks)
+            .values(
+              datesToMaterialize.map((d) => ({
+                userId: session.userId,
+                recurringRuleId: rule.id,
+                originalDate: d,
+                date: d,
+                title: rule.title,
+                content: rule.content,
+                time: rule.time,
+                duration: rule.duration,
+                tagId: rule.tagId,
+                projectId: rule.projectId,
+                completed: false,
+                order: 0,
+                createdAt: now,
+                updatedAt: now,
+              }))
+            )
+            .returning();
+
+          newlyCreatedTasks = inserted.map((ins) => ({
+            ...ins,
+            tag: null,
+            project: null,
+            parent: null,
+            recurringRule: rule,
+            subtaskCount: 0,
+            completedSubtaskCount: 0,
+            attachmentCount: 0,
+            docCount: 0,
+          }));
+        }
+      }
+    }
+
+    const updatedRes = await getTaskByIdAction(currentTask.id);
+    revalidatePath("/");
+    return {
+      task: updatedRes.task,
+      newTasks: newlyCreatedTasks,
+      deletedTaskIds: deletedIds,
+    };
+  } catch (err: unknown) {
+    console.error("Error updating task recurrence:", err);
+    return { error: "Failed to update recurrence." };
+  }
+}
+
 export async function deleteTaskAction(
-  taskId: string
+  taskId: string,
+  deleteScope: "this" | "future" | "all" = "this"
 ): Promise<{ success?: boolean; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
@@ -481,88 +989,102 @@ export async function deleteTaskAction(
   }
 
   try {
-    const taskIdsToDelete = [
-      taskId,
-      ...(
-        await db
-          .select({ id: tasks.id })
-          .from(tasks)
-          .where(and(eq(tasks.parentId, taskId), eq(tasks.userId, session.userId)))
-      ).map((t) => t.id),
-    ];
+    const [task] = await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
 
-    const taskAttachmentRows = await db
-      .select({
-        id: attachments.id,
-        filePath: attachments.filePath,
-        thumbnailPath: attachments.thumbnailPath,
-      })
-      .from(taskAttachments)
-      .innerJoin(attachments, eq(taskAttachments.attachmentId, attachments.id))
-      .where(
-        and(
-          inArray(taskAttachments.taskId, taskIdsToDelete),
-          eq(taskAttachments.userId, session.userId)
-        )
-      );
-
-    if (taskAttachmentRows.length > 0) {
-      const candidateIds = taskAttachmentRows.map((a) => a.id);
-
-      const [linkedToOtherTasks, linkedToDocs] = await Promise.all([
-        db
-          .select({ attachmentId: taskAttachments.attachmentId })
-          .from(taskAttachments)
-          .where(
-            and(
-              inArray(taskAttachments.attachmentId, candidateIds),
-              notInArray(taskAttachments.taskId, taskIdsToDelete),
-              eq(taskAttachments.userId, session.userId)
-            )
-          ),
-        db
-          .select({ attachmentId: docAttachments.attachmentId })
-          .from(docAttachments)
-          .where(
-            and(
-              inArray(docAttachments.attachmentId, candidateIds),
-              eq(docAttachments.userId, session.userId)
-            )
-          ),
-      ]);
-
-      const otherTaskLinkedSet = new Set(linkedToOtherTasks.map((r) => r.attachmentId));
-      const docLinkedSet = new Set(linkedToDocs.map((r) => r.attachmentId));
-
-      const attachmentsToDelete = taskAttachmentRows.filter(
-        (a) => !otherTaskLinkedSet.has(a.id) && !docLinkedSet.has(a.id)
-      );
-
-      if (attachmentsToDelete.length > 0) {
-        const keysToDelete = attachmentsToDelete
-          .flatMap((a) => [a.filePath, a.thumbnailPath])
-          .filter((k): k is string => Boolean(k));
-
-        await deleteManyFromR2(keysToDelete).catch((r2Err) =>
-          console.error("Warning: Failed to delete R2 files during deleteTaskAction:", r2Err)
-        );
-
-        await db.delete(attachments).where(
-          and(
-            inArray(
-              attachments.id,
-              attachmentsToDelete.map((a) => a.id)
-            ),
-            eq(attachments.userId, session.userId)
-          )
-        );
-      }
+    if (!task) {
+      return { error: "Task not found." };
     }
 
-    // Cascade deletes child subtasks and taskAttachments via DB foreign key
-    await db
-      .delete(tasks)
-      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
+    if (task.recurringRuleId) {
+      const [rule] = await db
+        .select()
+        .from(recurringRules)
+        .where(
+          and(
+            eq(recurringRules.id, task.recurringRuleId),
+            eq(recurringRules.userId, session.userId)
+          )
+        );
+
+      if (deleteScope === "all") {
+        const allTasks = await db
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(
+            and(
+              eq(tasks.recurringRuleId, task.recurringRuleId),
+              eq(tasks.userId, session.userId)
+            )
+          );
+        await deleteTasksInternal(
+          allTasks.map((t) => t.id),
+          session.userId
+        );
+        await db
+          .delete(recurringRules)
+          .where(
+            and(
+              eq(recurringRules.id, task.recurringRuleId),
+              eq(recurringRules.userId, session.userId)
+            )
+          );
+      } else if (deleteScope === "future") {
+        const currDate = task.originalDate || task.date;
+        if (currDate) {
+          const futureTasks = await db
+            .select({ id: tasks.id })
+            .from(tasks)
+            .where(
+              and(
+                eq(tasks.recurringRuleId, task.recurringRuleId),
+                eq(tasks.userId, session.userId),
+                or(gte(tasks.date, currDate), gte(tasks.originalDate, currDate))
+              )
+            );
+          await deleteTasksInternal(
+            futureTasks.map((t) => t.id),
+            session.userId
+          );
+
+          if (rule) {
+            const dayBefore = addDaysToStr(currDate, -1);
+            if (dayBefore < rule.startDate) {
+              await db
+                .delete(recurringRules)
+                .where(eq(recurringRules.id, rule.id));
+            } else {
+              await db
+                .update(recurringRules)
+                .set({ endDate: dayBefore, updatedAt: new Date() })
+                .where(eq(recurringRules.id, rule.id));
+            }
+          }
+        } else {
+          await deleteTasksInternal([taskId], session.userId);
+        }
+      } else {
+        // "this" occurrence only
+        const currDate = task.originalDate || task.date;
+        if (rule && currDate) {
+          const currentExceptions = rule.exceptions || [];
+          if (!currentExceptions.includes(currDate)) {
+            await db
+              .update(recurringRules)
+              .set({
+                exceptions: [...currentExceptions, currDate],
+                updatedAt: new Date(),
+              })
+              .where(eq(recurringRules.id, rule.id));
+          }
+        }
+        await deleteTasksInternal([taskId], session.userId);
+      }
+    } else {
+      await deleteTasksInternal([taskId], session.userId);
+    }
 
     revalidatePath("/");
     return { success: true };

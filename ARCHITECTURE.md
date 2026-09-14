@@ -59,7 +59,7 @@ flowchart TD
 
     subgraph DataLayer["Persistence Layer"]
         Drizzle["Drizzle ORM (node-postgres pool)"]
-        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• projects\n• tags\n• tasks\n• attachments\n• docs\n• task_docs")]
+        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• projects\n• tags\n• tasks\n• recurring_rules\n• attachments\n• docs\n• task_docs")]
     end
 
     %% Flow connections
@@ -117,9 +117,9 @@ flowchart TD
 
 ### 4.2. Domain Models & Schema
 
-The data model is user-scoped (`session.userId`), centered around three primary aggregates:
+The data model is user-scoped (`session.userId`), centered around four primary aggregates:
 - **Authentication & Sessions**: Better Auth managed tables (`users`, `sessions`, `accounts`, `verifications`) with custom user fields (`preferences`, `last_login_at`) and UUID primary keys.
-- **Tasks**: Weekly scheduled or backlog items supporting a 1-level subtask hierarchy (`parent_id`), natural duration, and project/tag relations.
+- **Tasks & Recurrence**: Weekly scheduled or backlog items supporting a 1-level subtask hierarchy (`parent_id`), natural duration, and project/tag relations. Recurring routines are managed via `recurring_rules` using an on-demand window projection strategy: instances are materialized as discrete rows in `tasks` with `recurringRuleId` and `originalDate`, preserving independent completion status while supporting scoped edits ("This occurrence" vs "This and future") and deletions ("This", "Future", "All").
 - **Documents & Attachments**: Rich-text workspace notes and Cloudflare R2 file attachments linked polymorphically to tasks and docs.
 
 > **Single Source of Truth**: All table schemas, foreign key constraints, indexes, and Drizzle relational mappings are defined strictly in [`src/db/schema.ts`](./src/db/schema.ts). Always inspect that file directly before writing database queries or migrations.

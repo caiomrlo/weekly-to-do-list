@@ -1,30 +1,56 @@
 "use client";
 
-import { Calendar, Clock, Timer, X } from "lucide-react";
+import { Calendar, Clock, Timer, X, Repeat } from "lucide-react";
+import { RecurringRule } from "@/db/schema";
+import { formatRecurrenceLabel } from "@/lib/recurrence-utils";
 
 interface TaskScheduleInputsProps {
   date: string;
   time: string;
   durationText: string;
+  isSubtask?: boolean;
+  recurringRule?: RecurringRule | null;
   onDateChange: (val: string) => void;
   onTimeChange: (val: string) => void;
   onDurationInputChange: (val: string) => void;
   onDurationBlur: () => void;
   onClearDuration: () => void;
+  onOpenRecurrence?: () => void;
 }
 
 export function TaskScheduleInputs({
   date,
   time,
   durationText,
+  isSubtask = false,
+  recurringRule,
   onDateChange,
   onTimeChange,
   onDurationInputChange,
   onDurationBlur,
   onClearDuration,
+  onOpenRecurrence,
 }: TaskScheduleInputsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
+      {/* Recurrence Pill (only for main tasks) */}
+      {!isSubtask && (
+        <button
+          type="button"
+          onClick={onOpenRecurrence}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium border transition-all cursor-pointer ${
+            recurringRule
+              ? "bg-amber-50/90 hover:bg-amber-100/90 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/80 shadow-2xs"
+              : "bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200"
+          }`}
+          title={recurringRule ? "Edit recurrence rule" : "Repeat this task"}
+        >
+          <Repeat className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+          <span>
+            {recurringRule ? formatRecurrenceLabel(recurringRule) : "Repeat"}
+          </span>
+        </button>
+      )}
       {/* Date Pill */}
       <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
         <Calendar className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 pointer-events-none" />
