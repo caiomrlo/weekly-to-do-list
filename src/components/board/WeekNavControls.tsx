@@ -21,6 +21,7 @@ export function WeekNavControls({
         disabled={isNavigating}
         className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
         title="Previous week"
+        aria-label="Previous week"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -29,7 +30,8 @@ export function WeekNavControls({
         type="button"
         onClick={onGoToday}
         disabled={isNavigating}
-        className="px-3.5 py-1.5 rounded-xl bg-amber-50/80 hover:bg-amber-100/90 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-semibold text-xs border border-amber-200/60 dark:border-amber-800/60 shadow-xs transition-all cursor-pointer"
+        className="px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-50/80 hover:bg-amber-100/90 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-semibold text-xs border border-amber-200/60 dark:border-amber-800/60 shadow-xs transition-all cursor-pointer"
+        aria-label="Go to current week"
       >
         Today
       </button>
@@ -40,6 +42,7 @@ export function WeekNavControls({
         disabled={isNavigating}
         className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
         title="Next week"
+        aria-label="Next week"
       >
         <ChevronRight className="w-4 h-4" />
       </button>

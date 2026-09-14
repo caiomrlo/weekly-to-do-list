@@ -245,7 +245,7 @@ export function DocsWorkspace({
 
       {/* Main Workspace Frame */}
       <main className="flex-1 px-3 sm:px-8 pb-8 w-full">
-        <div className="w-full h-[calc(100vh-130px)] glass-panel rounded-3xl border border-white/80 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col lg:flex-row">
+        <div className="w-full h-[calc(100dvh-165px)] md:h-[calc(100vh-130px)] glass-panel rounded-3xl border border-white/80 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col lg:flex-row">
           {/* Left Sidebar (Hidden on mobile if viewing a document via /docs/[id]) */}
           <div
             className={`w-full lg:w-80 xl:w-96 h-full flex flex-col ${
