@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { tags, Tag } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { getActiveWorkspaceContext } from "@/lib/workspace";
 import { and, eq, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -13,10 +14,17 @@ export async function getUserTagsAction(): Promise<{ tags?: Tag[]; error?: strin
   }
 
   try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+
     const list = await db
       .select()
       .from(tags)
-      .where(eq(tags.userId, session.userId))
+      .where(
+        and(
+          eq(tags.userId, session.userId),
+          eq(tags.workspaceId, activeWorkspace.id)
+        )
+      )
       .orderBy(asc(tags.name));
 
     return { tags: list };
@@ -57,10 +65,12 @@ export async function createTagAction(data: {
   const color = data.color && validColors.includes(data.color) ? data.color : "amber";
 
   try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
     const now = new Date();
     const [newTag] = await db
       .insert(tags)
       .values({
+        workspaceId: activeWorkspace.id,
         userId: session.userId,
         name,
         color,

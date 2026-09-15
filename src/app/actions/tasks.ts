@@ -14,6 +14,7 @@ import {
   RecurrenceFrequency,
 } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { getActiveWorkspaceContext } from "@/lib/workspace";
 import { deleteManyFromR2 } from "@/lib/r2";
 import {
   and,
@@ -49,6 +50,8 @@ export async function getWeekTasksAction(
   }
 
   try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+
     // 1. On-demand window projection for recurring tasks
     const activeRules = await db
       .select()
@@ -56,6 +59,7 @@ export async function getWeekTasksAction(
       .where(
         and(
           eq(recurringRules.userId, session.userId),
+          eq(recurringRules.workspaceId, activeWorkspace.id),
           lte(recurringRules.startDate, endDate),
           or(isNull(recurringRules.endDate), gte(recurringRules.endDate, startDate))
         )
@@ -89,6 +93,7 @@ export async function getWeekTasksAction(
           .where(
             and(
               eq(tasks.userId, session.userId),
+              eq(tasks.workspaceId, activeWorkspace.id),
               inArray(tasks.recurringRuleId, activeRuleIds),
               or(
                 inArray(tasks.date, allProjectedDates),
@@ -112,6 +117,7 @@ export async function getWeekTasksAction(
           for (const pDate of dates) {
             if (!existingKeySet.has(`${rule.id}_${pDate}`)) {
               tasksToInsert.push({
+                workspaceId: activeWorkspace.id,
                 userId: session.userId,
                 recurringRuleId: rule.id,
                 originalDate: pDate,
@@ -160,6 +166,7 @@ export async function getWeekTasksAction(
         .where(
           and(
             eq(tasks.userId, session.userId),
+            eq(tasks.workspaceId, activeWorkspace.id),
             or(
               and(gte(tasks.date, startDate), lte(tasks.date, endDate)),
               isNull(tasks.date),
@@ -168,7 +175,13 @@ export async function getWeekTasksAction(
                 db
                   .select({ id: tasks.id })
                   .from(tasks)
-                  .where(and(eq(tasks.userId, session.userId), isNull(tasks.date)))
+                  .where(
+                    and(
+                      eq(tasks.userId, session.userId),
+                      eq(tasks.workspaceId, activeWorkspace.id),
+                      isNull(tasks.date)
+                    )
+                  )
               )
             )
           )
@@ -375,6 +388,7 @@ export async function createTaskAction(data: {
   tagId?: string | null;
   projectId?: string | null;
   parentId?: string | null;
+  workspaceId?: string;
 }): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
@@ -387,6 +401,7 @@ export async function createTaskAction(data: {
   }
 
   try {
+    let workspaceId = data.workspaceId;
     let parentObj: { id: string; title: string } | null = null;
     if (data.parentId) {
       const [parent] = await db
@@ -401,6 +416,12 @@ export async function createTaskAction(data: {
         return { error: "Cannot create a subtask of a subtask (maximum 1 level of nesting allowed)." };
       }
       parentObj = { id: parent.id, title: parent.title };
+      workspaceId = parent.workspaceId;
+    }
+
+    if (!workspaceId) {
+      const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+      workspaceId = activeWorkspace.id;
     }
 
     const targetDate = data.date && data.date.trim() ? data.date.trim() : null;
@@ -410,12 +431,19 @@ export async function createTaskAction(data: {
     const [maxOrderRow] = await db
       .select({ maxOrder: sql<number>`coalesce(max(${tasks.order}), -1)::int` })
       .from(tasks)
-      .where(and(eq(tasks.userId, session.userId), dateCondition));
+      .where(
+        and(
+          eq(tasks.userId, session.userId),
+          eq(tasks.workspaceId, workspaceId),
+          dateCondition
+        )
+      );
     const nextOrder = (maxOrderRow?.maxOrder ?? -1) + 1;
 
     const [inserted] = await db
       .insert(tasks)
       .values({
+        workspaceId,
         userId: session.userId,
         tagId: data.tagId || null,
         projectId: data.projectId || null,
@@ -878,6 +906,7 @@ export async function updateTaskRecurrenceAction(params: {
       const [newRule] = await db
         .insert(recurringRules)
         .values({
+          workspaceId: currentTask.workspaceId,
           userId: session.userId,
           frequency: params.frequency,
           interval: Math.max(1, params.interval || 1),
@@ -933,6 +962,7 @@ export async function updateTaskRecurrenceAction(params: {
             .insert(tasks)
             .values(
               datesToMaterialize.map((d) => ({
+                workspaceId: currentTask.workspaceId,
                 userId: session.userId,
                 recurringRuleId: rule.id,
                 originalDate: d,

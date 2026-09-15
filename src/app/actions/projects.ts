@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { projects, Project } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { getActiveWorkspaceContext } from "@/lib/workspace";
 import { and, eq, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -13,10 +14,17 @@ export async function getUserProjectsAction(): Promise<{ projects?: Project[]; e
   }
 
   try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+
     const list = await db
       .select()
       .from(projects)
-      .where(eq(projects.userId, session.userId))
+      .where(
+        and(
+          eq(projects.userId, session.userId),
+          eq(projects.workspaceId, activeWorkspace.id)
+        )
+      )
       .orderBy(asc(projects.name));
 
     return { projects: list };
@@ -57,10 +65,12 @@ export async function createProjectAction(data: {
   const color = data.color && validColors.includes(data.color) ? data.color : "amber";
 
   try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
     const now = new Date();
     const [newProject] = await db
       .insert(projects)
       .values({
+        workspaceId: activeWorkspace.id,
         userId: session.userId,
         name,
         color,
@@ -161,5 +171,3 @@ export async function updateProjectAction(
     return { error: "Failed to update project." };
   }
 }
-
-

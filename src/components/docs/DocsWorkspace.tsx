@@ -8,6 +8,7 @@ import {
   UserPreferences,
   DEFAULT_USER_PREFERENCES,
   BackgroundThemeId,
+  Workspace,
 } from "@/db/schema";
 import {
   createDocAction,
@@ -28,6 +29,8 @@ interface DocsWorkspaceProps {
   activeDocIdFromRoute?: string | null;
   initialSelectedDoc?: DocWithRelations | null;
   initialPreferences?: UserPreferences;
+  workspaces?: Workspace[];
+  activeWorkspaceId?: string;
 }
 
 export function DocsWorkspace({
@@ -37,6 +40,8 @@ export function DocsWorkspace({
   activeDocIdFromRoute,
   initialSelectedDoc,
   initialPreferences,
+  workspaces,
+  activeWorkspaceId,
 }: DocsWorkspaceProps) {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -241,6 +246,8 @@ export function DocsWorkspace({
         preferences={preferences}
         onToggleDay={handleToggleDay}
         onSelectBackground={handleSelectBackground}
+        workspaces={workspaces}
+        activeWorkspaceId={activeWorkspaceId}
       />
 
       {/* Main Workspace Frame */}

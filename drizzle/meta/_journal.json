@@ -127,6 +127,13 @@
       "when": 1789425217594,
       "tag": "0017_crazy_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789483649492,
+      "tag": "0018_conscious_chamber",
+      "breakpoints": true
     }
   ]
 }

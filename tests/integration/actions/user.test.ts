@@ -48,7 +48,7 @@ describe("Integration: User Preferences Actions", () => {
 
     const res = await getUserPreferencesAction();
     expect(res.error).toBeUndefined();
-    expect(res.preferences).toEqual({
+    expect(res.preferences).toMatchObject({
       showSaturday: false,
       showSunday: true,
       theme: "dark",
@@ -82,7 +82,7 @@ describe("Integration: User Preferences Actions", () => {
       .from(users)
       .where(eq(users.id, testUser.id));
 
-    expect(saved.preferences).toEqual({
+    expect(saved.preferences).toMatchObject({
       showSaturday: true,
       showSunday: false,
       theme: "light",

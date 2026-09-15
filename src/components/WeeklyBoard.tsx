@@ -7,6 +7,7 @@ import {
   DEFAULT_USER_PREFERENCES,
   BackgroundThemeId,
   Project,
+  Workspace,
 } from "@/db/schema";
 import {
   getMondayOfWeek,
@@ -35,6 +36,8 @@ export interface WeeklyBoardProps {
   userEmail: string;
   initialMondayStr: string; // 'YYYY-MM-DD'
   initialPreferences?: UserPreferences;
+  workspaces?: Workspace[];
+  activeWorkspaceId?: string;
 }
 
 export function WeeklyBoard({
@@ -42,6 +45,8 @@ export function WeeklyBoard({
   userEmail,
   initialMondayStr,
   initialPreferences,
+  workspaces,
+  activeWorkspaceId,
 }: WeeklyBoardProps) {
   // Current monday date object
   const [currentMonday, setCurrentMonday] = useState<Date>(() => {
@@ -273,6 +278,7 @@ export function WeeklyBoard({
     const optimisticTask: TaskWithTag = {
       id: tempId,
       userId: "",
+      workspaceId: activeWorkspaceId || "",
       tagId: null,
       projectId: null,
       parentId: null,
@@ -307,7 +313,7 @@ export function WeeklyBoard({
     } else {
       setTasks((prev) => prev.filter((t) => t.id !== tempId));
     }
-  }, [newTitles, tasks]);
+  }, [newTitles, tasks, activeWorkspaceId]);
 
   // Toggle completed status
   const handleToggleCompleted = async (
@@ -503,6 +509,8 @@ export function WeeklyBoard({
         visibleDaysCount={visibleWeekDays.length}
         onToggleDay={handleToggleDay}
         onSelectBackground={handleSelectBackground}
+        workspaces={workspaces}
+        activeWorkspaceId={activeWorkspaceId}
       >
         <WeekNavControls
           isNavigating={isNavigating}

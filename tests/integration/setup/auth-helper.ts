@@ -3,10 +3,17 @@ import {
   users,
   sessions,
   accounts,
+  workspaces,
+  workspaceMembers,
   DEFAULT_USER_PREFERENCES,
   UserPreferences,
 } from "@/db/schema";
 import { AUTH_COOKIE_NAME } from "@/lib/auth";
+import {
+  ACTIVE_WORKSPACE_COOKIE,
+  getActiveWorkspaceContext,
+} from "@/lib/workspace";
+import { eq } from "drizzle-orm";
 import { mockCookieStore } from "./mocks";
 import { randomUUID, createHmac } from "crypto";
 import { hashPassword } from "better-auth/crypto";
@@ -66,11 +73,39 @@ export async function createTestUser(overrides?: {
     updatedAt: now,
   });
 
+  const [defaultWorkspace] = await db
+    .insert(workspaces)
+    .values({
+      name: "My Workspace",
+      ownerId: newUser.id,
+      isDefault: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  await db.insert(workspaceMembers).values({
+    workspaceId: defaultWorkspace.id,
+    userId: newUser.id,
+    role: "owner",
+    joinedAt: now,
+  });
+
+  const updatedPrefs: UserPreferences = {
+    ...(newUser.preferences || DEFAULT_USER_PREFERENCES),
+    activeWorkspaceId: defaultWorkspace.id,
+  };
+
+  await db
+    .update(users)
+    .set({ preferences: updatedPrefs })
+    .where(eq(users.id, newUser.id));
+
   return {
     id: newUser.id,
     email: newUser.email,
     plainPassword,
-    preferences: newUser.preferences,
+    preferences: updatedPrefs,
   };
 }
 
@@ -96,6 +131,10 @@ export async function loginAsTestUser(user: {
 
   const signedCookie = signCookieValue(token, AUTH_SECRET);
   mockCookieStore.set(AUTH_COOKIE_NAME, signedCookie);
+
+  const { activeWorkspace } = await getActiveWorkspaceContext(user.id);
+  mockCookieStore.set(ACTIVE_WORKSPACE_COOKIE, activeWorkspace.id);
+
   return token;
 }
 
@@ -104,6 +143,7 @@ export async function loginAsTestUser(user: {
  */
 export function logoutTestUser(): void {
   mockCookieStore.delete(AUTH_COOKIE_NAME);
+  mockCookieStore.delete(ACTIVE_WORKSPACE_COOKIE);
 }
 
 /**

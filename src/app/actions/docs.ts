@@ -12,6 +12,7 @@ import {
   DocWithRelations,
 } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { getActiveWorkspaceContext } from "@/lib/workspace";
 import { and, eq, desc, ilike, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -33,7 +34,11 @@ export async function getUserDocsAction(filters?: {
   }
 
   try {
-    const conditions = [eq(docs.userId, session.userId)];
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+    const conditions = [
+      eq(docs.userId, session.userId),
+      eq(docs.workspaceId, activeWorkspace.id),
+    ];
 
     if (filters?.projectId) {
       conditions.push(eq(docs.projectId, filters.projectId));
@@ -187,10 +192,12 @@ export async function createDocAction(data: {
   const isFavorite = !!data.isFavorite;
 
   try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
     const now = new Date();
     const [newDoc] = await db
       .insert(docs)
       .values({
+        workspaceId: activeWorkspace.id,
         userId: session.userId,
         projectId,
         title,
@@ -471,7 +478,7 @@ export async function createAndLinkDocAction(
 
   try {
     const [task] = await db
-      .select({ id: tasks.id })
+      .select({ id: tasks.id, workspaceId: tasks.workspaceId })
       .from(tasks)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)))
       .limit(1);
@@ -484,6 +491,7 @@ export async function createAndLinkDocAction(
     const [newDoc] = await db
       .insert(docs)
       .values({
+        workspaceId: task.workspaceId,
         userId: session.userId,
         projectId: data.projectId || null,
         title: trimmedTitle,

@@ -3,6 +3,7 @@ import { db, cleanupTestUser } from "../setup/test-db";
 import { createTestUser, TestUserData } from "../setup/auth-helper";
 import {
   users,
+  workspaces,
   tasks,
   docs,
   projects,
@@ -24,21 +25,23 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
   it("should cascade-delete all child entities when a user is deleted", async () => {
     testUser = await createTestUser();
     const userId = testUser.id;
+    const workspaceId = testUser.preferences.activeWorkspaceId!;
 
     // Insert project, tag, task, doc, attachment
     const [proj] = await db
       .insert(projects)
-      .values({ userId, name: "Cascade Project", color: "indigo" })
+      .values({ workspaceId, userId, name: "Cascade Project", color: "indigo" })
       .returning();
 
     const [tag] = await db
       .insert(tags)
-      .values({ userId, name: "Cascade Tag", color: "rose" })
+      .values({ workspaceId, userId, name: "Cascade Tag", color: "rose" })
       .returning();
 
     const [task] = await db
       .insert(tasks)
       .values({
+        workspaceId,
         userId,
         projectId: proj.id,
         tagId: tag.id,
@@ -49,6 +52,7 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
     const [doc] = await db
       .insert(docs)
       .values({
+        workspaceId,
         userId,
         projectId: proj.id,
         title: "Cascade Doc",
@@ -102,20 +106,22 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
   it("should set foreign keys to NULL when project or tag is deleted (onDelete: set null)", async () => {
     testUser = await createTestUser();
     const userId = testUser.id;
+    const workspaceId = testUser.preferences.activeWorkspaceId!;
 
     const [proj] = await db
       .insert(projects)
-      .values({ userId, name: "Nullify Project", color: "emerald" })
+      .values({ workspaceId, userId, name: "Nullify Project", color: "emerald" })
       .returning();
 
     const [tag] = await db
       .insert(tags)
-      .values({ userId, name: "Nullify Tag", color: "sky" })
+      .values({ workspaceId, userId, name: "Nullify Tag", color: "sky" })
       .returning();
 
     const [task] = await db
       .insert(tasks)
       .values({
+        workspaceId,
         userId,
         projectId: proj.id,
         tagId: tag.id,
@@ -126,6 +132,7 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
     const [doc] = await db
       .insert(docs)
       .values({
+        workspaceId,
         userId,
         projectId: proj.id,
         title: "Preserved Doc",
@@ -153,15 +160,16 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
   it("should enforce unique constraints on task_docs junction", async () => {
     testUser = await createTestUser();
     const userId = testUser.id;
+    const workspaceId = testUser.preferences.activeWorkspaceId!;
 
     const [task] = await db
       .insert(tasks)
-      .values({ userId, title: "T1" })
+      .values({ workspaceId, userId, title: "T1" })
       .returning();
 
     const [doc] = await db
       .insert(docs)
-      .values({ userId, title: "D1" })
+      .values({ workspaceId, userId, title: "D1" })
       .returning();
 
     // First insert succeeds
@@ -179,5 +187,48 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
         docId: doc.id,
       })
     ).rejects.toThrow();
+  });
+
+  it("should cascade-delete all entities when a workspace is deleted", async () => {
+    testUser = await createTestUser();
+    const userId = testUser.id;
+
+    // Create a custom workspace
+    const [ws] = await db
+      .insert(workspaces)
+      .values({
+        name: "Test Workspace",
+        ownerId: userId,
+        isDefault: false,
+      })
+      .returning();
+
+    const [proj] = await db
+      .insert(projects)
+      .values({ workspaceId: ws.id, userId, name: "WS Proj", color: "amber" })
+      .returning();
+
+    const [task] = await db
+      .insert(tasks)
+      .values({ workspaceId: ws.id, userId, title: "WS Task" })
+      .returning();
+
+    const [doc] = await db
+      .insert(docs)
+      .values({ workspaceId: ws.id, userId, title: "WS Doc" })
+      .returning();
+
+    // Delete workspace
+    await db.delete(workspaces).where(eq(workspaces.id, ws.id));
+
+    // Verify cascade deletion of entities in this workspace
+    const [taskCheck] = await db.select().from(tasks).where(eq(tasks.id, task.id));
+    expect(taskCheck).toBeUndefined();
+
+    const [docCheck] = await db.select().from(docs).where(eq(docs.id, doc.id));
+    expect(docCheck).toBeUndefined();
+
+    const [projCheck] = await db.select().from(projects).where(eq(projects.id, proj.id));
+    expect(projCheck).toBeUndefined();
   });
 });

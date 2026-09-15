@@ -1,8 +1,12 @@
 "use server";
 
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, workspaces, workspaceMembers } from "@/db/schema";
 import { auth, AUTH_COOKIE_NAME } from "@/lib/auth";
+import {
+  ACTIVE_WORKSPACE_COOKIE,
+  getActiveWorkspaceContext,
+} from "@/lib/workspace";
 import { eq } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -91,6 +95,50 @@ export async function registerAction(formData: {
       await applyResponseCookies(res);
     }
 
+    const [newUser] = await db
+      .select({ id: users.id, preferences: users.preferences })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (newUser) {
+      const now = new Date();
+      const [defaultWorkspace] = await db
+        .insert(workspaces)
+        .values({
+          name: "My Workspace",
+          ownerId: newUser.id,
+          isDefault: true,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      await db.insert(workspaceMembers).values({
+        workspaceId: defaultWorkspace.id,
+        userId: newUser.id,
+        role: "owner",
+        joinedAt: now,
+      });
+
+      await db
+        .update(users)
+        .set({
+          preferences: {
+            ...(newUser.preferences || {}),
+            activeWorkspaceId: defaultWorkspace.id,
+          },
+        })
+        .where(eq(users.id, newUser.id));
+
+      const cookieStore = await cookies();
+      cookieStore.set(ACTIVE_WORKSPACE_COOKIE, defaultWorkspace.id, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
+
     return { success: true };
   } catch (err: unknown) {
     const errorObj = err as { message?: string; body?: { message?: string; code?: string } };
@@ -137,6 +185,22 @@ export async function loginAction(formData: {
       .set({ lastLoginAt: new Date() })
       .where(eq(users.email, email));
 
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (user) {
+      const { activeWorkspace } = await getActiveWorkspaceContext(user.id);
+      const cookieStore = await cookies();
+      cookieStore.set(ACTIVE_WORKSPACE_COOKIE, activeWorkspace.id, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
+
     return { success: true };
   } catch (err: unknown) {
     const errorObj = err as { message?: string; status?: number; body?: { message?: string; code?: string } };
@@ -168,6 +232,7 @@ export async function logoutAction(): Promise<void> {
 
     const cookieStore = await cookies();
     cookieStore.delete(AUTH_COOKIE_NAME);
+    cookieStore.delete(ACTIVE_WORKSPACE_COOKIE);
   } catch (err) {
     console.error("Error during logout:", err);
   }

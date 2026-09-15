@@ -10,8 +10,9 @@ import {
   Moon,
   LogOut,
 } from "lucide-react";
-import { BackgroundThemeId, UserPreferences } from "@/db/schema";
+import { BackgroundThemeId, UserPreferences, Workspace } from "@/db/schema";
 import { SettingsMenu } from "./board/SettingsMenu";
+import { WorkspaceSelector } from "./workspace/WorkspaceSelector";
 
 export interface AppHeaderProps {
   title?: React.ReactNode;
@@ -22,6 +23,8 @@ export interface AppHeaderProps {
   visibleDaysCount?: number;
   onToggleDay?: (dayKey: "showSaturday" | "showSunday") => void;
   onSelectBackground?: (bgId: BackgroundThemeId) => void;
+  workspaces?: Workspace[];
+  activeWorkspaceId?: string;
   children?: React.ReactNode;
 }
 
@@ -34,6 +37,8 @@ export function AppHeader({
   visibleDaysCount,
   onToggleDay,
   onSelectBackground,
+  workspaces,
+  activeWorkspaceId,
   children,
 }: AppHeaderProps) {
   const pathname = usePathname();
@@ -45,20 +50,33 @@ export function AppHeader({
   return (
     <header className="sticky top-0 z-30 px-3.5 sm:px-6 md:px-8 py-2.5 sm:py-3.5 glass-panel border-b border-white/60 dark:border-slate-800/80 mb-4 sm:mb-6">
       <div className="w-full grid grid-cols-[1fr_auto] items-center gap-y-2.5 gap-x-2 md:flex md:items-center md:justify-between md:gap-4">
-        {/* Brand Icon & Title: Row 1 Left on mobile, Order 1 on desktop */}
-        <div className="row-start-1 col-start-1 flex items-center gap-2.5 sm:gap-3 min-w-0 md:order-1">
+        {/* Brand Icon & Workspace Selector / Title: Row 1 Left on mobile, Order 1 on desktop */}
+        <div className="row-start-1 col-start-1 flex items-center gap-2 sm:gap-2.5 min-w-0 md:order-1">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-500/20 flex-shrink-0">
             <CalendarDays className="w-5 h-5" />
           </div>
-          <div className="min-w-0 flex-1">
-            {typeof displayTitle === "string" ? (
-              <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight truncate">
-                {displayTitle}
-              </h1>
-            ) : (
-              displayTitle
-            )}
-          </div>
+
+          {workspaces && activeWorkspaceId && (
+            <WorkspaceSelector
+              workspaces={workspaces}
+              activeWorkspaceId={activeWorkspaceId}
+            />
+          )}
+
+          {displayTitle && (
+            <div className="min-w-0 flex items-center gap-1.5 hidden sm:flex">
+              {workspaces && activeWorkspaceId && (
+                <span className="text-slate-300 dark:text-slate-600 select-none font-light">/</span>
+              )}
+              {typeof displayTitle === "string" ? (
+                <h1 className="text-xs sm:text-sm md:text-base font-semibold text-slate-700 dark:text-slate-200 tracking-tight truncate">
+                  {displayTitle}
+                </h1>
+              ) : (
+                displayTitle
+              )}
+            </div>
+          )}
         </div>
 
         {/* View Switcher Nav Tabs: Row 2 Left on mobile, Order 2 on desktop */}
