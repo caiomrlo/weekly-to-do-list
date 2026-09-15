@@ -217,6 +217,28 @@ export const recurringRules = pgTable(
   ]
 );
 
+export type TaskStatusCategory = "todo" | "doing" | "done";
+
+export const taskStatuses = pgTable(
+  "task_statuses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 50 }).notNull(),
+    color: varchar("color", { length: 30 }).default("slate").notNull(),
+    category: varchar("category", { length: 20 }).$type<TaskStatusCategory>().notNull(),
+    order: integer("order").default(0).notNull(),
+    isDefault: boolean("is_default").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("task_statuses_workspace_id_idx").on(table.workspaceId),
+  ]
+);
+
 export const tasks = pgTable(
   "tasks",
   {
@@ -229,6 +251,7 @@ export const tasks = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     tagId: uuid("tag_id").references(() => tags.id, { onDelete: "set null" }),
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    statusId: uuid("status_id").references(() => taskStatuses.id, { onDelete: "set null" }),
     parentId: uuid("parent_id").references((): AnyPgColumn => tasks.id, { onDelete: "cascade" }),
     recurringRuleId: uuid("recurring_rule_id").references(() => recurringRules.id, { onDelete: "set null" }),
     title: varchar("title", { length: 500 }).notNull(),
@@ -245,6 +268,7 @@ export const tasks = pgTable(
   (table) => [
     index("tasks_workspace_id_idx").on(table.workspaceId),
     index("tasks_user_id_idx").on(table.userId),
+    index("tasks_status_id_idx").on(table.statusId),
     index("tasks_date_idx").on(table.date),
     index("tasks_parent_id_idx").on(table.parentId),
     index("tasks_recurring_rule_id_idx").on(table.recurringRuleId),
@@ -399,6 +423,9 @@ export type NewTag = typeof tags.$inferInsert;
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 
+export type TaskStatus = typeof taskStatuses.$inferSelect;
+export type NewTaskStatus = typeof taskStatuses.$inferInsert;
+
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 
@@ -425,6 +452,7 @@ export type TaskWithTag = Task & {
   project?: Project | null;
   parent?: { id: string; title: string } | null;
   recurringRule?: RecurringRule | null;
+  status?: TaskStatus | null;
   subtaskCount?: number;
   completedSubtaskCount?: number;
   attachmentCount?: number;

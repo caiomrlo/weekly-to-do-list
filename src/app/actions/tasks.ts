@@ -5,6 +5,7 @@ import {
   tasks,
   tags,
   projects,
+  taskStatuses,
   attachments,
   taskDocs,
   docAttachments,
@@ -152,6 +153,7 @@ export async function getWeekTasksAction(
           task: tasks,
           tag: tags,
           project: projects,
+          status: taskStatuses,
           parent: {
             id: parentTasks.id,
             title: parentTasks.title,
@@ -161,6 +163,7 @@ export async function getWeekTasksAction(
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
         .leftJoin(projects, eq(tasks.projectId, projects.id))
+        .leftJoin(taskStatuses, eq(tasks.statusId, taskStatuses.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
         .leftJoin(recurringRules, eq(tasks.recurringRuleId, recurringRules.id))
         .where(
@@ -244,6 +247,7 @@ export async function getWeekTasksAction(
         ...r.task,
         tag: r.tag || null,
         project: r.project || null,
+        status: r.status || null,
         parent: r.parent?.id ? r.parent : null,
         recurringRule: r.recurringRule || null,
         subtaskCount: stats?.total || 0,
@@ -324,6 +328,7 @@ export async function getTaskByIdAction(
           task: tasks,
           tag: tags,
           project: projects,
+          status: taskStatuses,
           parent: {
             id: parentTasks.id,
             title: parentTasks.title,
@@ -333,6 +338,7 @@ export async function getTaskByIdAction(
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
         .leftJoin(projects, eq(tasks.projectId, projects.id))
+        .leftJoin(taskStatuses, eq(tasks.statusId, taskStatuses.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
         .leftJoin(recurringRules, eq(tasks.recurringRuleId, recurringRules.id))
         .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
@@ -365,6 +371,7 @@ export async function getTaskByIdAction(
       ...rows[0].task,
       tag: rows[0].tag || null,
       project: rows[0].project || null,
+      status: rows[0].status || null,
       parent: rows[0].parent?.id ? rows[0].parent : null,
       recurringRule: rows[0].recurringRule || null,
       subtaskCount: stats?.total || 0,
@@ -387,6 +394,7 @@ export async function createTaskAction(data: {
   duration?: number | null;
   tagId?: string | null;
   projectId?: string | null;
+  statusId?: string | null;
   parentId?: string | null;
   workspaceId?: string;
 }): Promise<{ task?: TaskWithTag; error?: string }> {
@@ -424,6 +432,38 @@ export async function createTaskAction(data: {
       workspaceId = activeWorkspace.id;
     }
 
+    // Resolve statusId: if not provided, look for default status in workspace
+    let resolvedStatusId = data.statusId || null;
+    let isCompleted = false;
+    if (resolvedStatusId) {
+      const [foundStatus] = await db
+        .select()
+        .from(taskStatuses)
+        .where(
+          and(
+            eq(taskStatuses.id, resolvedStatusId),
+            eq(taskStatuses.workspaceId, workspaceId)
+          )
+        );
+      if (foundStatus) {
+        isCompleted = foundStatus.category === "done";
+      }
+    } else {
+      const [defaultStatus] = await db
+        .select()
+        .from(taskStatuses)
+        .where(
+          and(
+            eq(taskStatuses.workspaceId, workspaceId),
+            eq(taskStatuses.isDefault, true)
+          )
+        );
+      if (defaultStatus) {
+        resolvedStatusId = defaultStatus.id;
+        isCompleted = defaultStatus.category === "done";
+      }
+    }
+
     const targetDate = data.date && data.date.trim() ? data.date.trim() : null;
     const dateCondition = targetDate ? eq(tasks.date, targetDate) : isNull(tasks.date);
 
@@ -447,13 +487,14 @@ export async function createTaskAction(data: {
         userId: session.userId,
         tagId: data.tagId || null,
         projectId: data.projectId || null,
+        statusId: resolvedStatusId,
         parentId: data.parentId || null,
         title,
         date: targetDate,
         time: targetDate ? (data.time?.trim() || null) : null,
         duration: data.duration ?? null,
         content: "",
-        completed: false,
+        completed: isCompleted,
         order: nextOrder,
         createdAt: now,
         updatedAt: now,
@@ -478,16 +519,27 @@ export async function createTaskAction(data: {
       projectObj = foundProject || null;
     }
 
+    let statusObj = null;
+    if (inserted.statusId) {
+      const [foundStatus] = await db
+        .select()
+        .from(taskStatuses)
+        .where(eq(taskStatuses.id, inserted.statusId));
+      statusObj = foundStatus || null;
+    }
+
     const newTask: TaskWithTag = {
       ...inserted,
       tag: tagObj,
       project: projectObj,
+      status: statusObj,
       parent: parentObj,
       subtaskCount: 0,
       completedSubtaskCount: 0,
     };
 
     revalidatePath("/");
+    revalidatePath("/kanban");
     return { task: newTask };
   } catch (err: unknown) {
     console.error("Error creating task:", err);
@@ -505,15 +557,50 @@ export async function toggleTaskStatusAction(
   }
 
   try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+
+    const updatePayload: { completed: boolean; statusId?: string | null; updatedAt: Date } = {
+      completed,
+      updatedAt: new Date(),
+    };
+
+    if (completed) {
+      const [doneStatus] = await db
+        .select()
+        .from(taskStatuses)
+        .where(
+          and(
+            eq(taskStatuses.workspaceId, activeWorkspace.id),
+            eq(taskStatuses.category, "done")
+          )
+        )
+        .limit(1);
+      if (doneStatus) {
+        updatePayload.statusId = doneStatus.id;
+      }
+    } else {
+      const [todoStatus] = await db
+        .select()
+        .from(taskStatuses)
+        .where(
+          and(
+            eq(taskStatuses.workspaceId, activeWorkspace.id),
+            or(eq(taskStatuses.isDefault, true), eq(taskStatuses.category, "todo"))
+          )
+        )
+        .limit(1);
+      if (todoStatus) {
+        updatePayload.statusId = todoStatus.id;
+      }
+    }
+
     await db
       .update(tasks)
-      .set({
-        completed,
-        updatedAt: new Date(),
-      })
+      .set(updatePayload)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
 
     revalidatePath("/");
+    revalidatePath("/kanban");
     return { success: true };
   } catch (err: unknown) {
     console.error("Error updating status:", err);
@@ -613,6 +700,7 @@ export async function updateTaskAction(
     duration?: number | null;
     tagId?: string | null;
     projectId?: string | null;
+    statusId?: string | null;
     editScope?: "this" | "future";
   }
 ): Promise<{ task?: TaskWithTag; error?: string }> {
@@ -643,6 +731,18 @@ export async function updateTaskAction(
     if (data.duration !== undefined) updateValues.duration = data.duration && data.duration > 0 ? data.duration : null;
     if (data.tagId !== undefined) updateValues.tagId = data.tagId ? data.tagId : null;
     if (data.projectId !== undefined) updateValues.projectId = data.projectId ? data.projectId : null;
+    if (data.statusId !== undefined) {
+      updateValues.statusId = data.statusId ? data.statusId : null;
+      if (data.statusId) {
+        const [targetStatus] = await db
+          .select()
+          .from(taskStatuses)
+          .where(eq(taskStatuses.id, data.statusId));
+        if (targetStatus) {
+          updateValues.completed = targetStatus.category === "done";
+        }
+      }
+    }
 
     if (data.editScope === "future" && currentTask.recurringRuleId) {
       const currDate = currentTask.originalDate || currentTask.date;
@@ -696,6 +796,7 @@ export async function updateTaskAction(
           task: tasks,
           tag: tags,
           project: projects,
+          status: taskStatuses,
           parent: {
             id: parentTasks.id,
             title: parentTasks.title,
@@ -705,6 +806,7 @@ export async function updateTaskAction(
         .from(tasks)
         .leftJoin(tags, eq(tasks.tagId, tags.id))
         .leftJoin(projects, eq(tasks.projectId, projects.id))
+        .leftJoin(taskStatuses, eq(tasks.statusId, taskStatuses.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
         .leftJoin(recurringRules, eq(tasks.recurringRuleId, recurringRules.id))
         .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
@@ -737,6 +839,7 @@ export async function updateTaskAction(
       ...rows[0].task,
       tag: rows[0].tag || null,
       project: rows[0].project || null,
+      status: rows[0].status || null,
       parent: rows[0].parent?.id ? rows[0].parent : null,
       recurringRule: rows[0].recurringRule || null,
       subtaskCount: stats?.total || 0,
@@ -746,6 +849,7 @@ export async function updateTaskAction(
     };
 
     revalidatePath("/");
+    revalidatePath("/kanban");
     return { task: updated };
   } catch (err: unknown) {
     console.error("Error updating task:", err);
@@ -1244,5 +1348,178 @@ export async function moveOrReorderTasksAction(params: {
   } catch (err: unknown) {
     console.error("Error moving/reordering tasks:", err);
     return { error: "Failed to save task order." };
+  }
+}
+
+export async function getKanbanTasksAction(): Promise<{ tasks?: TaskWithTag[]; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+
+    const [rows, subtaskStats, attachmentStats, docStats] = await Promise.all([
+      db
+        .select({
+          task: tasks,
+          tag: tags,
+          project: projects,
+          status: taskStatuses,
+          recurringRule: recurringRules,
+        })
+        .from(tasks)
+        .leftJoin(tags, eq(tasks.tagId, tags.id))
+        .leftJoin(projects, eq(tasks.projectId, projects.id))
+        .leftJoin(taskStatuses, eq(tasks.statusId, taskStatuses.id))
+        .leftJoin(recurringRules, eq(tasks.recurringRuleId, recurringRules.id))
+        .where(
+          and(
+            eq(tasks.userId, session.userId),
+            eq(tasks.workspaceId, activeWorkspace.id),
+            isNull(tasks.parentId)
+          )
+        )
+        .orderBy(asc(tasks.order), asc(tasks.createdAt)),
+      db
+        .select({
+          parentId: tasks.parentId,
+          total: sql<number>`count(*)::int`,
+          completed: sql<number>`count(*) filter (where ${tasks.completed} = true)::int`,
+        })
+        .from(tasks)
+        .where(and(eq(tasks.userId, session.userId), isNotNull(tasks.parentId)))
+        .groupBy(tasks.parentId),
+      db
+        .select({
+          taskId: taskAttachments.taskId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(taskAttachments)
+        .where(eq(taskAttachments.userId, session.userId))
+        .groupBy(taskAttachments.taskId),
+      db
+        .select({
+          taskId: taskDocs.taskId,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(taskDocs)
+        .where(eq(taskDocs.userId, session.userId))
+        .groupBy(taskDocs.taskId),
+    ]);
+
+    const statsMap = new Map<string, { total: number; completed: number }>();
+    for (const s of subtaskStats) {
+      if (s.parentId) {
+        statsMap.set(s.parentId, {
+          total: Number(s.total) || 0,
+          completed: Number(s.completed) || 0,
+        });
+      }
+    }
+
+    const attachmentStatsMap = new Map<string, number>();
+    for (const a of attachmentStats) {
+      if (a.taskId) {
+        attachmentStatsMap.set(a.taskId, Number(a.total) || 0);
+      }
+    }
+
+    const docStatsMap = new Map<string, number>();
+    for (const d of docStats) {
+      if (d.taskId) {
+        docStatsMap.set(d.taskId, Number(d.total) || 0);
+      }
+    }
+
+    const list: TaskWithTag[] = rows.map((r) => {
+      const stats = statsMap.get(r.task.id);
+      return {
+        ...r.task,
+        tag: r.tag || null,
+        project: r.project || null,
+        status: r.status || null,
+        parent: null,
+        recurringRule: r.recurringRule || null,
+        subtaskCount: stats?.total || 0,
+        completedSubtaskCount: stats?.completed || 0,
+        attachmentCount: attachmentStatsMap.get(r.task.id) || 0,
+        docCount: docStatsMap.get(r.task.id) || 0,
+      };
+    });
+
+    return { tasks: list };
+  } catch (err: unknown) {
+    console.error("Error fetching kanban tasks:", err);
+    return { error: "Failed to fetch kanban tasks." };
+  }
+}
+
+export async function moveTaskKanbanAction(params: {
+  taskId: string;
+  targetStatusId: string;
+  targetOrderedIds: string[];
+}): Promise<{ success?: boolean; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const { taskId, targetStatusId, targetOrderedIds } = params;
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+
+    const [task] = await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
+
+    if (!task) {
+      return { error: "Task not found." };
+    }
+
+    const [targetStatus] = await db
+      .select()
+      .from(taskStatuses)
+      .where(
+        and(
+          eq(taskStatuses.id, targetStatusId),
+          eq(taskStatuses.workspaceId, activeWorkspace.id)
+        )
+      );
+
+    if (!targetStatus) {
+      return { error: "Target status not found." };
+    }
+
+    const isCompleted = targetStatus.category === "done";
+    const now = new Date();
+
+    await db
+      .update(tasks)
+      .set({
+        statusId: targetStatusId,
+        completed: isCompleted,
+        updatedAt: now,
+      })
+      .where(eq(tasks.id, taskId));
+
+    if (targetOrderedIds && targetOrderedIds.length > 0) {
+      const reorderPromises = targetOrderedIds.map((id, index) =>
+        db
+          .update(tasks)
+          .set({ order: index, updatedAt: now })
+          .where(and(eq(tasks.id, id), eq(tasks.userId, session.userId)))
+      );
+      await Promise.all(reorderPromises);
+    }
+
+    revalidatePath("/");
+    revalidatePath("/kanban");
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("Error moving task in kanban:", err);
+    return { error: "Failed to move task." };
   }
 }

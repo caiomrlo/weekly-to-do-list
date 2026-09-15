@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 import {
   CalendarDays,
+  Kanban,
   FileText,
   Sun,
   Moon,
@@ -43,9 +44,11 @@ export function AppHeader({
 }: AppHeaderProps) {
   const pathname = usePathname();
   const isPlannerActive = pathname === "/";
+  const isKanbanActive = pathname.startsWith("/kanban");
   const isDocsActive = pathname.startsWith("/docs");
 
-  const displayTitle = title ?? (isDocsActive ? "Docs & Notes" : "");
+  const displayTitle =
+    title ?? (isDocsActive ? "Docs & Notes" : isKanbanActive ? "Kanban" : "");
 
   return (
     <header className="sticky top-0 z-30 px-3.5 sm:px-6 md:px-8 py-2.5 sm:py-3.5 glass-panel border-b border-white/60 dark:border-slate-800/80 mb-4 sm:mb-6">
@@ -92,6 +95,17 @@ export function AppHeader({
             >
               <CalendarDays className="w-3.5 h-3.5" />
               <span className="inline">Planner</span>
+            </Link>
+            <Link
+              href="/kanban"
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs transition-all ${
+                isKanbanActive
+                  ? "font-semibold bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
+                  : "font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              <Kanban className="w-3.5 h-3.5" />
+              <span className="inline">Kanban</span>
             </Link>
             <Link
               href="/docs"

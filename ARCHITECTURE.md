@@ -36,9 +36,10 @@ flowchart TD
         subgraph UI["Frontend UI (React 19)"]
             LoginPage["/login (LoginPage)"]
             WeeklyBoard["/ (WeeklyBoard Component)"]
+            KanbanBoard["/kanban (KanbanBoard Component)"]
             DocsWorkspace["/docs (DocsWorkspace Component)"]
             WorkspaceSelector["WorkspaceSelector (Switch, Create, Rename & Delete)"]
-            TaskModal["TaskModal (Project Selector, Attachments, Docs & Auto-Save)"]
+            TaskModal["TaskModal (Project & Status Selector, Attachments, Docs & Auto-Save)"]
         end
 
         subgraph ServerActions["Server Actions (app/actions/*)"]
@@ -47,7 +48,8 @@ flowchart TD
             DocActions["Doc Actions\n(getDocs, getDocById, createDoc, updateDoc, deleteDoc, link/unlink)"]
             ProjectActions["Project Actions\n(getProjects, createProject, deleteProject)"]
             TagActions["Tag Actions (Backend)\n(getTags, createTag, deleteTag)"]
-            TaskActions["Task Actions\n(create, update, toggle, delete, move/reorder, query with projects/tags)"]
+            TaskStatusActions["Status Actions\n(getStatuses, createStatus, updateStatus, deleteStatus, reorderStatuses)"]
+            TaskActions["Task Actions\n(create, update, toggle, delete, move/reorder, moveKanban, query with projects/tags/statuses)"]
             UserActions["User Actions\n(getPreferences, updatePreferences)"]
         end
 
@@ -57,17 +59,19 @@ flowchart TD
             DateUtils["Date Utils (ISO YYYY-MM-DD)"]
             ProjectUtils["Project Utils (Palette Styles & Tokens)"]
             TagUtils["Tag Utils (Palette Styles & Tokens)"]
+            StatusUtils["Status Utils (Palette Styles & Tokens)"]
         end
     end
 
     subgraph DataLayer["Persistence Layer"]
         Drizzle["Drizzle ORM (node-postgres pool)"]
-        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• workspaces\n• workspace_members\n• projects\n• tags\n• tasks\n• recurring_rules\n• attachments\n• docs\n• task_docs")]
+        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• workspaces\n• workspace_members\n• task_statuses\n• projects\n• tags\n• tasks\n• recurring_rules\n• attachments\n• docs\n• task_docs")]
     end
 
     %% Flow connections
     User -->|"HTTP Request"| Middleware
     Middleware -->|"Authorized (Cookie Valid)"| WeeklyBoard
+    Middleware -->|"Authorized (Cookie Valid)"| KanbanBoard
     Middleware -->|"Authorized (Cookie Valid)"| DocsWorkspace
     Middleware -->|"Unauthorized"| LoginPage
     LoginPage -->|"Submit Credentials"| AuthActions
@@ -78,9 +82,12 @@ flowchart TD
     WeeklyBoard -->|"Manage Tasks / Navigate Weeks"| TaskActions
     WeeklyBoard -->|"Toggle Visible Days"| UserActions
     WeeklyBoard --> TaskModal
+    KanbanBoard -->|"Manage Column Statuses"| TaskStatusActions
+    KanbanBoard -->|"Move / Reorder Tasks"| TaskActions
+    KanbanBoard --> TaskModal
     DocsWorkspace -->|"Manage Documents & Notes"| DocActions
     DocsWorkspace -->|"Switch / Manage Workspaces"| WorkspaceActions
-    TaskModal -->|"Manage Projects"| ProjectActions
+    TaskModal -->|"Manage Projects & Statuses"| ProjectActions
     TaskModal -->|"Debounced Auto-Save"| TaskActions
     TaskModal -->|"Link & Create Notes"| DocActions
     WorkspaceActions --> Drizzle
@@ -88,6 +95,7 @@ flowchart TD
     WeeklyBoard --> DateUtils
     WeeklyBoard --> ProjectUtils
     TaskActions --> Drizzle
+    TaskStatusActions --> Drizzle
     ProjectActions --> Drizzle
     TagActions --> Drizzle
     UserActions --> Drizzle
@@ -102,14 +110,15 @@ flowchart TD
 - **Stack**: Next.js (App Router), React 19, Tailwind CSS v4 (custom glassmorphism design tokens), `lucide-react`.
 - **Main Views & Components**:
   - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Interactive weekly planner with HTML5 Drag & Drop, subtask nesting/reordering, week navigation, day visibility toggles, and persistent unscheduled backlog panel.
+  - **`KanbanBoard` (`src/components/kanban/KanbanBoard.tsx`)**: Columnar workflow board (`/kanban`) organizing workspace tasks into status columns (`To Do`, `Doing`, `Done`, and custom statuses) with HTML5 Drag & Drop, inline card creation, and status modal configurations.
   - **`WorkspaceSelector` (`src/components/workspace/WorkspaceSelector.tsx`)**: Header popover dropdown allowing instant workspace switching, creating new workspaces (+ New Workspace), inline renaming, and protected deletion (guarding against deleting default workspaces).
-  - **`TaskModal` (`src/components/TaskModal.tsx`)**: Task details modal featuring Tiptap WYSIWYG editor (`TaskDescriptionEditor`), subtask hierarchy, project selector, attachments, and linked docs.
+  - **`TaskModal` (`src/components/TaskModal.tsx`)**: Task details modal featuring Tiptap WYSIWYG editor (`TaskDescriptionEditor`), subtask hierarchy, project selector, status picker popover, attachments, and linked docs.
   - **`DocsWorkspace` (`src/components/docs/DocsWorkspace.tsx`)**: Split-pane notes/documentation workspace with Tiptap editor (`DocRichEditor`), search/filters, linked tasks, and attachments.
   - **`LoginPage` (`src/app/login/page.tsx`)**: Authentication card (login and registration with password visibility toggles).
 - **UX Principles**: Inline grouping over deep card nesting, zero redundant labels/clutter, progressive disclosure via popovers, and transient mutation feedback (`Saving...`).
 
 ### 3.2. Backend & API (`src/app/actions/`, `src/app/api/`)
-- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `tasks`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` preferences.
+- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` preferences.
 - **Route Handlers (`src/app/api/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`.
 - **Middleware (`src/middleware.ts`)**: Edge runtime session cookie validation (`better-auth/cookies`) protecting root and authentication routes.
 - *For detailed action signatures or component props, refer directly to the respective files in `src/app/actions/` and `src/components/`.*
@@ -125,10 +134,11 @@ flowchart TD
 
 ### 4.2. Domain Models & Schema
 
-The data model enforces strict workspace multi-tenancy scoped to the active workspace (`tasks.workspaceId`, `docs.workspaceId`, `projects.workspaceId`, `tags.workspaceId`, `recurringRules.workspaceId`):
+The data model enforces strict workspace multi-tenancy scoped to the active workspace (`tasks.workspaceId`, `docs.workspaceId`, `projects.workspaceId`, `tags.workspaceId`, `taskStatuses.workspaceId`, `recurringRules.workspaceId`):
 - **Authentication & Sessions**: Better Auth managed tables (`users`, `sessions`, `accounts`, `verifications`) with custom user fields (`preferences`, `last_login_at`) and UUID primary keys.
 - **Workspaces & Membership**: `workspaces` (UUID, `name`, `ownerId`, `isDefault`, timestamps) and `workspace_members` (UUID, `workspaceId`, `userId`, `role`, `joinedAt`), architected for future multi-user teams while providing a streamlined individual workflow.
-- **Tasks & Recurrence**: Weekly scheduled or backlog items strictly isolated by `workspaceId`, supporting a 1-level subtask hierarchy (`parentId`), natural duration, and project/tag relations. Recurring routines are managed via `recurring_rules` using an on-demand window projection strategy.
+- **Task Statuses & Workflow**: `task_statuses` (UUID, `workspaceId`, `name`, `color`, `category` (`todo`/`doing`/`done`), `order`, `isDefault`, timestamps) providing customizable board columns strictly scoped per workspace.
+- **Tasks & Recurrence**: Weekly scheduled, backlog, or kanban items strictly isolated by `workspaceId`, supporting a 1-level subtask hierarchy (`parentId`), `statusId` reference (with `set null` on status deletion), natural duration, and project/tag relations. Recurring routines are managed via `recurring_rules` using an on-demand window projection strategy.
 - **Documents & Attachments**: Rich-text workspace notes isolated by `workspaceId` and Cloudflare R2 file attachments linked polymorphically to tasks and docs.
 
 > **Single Source of Truth**: All table schemas, foreign key constraints, indexes, and Drizzle relational mappings are defined strictly in [`src/db/schema.ts`](./src/db/schema.ts). Always inspect that file directly before writing database queries or migrations.

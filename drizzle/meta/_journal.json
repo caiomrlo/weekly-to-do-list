@@ -134,6 +134,13 @@
       "when": 1789483649492,
       "tag": "0018_conscious_chamber",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789505488231,
+      "tag": "0019_icy_vapor",
+      "breakpoints": true
     }
   ]
 }

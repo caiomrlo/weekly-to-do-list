@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, useCallback } from "react";
-import { TaskWithTag, Project, RecurringRule, RecurrenceFrequency } from "@/db/schema";
+import { TaskWithTag, Project, RecurringRule, RecurrenceFrequency, TaskStatus } from "@/db/schema";
 import {
   updateTaskAction,
   deleteTaskAction,
@@ -11,11 +11,13 @@ import {
   updateTaskRecurrenceAction,
 } from "@/app/actions/tasks";
 import { getUserProjectsAction } from "@/app/actions/projects";
+import { getWorkspaceTaskStatusesAction } from "@/app/actions/task-statuses";
 import { formatDuration, parseNaturalDuration } from "@/lib/date-utils";
 import { TaskDescriptionEditor } from "./TaskDescriptionEditor";
 import { TaskParentBanner } from "./task-modal/TaskParentBanner";
 import { TaskScheduleInputs } from "./task-modal/TaskScheduleInputs";
 import { ProjectSelector } from "./shared/ProjectSelector";
+import { StatusSelector } from "./shared/StatusSelector";
 import { TaskSubtasksSection } from "./task-modal/TaskSubtasksSection";
 import { AttachmentsAndDocsSection } from "./shared/AttachmentsAndDocsSection";
 import { TaskModalFooter } from "./task-modal/TaskModalFooter";
@@ -94,7 +96,8 @@ function TaskModalDialog({
   const [attachments, setAttachments] = useState<AttachmentWithUrl[]>([]);
   const [isLoadingAttachments, setIsLoadingAttachments] = useState(true);
 
-  // User projects state
+  const [statuses, setStatuses] = useState<TaskStatus[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<TaskStatus | null>(task.status || null);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -117,7 +120,7 @@ function TaskModalDialog({
     };
   }, [task.id]);
 
-  // Fetch subtasks if task is a main task
+  // Fetch subtasks if parent
   useEffect(() => {
     let isMounted = true;
     if (!task.parentId) {
@@ -135,16 +138,29 @@ function TaskModalDialog({
     };
   }, [task.id, task.parentId]);
 
-  // Fetch available user projects on load
+  // Fetch available user projects and statuses on load
   useEffect(() => {
-    async function loadProjects() {
-      const res = await getUserProjectsAction();
-      if (res.projects) {
-        setUserProjects(res.projects);
+    async function loadData() {
+      const [pRes, sRes] = await Promise.all([
+        getUserProjectsAction(),
+        getWorkspaceTaskStatusesAction(),
+      ]);
+      if (pRes.projects) {
+        setUserProjects(pRes.projects);
+      }
+      if (sRes.statuses) {
+        setStatuses(sRes.statuses);
+        if (!task.status && task.statusId) {
+          const match = sRes.statuses.find((s) => s.id === task.statusId);
+          if (match) setSelectedStatus(match);
+        } else if (!task.status && !task.statusId) {
+          const defaultMatch = sRes.statuses.find((s) => s.isDefault) || sRes.statuses[0];
+          if (defaultMatch) setSelectedStatus(defaultMatch);
+        }
       }
     }
-    loadProjects();
-  }, []);
+    loadData();
+  }, [task.status, task.statusId]);
 
   const handleCloseAttempt = useCallback(() => {
     if ((task.recurringRuleId || currentRule) && hasFieldEdits) {
@@ -285,14 +301,46 @@ function TaskModalDialog({
     onProjectUpdated?.(updatedProject);
   };
 
+  const handleSelectStatus = async (status: TaskStatus) => {
+    setSelectedStatus(status);
+    const newCompleted = status.category === "done";
+    setCompleted(newCompleted);
+    setIsSaving(true);
+    try {
+      const res = await updateTaskAction(task.id, {
+        statusId: status.id,
+      });
+      if (res.task) {
+        onTaskUpdated(res.task);
+      }
+    } catch (err) {
+      console.error("Error updating status:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleToggleCompleted = async () => {
     const newCompleted = !completed;
     setCompleted(newCompleted);
+
+    if (statuses.length > 0) {
+      if (newCompleted) {
+        const doneStatus = statuses.find((s) => s.category === "done");
+        if (doneStatus) setSelectedStatus(doneStatus);
+      } else {
+        const todoStatus =
+          statuses.find((s) => s.isDefault) ||
+          statuses.find((s) => s.category === "todo") ||
+          statuses[0];
+        if (todoStatus) setSelectedStatus(todoStatus);
+      }
+    }
+
     try {
-      const res = await updateTaskAction(task.id, {});
-      if (res.task) {
-        const updated = { ...res.task, completed: newCompleted };
-        onTaskUpdated(updated);
+      const res = await toggleTaskStatusAction(task.id, newCompleted);
+      if (res.success) {
+        onTaskUpdated({ ...task, completed: newCompleted });
       }
     } catch (err) {
       console.error(err);
@@ -528,13 +576,20 @@ function TaskModalDialog({
             onOpenRecurrence={() => setIsRecurrenceSelectorOpen(true)}
           />
 
-          <ProjectSelector
-            selectedProject={selectedProject}
-            userProjects={userProjects}
-            onSelectProject={handleSelectProject}
-            onProjectCreated={handleProjectCreated}
-            onProjectUpdated={handleProjectUpdated}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusSelector
+              selectedStatus={selectedStatus}
+              statuses={statuses}
+              onSelectStatus={handleSelectStatus}
+            />
+            <ProjectSelector
+              selectedProject={selectedProject}
+              userProjects={userProjects}
+              onSelectProject={handleSelectProject}
+              onProjectCreated={handleProjectCreated}
+              onProjectUpdated={handleProjectUpdated}
+            />
+          </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
