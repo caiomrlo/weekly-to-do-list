@@ -281,6 +281,8 @@ export function WeeklyBoard({
       workspaceId: activeWorkspaceId || "",
       tagId: null,
       projectId: null,
+      statusId: null,
+      status: null,
       parentId: null,
       parent: null,
       tag: null,

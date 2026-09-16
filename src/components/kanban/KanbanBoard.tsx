@@ -66,7 +66,34 @@ export function KanbanBoard({
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
 
   // Dark mode hook
-  const { isDarkMode, toggleTheme } = useDarkMode(preferences.theme || "light");
+  const isDarkMode = useDarkMode();
+
+  const handleToggleTheme = async () => {
+    const nextIsDark = !isDarkMode;
+
+    if (nextIsDark) {
+      document.documentElement.classList.add("dark");
+      try {
+        localStorage.setItem("theme", "dark");
+        document.cookie = "theme=dark; path=/; max-age=31536000; SameSite=Lax";
+      } catch {}
+    } else {
+      document.documentElement.classList.remove("dark");
+      try {
+        localStorage.setItem("theme", "light");
+        document.cookie = "theme=light; path=/; max-age=31536000; SameSite=Lax";
+      } catch {}
+    }
+
+    const nextTheme = nextIsDark ? "dark" : "light";
+    setPreferences((prev) => ({ ...prev, theme: nextTheme }));
+
+    try {
+      await updateUserPreferencesAction({ theme: nextTheme });
+    } catch (err) {
+      console.error("Error saving theme preference:", err);
+    }
+  };
 
   const handleSelectBackground = async (bgId: BackgroundThemeId) => {
     setPreferences((prev) => ({ ...prev, background: bgId }));
@@ -397,7 +424,7 @@ export function KanbanBoard({
       <AppHeader
         userEmail={userEmail}
         isDarkMode={isDarkMode}
-        onToggleTheme={toggleTheme}
+        onToggleTheme={handleToggleTheme}
         preferences={preferences}
         onSelectBackground={handleSelectBackground}
         workspaces={workspaces}
