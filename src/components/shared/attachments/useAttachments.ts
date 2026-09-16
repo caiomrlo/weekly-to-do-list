@@ -160,6 +160,15 @@ export function useAttachments({
     setIsAttachPickerOpen(false);
 
     const fileList = Array.from(files);
+    const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+    for (const file of fileList) {
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        setUploadError("The file exceeds the maximum allowed limit of 10MB.");
+        setIsUploading(false);
+        return;
+      }
+    }
+
     const newAttachments: AttachmentWithUrl[] = [];
 
     try {

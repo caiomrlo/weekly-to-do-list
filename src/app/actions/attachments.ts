@@ -29,7 +29,7 @@ const ALLOWED_MIME_TYPES = new Set([
   "application/pdf",
 ]);
 
-const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 export interface AttachmentWithUrl extends Attachment {
   url: string;

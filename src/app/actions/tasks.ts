@@ -24,6 +24,7 @@ import {
   gte,
   lte,
   asc,
+  desc,
   isNotNull,
   sql,
   or,
@@ -455,9 +456,11 @@ export async function createTaskAction(data: {
         .where(
           and(
             eq(taskStatuses.workspaceId, workspaceId),
-            eq(taskStatuses.isDefault, true)
+            eq(taskStatuses.category, "todo")
           )
-        );
+        )
+        .orderBy(desc(taskStatuses.isDefault), asc(taskStatuses.order))
+        .limit(1);
       if (defaultStatus) {
         resolvedStatusId = defaultStatus.id;
         isCompleted = defaultStatus.category === "done";
@@ -574,6 +577,7 @@ export async function toggleTaskStatusAction(
             eq(taskStatuses.category, "done")
           )
         )
+        .orderBy(desc(taskStatuses.isDefault), asc(taskStatuses.order))
         .limit(1);
       if (doneStatus) {
         updatePayload.statusId = doneStatus.id;
@@ -585,9 +589,10 @@ export async function toggleTaskStatusAction(
         .where(
           and(
             eq(taskStatuses.workspaceId, activeWorkspace.id),
-            or(eq(taskStatuses.isDefault, true), eq(taskStatuses.category, "todo"))
+            eq(taskStatuses.category, "todo")
           )
         )
+        .orderBy(desc(taskStatuses.isDefault), asc(taskStatuses.order))
         .limit(1);
       if (todoStatus) {
         updatePayload.statusId = todoStatus.id;

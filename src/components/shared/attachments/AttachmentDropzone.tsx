@@ -57,7 +57,7 @@ export function AttachmentDropzone({
           } bg-amber-50/70 dark:bg-amber-950/50 border border-amber-200/70 dark:border-amber-800/70 text-amber-600 dark:text-amber-400 text-xs font-medium animate-pulse`}
         >
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          <span>Uploading attachment to Cloudflare R2...</span>
+          <span>Uploading attachment...</span>
         </div>
       )}
 
@@ -70,7 +70,7 @@ export function AttachmentDropzone({
               Drag files here or click to browse
             </span>
             <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-              (Images, PDF up to 20MB)
+              (Images, PDF up to 10MB)
             </span>
           </div>
         ) : (
@@ -82,7 +82,7 @@ export function AttachmentDropzone({
                 : "Drag images or PDFs here, or click to browse"}
             </p>
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              PNG, JPG, WebP, GIF or PDF up to 20MB
+              PNG, JPG, WebP, GIF or PDF up to 10MB
             </p>
           </div>
         )

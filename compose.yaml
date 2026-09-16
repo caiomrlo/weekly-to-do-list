@@ -32,6 +32,10 @@ services:
         - action: sync
           path: ./drizzle
           target: /app/drizzle
+        # Sync and restart Next.js when configuration changes
+        - action: sync+restart
+          path: ./next.config.ts
+          target: /app/next.config.ts
         # Rebuild container automatically when dependencies are updated
         - action: rebuild
           path: ./package.json

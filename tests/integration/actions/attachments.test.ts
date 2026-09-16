@@ -106,6 +106,28 @@ describe("Integration: Attachments Actions", () => {
       const res = await uploadAttachmentAction(fd);
       expect(res.error).toBe("Task not found or access denied.");
     });
+
+    it("should reject file exceeding 10MB limit", async () => {
+      userA = await createTestUser();
+      await loginAsTestUser(userA);
+
+      const task = await createTaskAction({ title: "User Task" });
+      const taskId = task.task!.id;
+
+      const oversizedFile = new File([Buffer.from("dummy content")], "large.png", {
+        type: "image/png",
+      });
+      Object.defineProperty(oversizedFile, "size", {
+        value: 10 * 1024 * 1024 + 1,
+      });
+
+      const fd = new FormData();
+      fd.set("taskId", taskId);
+      fd.set("file", oversizedFile);
+
+      const res = await uploadAttachmentAction(fd);
+      expect(res.error).toBe("The file exceeds the maximum allowed limit of 10MB.");
+    });
   });
 
   describe("Successful Uploads and Retrieval", () => {
