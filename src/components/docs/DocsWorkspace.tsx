@@ -17,7 +17,7 @@ import {
 } from "@/app/actions/docs";
 import { updateUserPreferencesAction } from "@/app/actions/user";
 import { useDarkMode } from "@/lib/hooks/useDarkMode";
-import { AppHeader } from "@/components/AppHeader";
+import { AppHeader } from "@/components/header/AppHeader";
 import { DocsSidebar } from "./DocsSidebar";
 import { DocEditor } from "./DocEditor";
 import { FileText, Plus, Loader2 } from "lucide-react";

@@ -5,7 +5,7 @@ import { getWeekTasksAction } from "@/app/actions/tasks";
 import { getUserPreferencesAction } from "@/app/actions/user";
 import { getUserWorkspacesAction } from "@/app/actions/workspaces";
 import { DEFAULT_USER_PREFERENCES } from "@/db/schema";
-import { WeeklyBoard } from "@/components/WeeklyBoard";
+import { WeeklyBoard } from "@/components/board/WeeklyBoard";
 import { cookies } from "next/headers";
 
 export default async function HomePage() {

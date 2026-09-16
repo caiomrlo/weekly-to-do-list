@@ -23,13 +23,13 @@ import {
 import { updateUserPreferencesAction } from "@/app/actions/user";
 import { useTodayDateStr } from "@/lib/hooks/useTodayDateStr";
 import { useDarkMode } from "@/lib/hooks/useDarkMode";
-import { useBoardDnD } from "./board/hooks/useBoardDnD";
-import { AppHeader } from "./AppHeader";
-import { WeekNavControls } from "./board/WeekNavControls";
+import { useBoardDnD } from "./hooks/useBoardDnD";
+import { AppHeader } from "@/components/header/AppHeader";
+import { WeekNavControls } from "./WeekNavControls";
 import { formatMonthYear } from "@/lib/date-utils";
-import { DayColumn } from "./board/DayColumn";
-import { UnscheduledSection } from "./board/UnscheduledSection";
-import { TaskModal } from "./TaskModal";
+import { DayColumn } from "./DayColumn";
+import { UnscheduledSection } from "./UnscheduledSection";
+import { TaskModal } from "@/components/task-modal/TaskModal";
 
 export interface WeeklyBoardProps {
   initialTasks: TaskWithTag[];

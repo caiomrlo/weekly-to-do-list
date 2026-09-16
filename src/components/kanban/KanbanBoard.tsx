@@ -22,8 +22,8 @@ import {
   updateTaskStatusAction,
   deleteTaskStatusAction,
 } from "@/app/actions/task-statuses";
-import { AppHeader } from "../AppHeader";
-import { TaskModal } from "../TaskModal";
+import { AppHeader } from "@/components/header/AppHeader";
+import { TaskModal } from "@/components/task-modal/TaskModal";
 import { KanbanColumn } from "./KanbanColumn";
 import { StatusConfigModal } from "./StatusConfigModal";
 import { Plus } from "lucide-react";

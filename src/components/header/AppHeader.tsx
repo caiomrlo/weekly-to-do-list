@@ -12,8 +12,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { BackgroundThemeId, UserPreferences, Workspace } from "@/db/schema";
-import { SettingsMenu } from "./header/SettingsMenu";
-import { WorkspaceSelector } from "./workspace/WorkspaceSelector";
+import { SettingsMenu } from "./SettingsMenu";
+import { WorkspaceSelector } from "@/components/workspace/WorkspaceSelector";
 
 export interface AppHeaderProps {
   title?: React.ReactNode;
