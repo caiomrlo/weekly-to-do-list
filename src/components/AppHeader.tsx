@@ -12,7 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { BackgroundThemeId, UserPreferences, Workspace } from "@/db/schema";
-import { SettingsMenu } from "./board/SettingsMenu";
+import { SettingsMenu } from "./header/SettingsMenu";
 import { WorkspaceSelector } from "./workspace/WorkspaceSelector";
 
 export interface AppHeaderProps {

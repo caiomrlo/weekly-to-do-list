@@ -140,17 +140,6 @@ export function DocsWorkspace({
     }
   };
 
-  const handleToggleDay = async (dayKey: "showSaturday" | "showSunday") => {
-    const nextVal = !preferences[dayKey];
-    const updated = { ...preferences, [dayKey]: nextVal };
-    setPreferences(updated);
-
-    try {
-      await updateUserPreferencesAction({ [dayKey]: nextVal });
-    } catch (err) {
-      console.error("Error saving day visibility preference:", err);
-    }
-  };
 
   useEffect(() => {
     const bg = (preferences.background as BackgroundThemeId) || "default";
@@ -244,7 +233,6 @@ export function DocsWorkspace({
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
         preferences={preferences}
-        onToggleDay={handleToggleDay}
         onSelectBackground={handleSelectBackground}
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}

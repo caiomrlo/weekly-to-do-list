@@ -85,7 +85,8 @@ export function SettingsMenu({
     };
   }, [isOpen]);
 
-  const hasCustomDays = preferences.showSaturday || preferences.showSunday;
+  const hasCustomDays =
+    Boolean(onToggleDay) && (preferences.showSaturday || preferences.showSunday);
   const hasCustomBg = preferences.background && preferences.background !== "default";
   const hasCustomSettings = hasCustomDays || hasCustomBg;
   const activeBg = (preferences.background as BackgroundThemeId) || "default";
@@ -126,7 +127,7 @@ export function SettingsMenu({
           </div>
 
           {/* Section 1: Background Color / Gradient */}
-          <div className="mb-3.5">
+          <div className={onToggleDay ? "mb-3.5" : ""}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                 Background
@@ -174,79 +175,81 @@ export function SettingsMenu({
             </div>
           </div>
 
-          {/* Section 2: Days of the Week */}
-          <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
-            <div className="pb-2 mb-1 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                Days of the Week
-              </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                {calculatedDaysCount} of 7 days
-              </span>
-            </div>
-
-            <div className="space-y-1">
-              {/* Mon to Fri indicator */}
-              <div className="px-2 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-slate-800/60 rounded-lg flex items-center justify-between">
-                <span>Monday – Friday</span>
-                <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px]">
-                  Default
+          {/* Section 2: Days of the Week (Only rendered when planner day controls are provided) */}
+          {onToggleDay && (
+            <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
+              <div className="pb-2 mb-1 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  Days of the Week
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                  {calculatedDaysCount} of 7 days
                 </span>
               </div>
 
-              {/* Saturday Switch */}
-              <button
-                type="button"
-                onClick={() => onToggleDay?.("showSaturday")}
-                className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
-              >
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                  Saturday
-                </span>
-                <div
-                  className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
-                    preferences.showSaturday
-                      ? "bg-amber-500"
-                      : "bg-slate-300 dark:bg-slate-700"
-                  }`}
-                >
-                  <div
-                    className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                      preferences.showSaturday
-                        ? "translate-x-3.5"
-                        : "translate-x-0"
-                    }`}
-                  />
+              <div className="space-y-1">
+                {/* Mon to Fri indicator */}
+                <div className="px-2 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-slate-800/60 rounded-lg flex items-center justify-between">
+                  <span>Monday – Friday</span>
+                  <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px]">
+                    Default
+                  </span>
                 </div>
-              </button>
 
-              {/* Sunday Switch */}
-              <button
-                type="button"
-                onClick={() => onToggleDay?.("showSunday")}
-                className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
-              >
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                  Sunday
-                </span>
-                <div
-                  className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
-                    preferences.showSunday
-                      ? "bg-amber-500"
-                      : "bg-slate-300 dark:bg-slate-700"
-                  }`}
+                {/* Saturday Switch */}
+                <button
+                  type="button"
+                  onClick={() => onToggleDay("showSaturday")}
+                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
                 >
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                    Saturday
+                  </span>
                   <div
-                    className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                      preferences.showSunday
-                        ? "translate-x-3.5"
-                        : "translate-x-0"
+                    className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+                      preferences.showSaturday
+                        ? "bg-amber-500"
+                        : "bg-slate-300 dark:bg-slate-700"
                     }`}
-                  />
-                </div>
-              </button>
+                  >
+                    <div
+                      className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                        preferences.showSaturday
+                          ? "translate-x-3.5"
+                          : "translate-x-0"
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Sunday Switch */}
+                <button
+                  type="button"
+                  onClick={() => onToggleDay("showSunday")}
+                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
+                >
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                    Sunday
+                  </span>
+                  <div
+                    className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+                      preferences.showSunday
+                        ? "bg-amber-500"
+                        : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                        preferences.showSunday
+                          ? "translate-x-3.5"
+                          : "translate-x-0"
+                      }`}
+                    />
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>
