@@ -10,8 +10,12 @@ import {
   taskDocs,
   docAttachments,
   taskAttachments,
+  taskAssignees,
+  users,
+  workspaceMembers,
   recurringRules,
   TaskWithTag,
+  TaskAssigneeUser,
   RecurrenceFrequency,
 } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
@@ -41,6 +45,39 @@ import {
   parseDateParts,
 } from "@/lib/recurrence-utils";
 import { toDateString } from "@/lib/date-utils";
+
+export async function batchFetchTaskAssignees(
+  taskIds: string[]
+): Promise<Map<string, TaskAssigneeUser[]>> {
+  const map = new Map<string, TaskAssigneeUser[]>();
+  if (taskIds.length === 0) return map;
+
+  const rows = await db
+    .select({
+      taskId: taskAssignees.taskId,
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      image: users.image,
+    })
+    .from(taskAssignees)
+    .innerJoin(users, eq(taskAssignees.userId, users.id))
+    .where(inArray(taskAssignees.taskId, taskIds))
+    .orderBy(asc(taskAssignees.assignedAt));
+
+  for (const row of rows) {
+    const list = map.get(row.taskId) || [];
+    list.push({
+      id: row.userId,
+      name: row.name,
+      email: row.email,
+      image: row.image,
+    });
+    map.set(row.taskId, list);
+  }
+
+  return map;
+}
 
 export async function getWeekTasksAction(
   startDate: string,
@@ -242,6 +279,9 @@ export async function getWeekTasksAction(
       }
     }
 
+    const taskIds = rows.map((r) => r.task.id);
+    const assigneesMap = await batchFetchTaskAssignees(taskIds);
+
     const list: TaskWithTag[] = rows.map((r) => {
       const stats = statsMap.get(r.task.id);
       return {
@@ -255,6 +295,7 @@ export async function getWeekTasksAction(
         completedSubtaskCount: stats?.completed || 0,
         attachmentCount: attachmentStatsMap.get(r.task.id) || 0,
         docCount: docStatsMap.get(r.task.id) || 0,
+        assignees: assigneesMap.get(r.task.id) || [],
       };
     });
 
@@ -297,6 +338,9 @@ export async function getSubtasksAction(
       )
       .orderBy(asc(tasks.order), asc(tasks.createdAt));
 
+    const taskIds = rows.map((r) => r.task.id);
+    const assigneesMap = await batchFetchTaskAssignees(taskIds);
+
     const list: TaskWithTag[] = rows.map((r) => ({
       ...r.task,
       tag: r.tag || null,
@@ -304,6 +348,7 @@ export async function getSubtasksAction(
       parent: r.parent?.id ? r.parent : null,
       subtaskCount: 0,
       completedSubtaskCount: 0,
+      assignees: assigneesMap.get(r.task.id) || [],
     }));
 
     return { subtasks: list };
@@ -322,8 +367,31 @@ export async function getTaskByIdAction(
   }
 
   try {
+    const [taskRecord] = await db
+      .select({ id: tasks.id, workspaceId: tasks.workspaceId })
+      .from(tasks)
+      .where(eq(tasks.id, taskId));
+
+    if (!taskRecord) {
+      return { error: "Task not found." };
+    }
+
+    const [membership] = await db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, taskRecord.workspaceId),
+          eq(workspaceMembers.userId, session.userId)
+        )
+      );
+
+    if (!membership) {
+      return { error: "Task not found." };
+    }
+
     const parentTasks = alias(tasks, "parent_task");
-    const [rows, [stats], [attachmentStat], [docStat]] = await Promise.all([
+    const [rows, [stats], [attachmentStat], [docStat], assigneesMap] = await Promise.all([
       db
         .select({
           task: tasks,
@@ -342,26 +410,27 @@ export async function getTaskByIdAction(
         .leftJoin(taskStatuses, eq(tasks.statusId, taskStatuses.id))
         .leftJoin(parentTasks, eq(tasks.parentId, parentTasks.id))
         .leftJoin(recurringRules, eq(tasks.recurringRuleId, recurringRules.id))
-        .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId))),
+        .where(eq(tasks.id, taskId)),
       db
         .select({
           total: sql<number>`count(*)::int`,
           completed: sql<number>`count(*) filter (where ${tasks.completed} = true)::int`,
         })
         .from(tasks)
-        .where(and(eq(tasks.userId, session.userId), eq(tasks.parentId, taskId))),
+        .where(eq(tasks.parentId, taskId)),
       db
         .select({
           total: sql<number>`count(*)::int`,
         })
         .from(attachments)
-        .where(and(eq(attachments.userId, session.userId), eq(attachments.taskId, taskId))),
+        .where(eq(attachments.taskId, taskId)),
       db
         .select({
           total: sql<number>`count(*)::int`,
         })
         .from(taskDocs)
-        .where(and(eq(taskDocs.userId, session.userId), eq(taskDocs.taskId, taskId))),
+        .where(eq(taskDocs.taskId, taskId)),
+      batchFetchTaskAssignees([taskId]),
     ]);
 
     if (!rows.length) {
@@ -379,6 +448,7 @@ export async function getTaskByIdAction(
       completedSubtaskCount: stats?.completed || 0,
       attachmentCount: attachmentStat?.total || 0,
       docCount: docStat?.total || 0,
+      assignees: assigneesMap.get(taskId) || [],
     };
 
     return { task: item };
@@ -398,6 +468,7 @@ export async function createTaskAction(data: {
   statusId?: string | null;
   parentId?: string | null;
   workspaceId?: string;
+  assigneeIds?: string[];
 }): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
   if (!session) {
@@ -531,6 +602,29 @@ export async function createTaskAction(data: {
       statusObj = foundStatus || null;
     }
 
+    if (data.assigneeIds && data.assigneeIds.length > 0) {
+      const validMembers = await db
+        .select({ userId: workspaceMembers.userId })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            inArray(workspaceMembers.userId, data.assigneeIds)
+          )
+        );
+      const validMemberIds = validMembers.map((m) => m.userId);
+      if (validMemberIds.length > 0) {
+        await db.insert(taskAssignees).values(
+          validMemberIds.map((uId) => ({
+            taskId: inserted.id,
+            userId: uId,
+          }))
+        );
+      }
+    }
+
+    const assigneesMap = await batchFetchTaskAssignees([inserted.id]);
+
     const newTask: TaskWithTag = {
       ...inserted,
       tag: tagObj,
@@ -539,6 +633,7 @@ export async function createTaskAction(data: {
       parent: parentObj,
       subtaskCount: 0,
       completedSubtaskCount: 0,
+      assignees: assigneesMap.get(inserted.id) || [],
     };
 
     revalidatePath("/");
@@ -707,6 +802,7 @@ export async function updateTaskAction(
     projectId?: string | null;
     statusId?: string | null;
     editScope?: "this" | "future";
+    assigneeIds?: string[];
   }
 ): Promise<{ task?: TaskWithTag; error?: string }> {
   const session = await getSessionUser();
@@ -794,8 +890,32 @@ export async function updateTaskAction(
       .set(updateValues)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, session.userId)));
 
+    if (data.assigneeIds !== undefined) {
+      await db.delete(taskAssignees).where(eq(taskAssignees.taskId, taskId));
+      if (data.assigneeIds.length > 0) {
+        const validMembers = await db
+          .select({ userId: workspaceMembers.userId })
+          .from(workspaceMembers)
+          .where(
+            and(
+              eq(workspaceMembers.workspaceId, currentTask.workspaceId),
+              inArray(workspaceMembers.userId, data.assigneeIds)
+            )
+          );
+        const validMemberIds = validMembers.map((m) => m.userId);
+        if (validMemberIds.length > 0) {
+          await db.insert(taskAssignees).values(
+            validMemberIds.map((uId) => ({
+              taskId,
+              userId: uId,
+            }))
+          );
+        }
+      }
+    }
+
     const parentTasks = alias(tasks, "parent_task");
-    const [rows, [stats], [attachmentStat], [docStat]] = await Promise.all([
+    const [rows, [stats], [attachmentStat], [docStat], assigneesMap] = await Promise.all([
       db
         .select({
           task: tasks,
@@ -834,6 +954,7 @@ export async function updateTaskAction(
         })
         .from(taskDocs)
         .where(and(eq(taskDocs.userId, session.userId), eq(taskDocs.taskId, taskId))),
+      batchFetchTaskAssignees([taskId]),
     ]);
 
     if (!rows.length) {
@@ -851,6 +972,7 @@ export async function updateTaskAction(
       completedSubtaskCount: stats?.completed || 0,
       attachmentCount: attachmentStat?.total || 0,
       docCount: docStat?.total || 0,
+      assignees: assigneesMap.get(taskId) || [],
     };
 
     revalidatePath("/");
@@ -1438,6 +1560,9 @@ export async function getKanbanTasksAction(): Promise<{ tasks?: TaskWithTag[]; e
       }
     }
 
+    const taskIds = rows.map((r) => r.task.id);
+    const assigneesMap = await batchFetchTaskAssignees(taskIds);
+
     const list: TaskWithTag[] = rows.map((r) => {
       const stats = statsMap.get(r.task.id);
       return {
@@ -1451,6 +1576,7 @@ export async function getKanbanTasksAction(): Promise<{ tasks?: TaskWithTag[]; e
         completedSubtaskCount: stats?.completed || 0,
         attachmentCount: attachmentStatsMap.get(r.task.id) || 0,
         docCount: docStatsMap.get(r.task.id) || 0,
+        assignees: assigneesMap.get(r.task.id) || [],
       };
     });
 
@@ -1528,3 +1654,81 @@ export async function moveTaskKanbanAction(params: {
     return { error: "Failed to move task." };
   }
 }
+
+export async function updateTaskAssigneesAction(
+  taskId: string,
+  userIds: string[]
+): Promise<{ assignees?: TaskAssigneeUser[]; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  try {
+    const [task] = await db
+      .select({ id: tasks.id, workspaceId: tasks.workspaceId })
+      .from(tasks)
+      .where(eq(tasks.id, taskId));
+
+    if (!task) {
+      return { error: "Task not found." };
+    }
+
+    const [membership] = await db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, task.workspaceId),
+          eq(workspaceMembers.userId, session.userId)
+        )
+      );
+
+    if (!membership) {
+      return { error: "Task not found." };
+    }
+
+    if (userIds.length > 0) {
+      const validMembers = await db
+        .select({ userId: workspaceMembers.userId })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, task.workspaceId),
+            inArray(workspaceMembers.userId, userIds)
+          )
+        );
+
+      const validUserIdSet = new Set(validMembers.map((m) => m.userId));
+      const hasInvalidUser = userIds.some((id) => !validUserIdSet.has(id));
+      if (hasInvalidUser) {
+        return { error: "One or more users are not members of this workspace." };
+      }
+    }
+
+    await db.transaction(async (tx) => {
+      await tx.delete(taskAssignees).where(eq(taskAssignees.taskId, taskId));
+
+      if (userIds.length > 0) {
+        const uniqueUserIds = Array.from(new Set(userIds));
+        await tx.insert(taskAssignees).values(
+          uniqueUserIds.map((userId) => ({
+            taskId,
+            userId,
+          }))
+        );
+      }
+    });
+
+    const assigneesMap = await batchFetchTaskAssignees([taskId]);
+    const updatedAssignees = assigneesMap.get(taskId) || [];
+
+    revalidatePath("/");
+    revalidatePath("/kanban");
+    return { assignees: updatedAssignees };
+  } catch (err: unknown) {
+    console.error("Error updating task assignees:", err);
+    return { error: "Failed to update task assignees." };
+  }
+}
+

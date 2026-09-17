@@ -66,7 +66,7 @@ flowchart TD
 
     subgraph DataLayer["Persistence Layer"]
         Drizzle["Drizzle ORM (node-postgres pool)"]
-        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• workspaces\n• workspace_members\n• workspace_invites\n• task_statuses\n• projects\n• tags\n• tasks\n• recurring_rules\n• attachments\n• docs\n• task_docs")]
+        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• workspaces\n• workspace_members\n• workspace_invites\n• task_statuses\n• projects\n• tags\n• tasks\n• task_assignees\n• recurring_rules\n• attachments\n• docs\n• task_docs")]
     end
 
     %% Flow connections
@@ -140,7 +140,7 @@ The data model enforces strict workspace multi-tenancy scoped to the active work
 - **Authentication & Sessions**: Better Auth managed tables (`users`, `sessions`, `accounts`, `verifications`) with custom user fields (`preferences`, `last_login_at`) and UUID primary keys.
 - **Workspaces & Membership**: `workspaces` (UUID, `name`, `ownerId`, `isDefault`, timestamps), `workspace_members` (UUID, `workspaceId`, `userId`, `role`, `joinedAt`), and `workspace_invites` (UUID, `workspaceId`, `invitedBy`, `token`, `email`, `role`, `status`, `expiresAt`, timestamps) supporting multi-user collaboration via secure shareable links and extensible email invitations.
 - **Task Statuses & Workflow**: `task_statuses` (UUID, `workspaceId`, `name`, `color`, `category` (`todo`/`doing`/`done`), `order`, `isDefault`, timestamps) providing customizable board columns strictly scoped per workspace.
-- **Tasks & Recurrence**: Weekly scheduled, backlog, or kanban items strictly isolated by `workspaceId`, supporting a 1-level subtask hierarchy (`parentId`), `statusId` reference (with `set null` on status deletion), natural duration, and project/tag relations. Recurring routines are managed via `recurring_rules` using an on-demand window projection strategy.
+- **Tasks, Recurrence & Assignees**: Weekly scheduled, backlog, or kanban items strictly isolated by `workspaceId`, supporting a 1-level subtask hierarchy (`parentId`), `statusId` reference (with `set null` on status deletion), natural duration, and project/tag relations. Workspace member collaboration is enabled through `task_assignees` (UUID, `taskId`, `userId`, `assignedAt`) linking tasks to active workspace members with cascade cleanup. Recurring routines are managed via `recurring_rules` using an on-demand window projection strategy.
 - **Documents & Attachments**: Rich-text workspace notes isolated by `workspaceId` and Cloudflare R2 file attachments linked polymorphically to tasks and docs.
 
 > **Single Source of Truth**: All table schemas, foreign key constraints, indexes, and Drizzle relational mappings are defined strictly in [`src/db/schema.ts`](./src/db/schema.ts). Always inspect that file directly before writing database queries or migrations.

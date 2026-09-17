@@ -4,6 +4,7 @@ import { TaskWithTag } from "@/db/schema";
 import { getProjectColorStyles } from "@/lib/project-utils";
 import { formatDuration, formatDayShort } from "@/lib/date-utils";
 import { DropTargetState } from "./hooks/useBoardDnD";
+import { TaskAssigneeAvatars } from "@/components/shared/TaskAssigneeAvatars";
 import {
   GripVertical,
   CheckCircle2,
@@ -81,7 +82,8 @@ export function TaskCard({
       (task.duration != null && task.duration > 0) ||
       (task.subtaskCount != null && task.subtaskCount > 0) ||
       (task.attachmentCount != null && task.attachmentCount > 0) ||
-      (task.docCount != null && task.docCount > 0)
+      (task.docCount != null && task.docCount > 0) ||
+      (task.assignees != null && task.assignees.length > 0)
   );
 
   const cardDateStr = task.date || "unscheduled";
@@ -318,6 +320,16 @@ export function TaskCard({
                 />
                 {formatDuration(task.duration!)}
               </span>
+            )}
+
+            {/* Assignees */}
+            {Boolean(task.assignees && task.assignees.length > 0) && (
+              <TaskAssigneeAvatars
+                assignees={task.assignees}
+                max={3}
+                size="xs"
+                className={task.completed ? "opacity-60" : ""}
+              />
             )}
           </div>
         )}

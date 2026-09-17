@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, useCallback } from "react";
-import { TaskWithTag, Project, RecurringRule, RecurrenceFrequency, TaskStatus } from "@/db/schema";
+import { TaskWithTag, Project, RecurringRule, RecurrenceFrequency, TaskStatus, TaskAssigneeUser } from "@/db/schema";
 import {
   updateTaskAction,
   deleteTaskAction,
@@ -18,6 +18,7 @@ import { TaskParentBanner } from "./TaskParentBanner";
 import { TaskScheduleInputs } from "./TaskScheduleInputs";
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
 import { StatusSelector } from "@/components/shared/StatusSelector";
+import { TaskAssigneeSelector } from "./TaskAssigneeSelector";
 import { TaskSubtasksSection } from "./TaskSubtasksSection";
 import { AttachmentsAndDocsSection } from "@/components/shared/AttachmentsAndDocsSection";
 import { TaskModalFooter } from "./TaskModalFooter";
@@ -99,10 +100,19 @@ function TaskModalDialog({
   const [statuses, setStatuses] = useState<TaskStatus[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus | null>(task.status || null);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
+  const [assignees, setAssignees] = useState<TaskAssigneeUser[]>(task.assignees || []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleAssigneesChange = (newAssignees: TaskAssigneeUser[]) => {
+    setAssignees(newAssignees);
+    onTaskUpdated({
+      ...task,
+      assignees: newAssignees,
+    });
+  };
 
   // Fetch attachments for this task
   useEffect(() => {
@@ -588,6 +598,12 @@ function TaskModalDialog({
               onSelectProject={handleSelectProject}
               onProjectCreated={handleProjectCreated}
               onProjectUpdated={handleProjectUpdated}
+            />
+            <TaskAssigneeSelector
+              taskId={task.id}
+              workspaceId={task.workspaceId}
+              assignees={assignees}
+              onAssigneesChange={handleAssigneesChange}
             />
           </div>
 

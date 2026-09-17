@@ -4,6 +4,7 @@ import React from "react";
 import { TaskWithTag } from "@/db/schema";
 import { getProjectColorStyles } from "@/lib/project-utils";
 import { TAG_COLORS } from "@/lib/tag-utils";
+import { TaskAssigneeAvatars } from "@/components/shared/TaskAssigneeAvatars";
 import {
   GripVertical,
   CheckCircle2,
@@ -183,6 +184,16 @@ export function KanbanCard({
                 <FileText className="w-2.5 h-2.5" />
                 <span>{task.docCount}</span>
               </span>
+            )}
+
+            {/* Assignees */}
+            {Boolean(task.assignees && task.assignees.length > 0) && (
+              <TaskAssigneeAvatars
+                assignees={task.assignees}
+                max={3}
+                size="xs"
+                className={task.completed ? "opacity-60 ml-auto" : "ml-auto"}
+              />
             )}
           </div>
         </div>

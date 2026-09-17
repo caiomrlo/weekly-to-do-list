@@ -424,6 +424,25 @@ export const docAttachments = pgTable(
   ]
 );
 
+export const taskAssignees = pgTable(
+  "task_assignees",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    assignedAt: timestamp("assigned_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("task_assignees_task_user_unique_idx").on(table.taskId, table.userId),
+    index("task_assignees_task_id_idx").on(table.taskId),
+    index("task_assignees_user_id_idx").on(table.userId),
+  ]
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
@@ -472,6 +491,16 @@ export type NewTaskAttachment = typeof taskAttachments.$inferInsert;
 export type DocAttachment = typeof docAttachments.$inferSelect;
 export type NewDocAttachment = typeof docAttachments.$inferInsert;
 
+export type TaskAssignee = typeof taskAssignees.$inferSelect;
+export type NewTaskAssignee = typeof taskAssignees.$inferInsert;
+
+export interface TaskAssigneeUser {
+  id: string; // userId
+  name: string;
+  email: string;
+  image?: string | null;
+}
+
 export type RecurringRule = typeof recurringRules.$inferSelect;
 export type NewRecurringRule = typeof recurringRules.$inferInsert;
 
@@ -485,6 +514,7 @@ export type TaskWithTag = Task & {
   completedSubtaskCount?: number;
   attachmentCount?: number;
   docCount?: number;
+  assignees?: TaskAssigneeUser[];
 };
 
 export type TaskWithProject = TaskWithTag;
