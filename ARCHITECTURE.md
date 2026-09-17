@@ -13,7 +13,7 @@ High-signal architectural boundaries and folder responsibilities:
 - **`src/app/(routes)/`**: Next.js App Router pages, dynamic routes, and layouts.
 - **`src/components/`**: Reusable React 19 UI components modularized by domain.
 - **`src/db/`**: Persistence configuration with PostgreSQL connection pooling (`index.ts`) and Drizzle ORM schemas and relations (`schema.ts`).
-- **`src/lib/`**: Core utilities, Better Auth configuration, timezone-immune date arithmetic, Cloudflare R2 client, and shared React hooks.
+- **`src/lib/`**: Core utilities, task domain services (`src/lib/tasks/`), Better Auth configuration, timezone-immune date arithmetic, Cloudflare R2 client, and shared React hooks.
 - **`src/middleware.ts`**: Edge runtime middleware enforcing session cookie validation via Better Auth and route protection.
 - **`tests/`**: Automated test suites.
 - **`drizzle/`**: Auto-generated Drizzle Kit migration SQL files and schema snapshots.
@@ -62,6 +62,7 @@ flowchart TD
             TagUtils["Tag Utils (Palette Styles & Tokens)"]
             StatusUtils["Status Utils (Palette Styles & Tokens)"]
             AvatarUtils["Avatar Utils (Palette Styles & Deterministic Fallback)"]
+            TaskServices["Task Domain Services (src/lib/tasks/*)\n(Queries & Hydration, Mutations, Recurrence, Reorder, Cleanup, Assignees)"]
         end
     end
 
