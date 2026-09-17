@@ -9,11 +9,13 @@ import {
   BackgroundThemeId,
   DEFAULT_USER_PREFERENCES,
   TaskStatusCategory,
+  Project,
 } from "@/db/schema";
 import { useDarkMode } from "@/lib/hooks/useDarkMode";
 import { updateUserPreferencesAction } from "@/app/actions/user";
 import {
   createTaskAction,
+  getTaskByIdAction,
   toggleTaskStatusAction,
   moveTaskKanbanAction,
 } from "@/app/actions/tasks";
@@ -340,27 +342,77 @@ export function KanbanBoard({
     }
   };
 
-  // Task click (open modal)
-  const handleTaskClick = (task: TaskWithTag) => {
-    setSelectedTask(task);
-    setIsTaskModalOpen(true);
+  const handleOpenTask = async (taskOrId: TaskWithTag | string) => {
+    if (typeof taskOrId === "string") {
+      const found = tasks.find((t) => t.id === taskOrId);
+      if (found) {
+        setSelectedTask(found);
+        setIsTaskModalOpen(true);
+      } else {
+        const res = await getTaskByIdAction(taskOrId);
+        if (res.task) {
+          setSelectedTask(res.task);
+          setIsTaskModalOpen(true);
+        }
+      }
+    } else {
+      setSelectedTask(taskOrId);
+      setIsTaskModalOpen(true);
+    }
   };
 
-  const handleTaskUpdated = (updatedTask: TaskWithTag) => {
+  // Task click (open modal)
+  const handleTaskClick = (task: TaskWithTag) => {
+    handleOpenTask(task);
+  };
+
+  const handleTaskUpdated = async (updatedTask: TaskWithTag) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
     );
     if (selectedTask?.id === updatedTask.id) {
       setSelectedTask(updatedTask);
     }
+    if (updatedTask.parentId) {
+      const res = await getTaskByIdAction(updatedTask.parentId);
+      if (res.task) {
+        const parentTask = res.task;
+        setTasks((prev) =>
+          prev.map((t) => (t.id === parentTask.id ? parentTask : t))
+        );
+      }
+    }
   };
 
-  const handleTaskDeleted = (deletedTaskId: string) => {
+  const handleTaskDeleted = async (deletedTaskId: string) => {
+    const parentId =
+      selectedTask?.id === deletedTaskId ? selectedTask.parentId : null;
+
     setTasks((prev) => prev.filter((t) => t.id !== deletedTaskId));
     if (selectedTask?.id === deletedTaskId) {
       setSelectedTask(null);
       setIsTaskModalOpen(false);
     }
+
+    if (parentId) {
+      const res = await getTaskByIdAction(parentId);
+      if (res.task) {
+        const parentTask = res.task;
+        setTasks((prev) =>
+          prev.map((t) => (t.id === parentTask.id ? parentTask : t))
+        );
+      }
+    }
+  };
+
+  const handleProjectUpdated = (updatedProject: Project) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.projectId === updatedProject.id
+          ? { ...t, project: updatedProject }
+          : t
+      )
+    );
   };
 
   // Status management
@@ -504,6 +556,8 @@ export function KanbanBoard({
           }}
           onTaskUpdated={handleTaskUpdated}
           onTaskDeleted={handleTaskDeleted}
+          onOpenTask={handleOpenTask}
+          onProjectUpdated={handleProjectUpdated}
         />
       )}
 
