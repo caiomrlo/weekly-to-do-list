@@ -5,15 +5,14 @@ import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 import {
   CalendarDays,
-  Kanban,
-  FileText,
   Sun,
   Moon,
   LogOut,
 } from "lucide-react";
 import { BackgroundThemeId, UserPreferences, Workspace } from "@/db/schema";
 import { SettingsMenu } from "./SettingsMenu";
-import { WorkspaceSelector } from "@/components/workspace/WorkspaceSelector";
+import { NavTabs } from "./NavTabs";
+import { WorkspaceToolbar } from "@/components/workspace/WorkspaceToolbar";
 
 export interface AppHeaderProps {
   title?: React.ReactNode;
@@ -43,7 +42,6 @@ export function AppHeader({
   children,
 }: AppHeaderProps) {
   const pathname = usePathname();
-  const isPlannerActive = pathname === "/";
   const isKanbanActive = pathname.startsWith("/kanban");
   const isDocsActive = pathname.startsWith("/docs");
 
@@ -51,85 +49,25 @@ export function AppHeader({
     title ?? (isDocsActive ? "Docs & Notes" : isKanbanActive ? "Kanban" : "");
 
   return (
-    <header className="sticky top-0 z-30 px-3.5 sm:px-6 md:px-8 py-2.5 sm:py-3.5 glass-panel border-b border-white/60 dark:border-slate-800/80 mb-4 sm:mb-6">
-      <div className="w-full grid grid-cols-[1fr_auto] items-center gap-y-2.5 gap-x-2 md:flex md:items-center md:justify-between md:gap-4">
-        {/* Brand Icon & Workspace Selector / Title: Row 1 Left on mobile, Order 1 on desktop */}
-        <div className="row-start-1 col-start-1 flex items-center gap-2 sm:gap-2.5 min-w-0 md:order-1">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-500/20 flex-shrink-0">
+    <header className="sticky top-0 z-30 w-full mb-4 sm:mb-6 backdrop-blur-xl bg-white/75 dark:bg-slate-900/80 border-b border-white/60 dark:border-slate-800/80 shadow-xs transition-colors">
+      {/* Tier 1: Main Application Header (Brand, Navigation Views, System Controls) */}
+      <div className="px-3.5 sm:px-6 md:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-3 sm:gap-4 border-b border-slate-200/50 dark:border-slate-800/50">
+        {/* Left: Brand Icon + View Switcher Tabs */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+          <Link
+            href="/"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0 hover:opacity-95 transition-opacity"
+            aria-label="Weekly Planner Home"
+          >
             <CalendarDays className="w-5 h-5" />
-          </div>
+          </Link>
 
-          {workspaces && activeWorkspaceId && (
-            <WorkspaceSelector
-              workspaces={workspaces}
-              activeWorkspaceId={activeWorkspaceId}
-            />
-          )}
-
-          {displayTitle && (
-            <div className="min-w-0 flex items-center gap-1.5 hidden sm:flex">
-              {workspaces && activeWorkspaceId && (
-                <span className="text-slate-300 dark:text-slate-600 select-none font-light">/</span>
-              )}
-              {typeof displayTitle === "string" ? (
-                <h1 className="text-xs sm:text-sm md:text-base font-semibold text-slate-700 dark:text-slate-200 tracking-tight truncate">
-                  {displayTitle}
-                </h1>
-              ) : (
-                displayTitle
-              )}
-            </div>
-          )}
+          {/* View Switcher Nav Tabs */}
+          <NavTabs />
         </div>
 
-        {/* View Switcher Nav Tabs: Row 2 Left on mobile, Order 2 on desktop */}
-        <div className="row-start-2 col-start-1 flex items-center md:order-2 md:mr-auto">
-          <nav className="flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 shrink-0">
-            <Link
-              href="/"
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs transition-all ${
-                isPlannerActive
-                  ? "font-semibold bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
-                  : "font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              <CalendarDays className="w-3.5 h-3.5" />
-              <span className="inline">Planner</span>
-            </Link>
-            <Link
-              href="/kanban"
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs transition-all ${
-                isKanbanActive
-                  ? "font-semibold bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
-                  : "font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              <Kanban className="w-3.5 h-3.5" />
-              <span className="inline">Kanban</span>
-            </Link>
-            <Link
-              href="/docs"
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs transition-all ${
-                isDocsActive
-                  ? "font-semibold bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
-                  : "font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span className="inline">Docs</span>
-            </Link>
-          </nav>
-        </div>
-
-        {/* Context Controls (e.g. WeekNavControls): Row 2 Right on mobile, Order 3 on desktop */}
-        {children && (
-          <div className="row-start-2 col-start-2 justify-self-end flex items-center md:order-3">
-            {children}
-          </div>
-        )}
-
-        {/* System Controls: Row 1 Right on mobile, Order 4 on desktop */}
-        <div className="row-start-1 col-start-2 justify-self-end flex items-center gap-1.5 sm:gap-2 md:gap-3 md:order-4">
+        {/* Right: System Controls (Theme, Settings, Profile, Logout) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
           {/* Settings Menu Button */}
           {preferences && onSelectBackground && (
             <SettingsMenu
@@ -160,7 +98,7 @@ export function AppHeader({
 
           {/* User Avatar Circle */}
           <div
-            className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-white font-bold text-xs flex items-center justify-center shadow-xs select-none uppercase flex-shrink-0"
+            className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-white font-bold text-xs flex items-center justify-center shadow-xs select-none uppercase shrink-0"
             title={userEmail}
             aria-label={`Logged in as ${userEmail}`}
           >
@@ -180,6 +118,19 @@ export function AppHeader({
           </form>
         </div>
       </div>
+
+      {/* Tier 2: Workspace Toolbar (Workspace Selector, Members, Contextual Actions) */}
+      {workspaces && activeWorkspaceId && (
+        <div className="px-3.5 sm:px-6 md:px-8 py-2 sm:py-2.5">
+          <WorkspaceToolbar
+            workspaces={workspaces}
+            activeWorkspaceId={activeWorkspaceId}
+            displayTitle={displayTitle}
+          >
+            {children}
+          </WorkspaceToolbar>
+        </div>
+      )}
     </header>
   );
 }

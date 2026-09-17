@@ -187,17 +187,17 @@ export function WorkspaceSelector({
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         disabled={isPending}
-        className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none max-w-[180px] sm:max-w-[220px] ${
+        className={`flex items-center gap-2.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer select-none max-w-[190px] sm:max-w-[240px] shadow-xs ${
           isOpen
-            ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300/80 dark:border-amber-700/80 shadow-xs"
-            : "bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/70 dark:border-slate-700/70 shadow-2xs"
+            ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300/80 dark:border-amber-700/80 ring-2 ring-amber-500/20"
+            : "bg-white/90 hover:bg-white dark:bg-slate-800/90 dark:hover:bg-slate-850 text-slate-800 dark:text-slate-100 border-slate-200/80 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600"
         }`}
         title={`Current Workspace: ${activeWorkspace?.name || "Workspace"}`}
         aria-label={`Current Workspace: ${activeWorkspace?.name || "Workspace"}`}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
       >
-        <div className="w-5 h-5 rounded-lg bg-amber-500/15 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+        <div className="w-5 h-5 rounded-lg bg-amber-500/10 dark:bg-amber-400/15 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0">
           {isPending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : (
