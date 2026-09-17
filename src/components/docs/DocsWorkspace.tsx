@@ -26,7 +26,11 @@ interface DocsWorkspaceProps {
   initialDocs: DocWithRelations[];
   userProjects: Project[];
   userEmail: string;
-  activeDocIdFromRoute?: string | null;
+  userName?: string;
+  userImage?: string | null;
+  userAvatarColor?: string | null;
+  userId?: string;
+  activeDocIdFromRoute?: string;
   initialSelectedDoc?: DocWithRelations | null;
   initialPreferences?: UserPreferences;
   workspaces?: Workspace[];
@@ -37,6 +41,10 @@ export function DocsWorkspace({
   initialDocs,
   userProjects: initialProjects,
   userEmail,
+  userName,
+  userImage,
+  userAvatarColor,
+  userId,
   activeDocIdFromRoute,
   initialSelectedDoc,
   initialPreferences,
@@ -230,6 +238,10 @@ export function DocsWorkspace({
       {/* Top Header */}
       <AppHeader
         userEmail={userEmail}
+        userName={userName}
+        userImage={userImage}
+        userAvatarColor={userAvatarColor}
+        userId={userId}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
         preferences={preferences}

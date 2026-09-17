@@ -62,6 +62,8 @@ describe("Integration: Auth Actions (registerAction, loginAction, logoutAction)"
 
       expect(saved).toBeDefined();
       expect(saved.email).toBe(uniqueEmail);
+      expect(saved.avatarColor).toBeDefined();
+      expect(typeof saved.avatarColor).toBe("string");
       userIdsToCleanup.push(saved.id);
 
       // Verify account password record

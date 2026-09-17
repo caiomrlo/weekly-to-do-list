@@ -7,15 +7,7 @@ import {
   WorkspaceMemberItem,
 } from "@/app/actions/workspace-invites";
 import { WorkspaceInvitePopover } from "./WorkspaceInvitePopover";
-
-const AVATAR_BG_COLORS = [
-  "bg-amber-500 text-white",
-  "bg-indigo-500 text-white",
-  "bg-teal-500 text-white",
-  "bg-rose-500 text-white",
-  "bg-violet-500 text-white",
-  "bg-sky-500 text-white",
-];
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 export interface WorkspaceMemberAvatarsProps {
   workspaceId?: string;
@@ -27,7 +19,6 @@ export function WorkspaceMemberAvatars({
   workspaceName,
 }: WorkspaceMemberAvatarsProps) {
   const [members, setMembers] = useState<WorkspaceMemberItem[]>([]);
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -55,10 +46,6 @@ export function WorkspaceMemberAvatars({
     };
   }, [workspaceId, refreshTrigger]);
 
-  const handleImageError = (id: string) => {
-    setImageErrors((prev) => ({ ...prev, [id]: true }));
-  };
-
   const displayedMembers = members.slice(0, 4);
   const remainingCount = Math.max(0, members.length - 4);
 
@@ -66,38 +53,23 @@ export function WorkspaceMemberAvatars({
     <div className="relative">
       <div className="flex items-center" aria-label="Workspace members">
         <div className="flex items-center -space-x-1.5 sm:-space-x-2">
-          {displayedMembers.map((member, idx) => {
-            const hasImageFailed = imageErrors[member.id];
-            const showImage = Boolean(member.image && !hasImageFailed);
-            const bgColor = AVATAR_BG_COLORS[idx % AVATAR_BG_COLORS.length];
-            const initial =
-              member.name?.charAt(0) || member.email.charAt(0).toUpperCase();
-
-            return (
-              <div
-                key={member.id}
-                onClick={() => setIsPopoverOpen((prev) => !prev)}
-                className="relative group transition-transform hover:scale-110 hover:z-20 cursor-pointer"
+          {displayedMembers.map((member) => (
+            <div
+              key={member.id}
+              onClick={() => setIsPopoverOpen((prev) => !prev)}
+              className="relative group transition-transform hover:scale-110 hover:z-20 cursor-pointer"
+            >
+              <UserAvatar
+                size="md"
+                name={member.name}
+                email={member.email}
+                image={member.image}
+                color={member.avatarColor}
+                userId={member.userId}
                 title={`${member.name} (${member.isOwner ? "Owner" : "Member"})`}
-              >
-                {showImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={member.image!}
-                    alt={member.name}
-                    onError={() => handleImageError(member.id)}
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-2xs"
-                  />
-                ) : (
-                  <div
-                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-xs font-semibold shadow-2xs select-none uppercase ${bgColor}`}
-                  >
-                    {initial}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              />
+            </div>
+          ))}
 
           {/* Overflow Pill */}
           {remainingCount > 0 && (

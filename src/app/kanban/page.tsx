@@ -33,6 +33,10 @@ export default async function KanbanPage() {
       initialTasks={initialTasks}
       initialStatuses={initialStatuses}
       userEmail={session.email}
+      userName={session.name}
+      userImage={session.image}
+      userAvatarColor={session.avatarColor}
+      userId={session.userId}
       initialPreferences={initialPreferences}
       workspaces={workspaces}
       activeWorkspaceId={activeWorkspaceId}

@@ -34,6 +34,10 @@ import { TaskModal } from "@/components/task-modal/TaskModal";
 export interface WeeklyBoardProps {
   initialTasks: TaskWithTag[];
   userEmail: string;
+  userName?: string;
+  userImage?: string | null;
+  userAvatarColor?: string | null;
+  userId?: string;
   initialMondayStr: string; // 'YYYY-MM-DD'
   initialPreferences?: UserPreferences;
   workspaces?: Workspace[];
@@ -43,6 +47,10 @@ export interface WeeklyBoardProps {
 export function WeeklyBoard({
   initialTasks,
   userEmail,
+  userName,
+  userImage,
+  userAvatarColor,
+  userId,
   initialMondayStr,
   initialPreferences,
   workspaces,
@@ -505,6 +513,10 @@ export function WeeklyBoard({
       <AppHeader
         title={formatMonthYear(currentMonday)}
         userEmail={userEmail}
+        userName={userName}
+        userImage={userImage}
+        userAvatarColor={userAvatarColor}
+        userId={userId}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
         preferences={preferences}

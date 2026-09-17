@@ -26,6 +26,7 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
   passwordHash: text("password_hash"),
+  avatarColor: varchar("avatar_color", { length: 50 }),
   preferences: jsonb("preferences").$type<UserPreferences>().default(DEFAULT_USER_PREFERENCES).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -499,6 +500,7 @@ export interface TaskAssigneeUser {
   name: string;
   email: string;
   image?: string | null;
+  avatarColor?: string | null;
 }
 
 export type RecurringRule = typeof recurringRules.$inferSelect;

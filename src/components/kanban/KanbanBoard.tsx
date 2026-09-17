@@ -32,6 +32,10 @@ export interface KanbanBoardProps {
   initialTasks: TaskWithTag[];
   initialStatuses: TaskStatus[];
   userEmail: string;
+  userName?: string;
+  userImage?: string | null;
+  userAvatarColor?: string | null;
+  userId?: string;
   initialPreferences?: UserPreferences;
   workspaces?: Workspace[];
   activeWorkspaceId?: string;
@@ -41,6 +45,10 @@ export function KanbanBoard({
   initialTasks,
   initialStatuses,
   userEmail,
+  userName,
+  userImage,
+  userAvatarColor,
+  userId,
   initialPreferences,
   workspaces,
   activeWorkspaceId,
@@ -423,6 +431,10 @@ export function KanbanBoard({
     <div className="min-h-screen flex flex-col transition-colors">
       <AppHeader
         userEmail={userEmail}
+        userName={userName}
+        userImage={userImage}
+        userAvatarColor={userAvatarColor}
+        userId={userId}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
         preferences={preferences}

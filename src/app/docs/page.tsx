@@ -45,6 +45,10 @@ export default async function DocsPage() {
       initialDocs={initialDocs}
       userProjects={userProjects}
       userEmail={session.email}
+      userName={session.name}
+      userImage={session.image}
+      userAvatarColor={session.avatarColor}
+      userId={session.userId}
       initialSelectedDoc={initialSelectedDoc}
       initialPreferences={initialPreferences}
       workspaces={workspaces}

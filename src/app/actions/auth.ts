@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { users, workspaces, workspaceMembers } from "@/db/schema";
 import { auth, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { getRandomAvatarColor } from "@/lib/avatar-utils";
 import {
   ACTIVE_WORKSPACE_COOKIE,
   getActiveWorkspaceContext,
@@ -121,9 +122,12 @@ export async function registerAction(formData: {
         joinedAt: now,
       });
 
+      const randomColor = getRandomAvatarColor();
+
       await db
         .update(users)
         .set({
+          avatarColor: randomColor,
           preferences: {
             ...(newUser.preferences || {}),
             activeWorkspaceId: defaultWorkspace.id,
@@ -186,12 +190,20 @@ export async function loginAction(formData: {
       .where(eq(users.email, email));
 
     const [user] = await db
-      .select({ id: users.id })
+      .select({ id: users.id, avatarColor: users.avatarColor })
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
 
     if (user) {
+      if (!user.avatarColor) {
+        const randomColor = getRandomAvatarColor();
+        await db
+          .update(users)
+          .set({ avatarColor: randomColor })
+          .where(eq(users.id, user.id));
+      }
+
       const { activeWorkspace } = await getActiveWorkspaceContext(user.id);
       const cookieStore = await cookies();
       cookieStore.set(ACTIVE_WORKSPACE_COOKIE, activeWorkspace.id, {

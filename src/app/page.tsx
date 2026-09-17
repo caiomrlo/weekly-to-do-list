@@ -56,6 +56,10 @@ export default async function HomePage() {
       key={activeWorkspaceId}
       initialTasks={initialTasks}
       userEmail={session.email}
+      userName={session.name}
+      userImage={session.image}
+      userAvatarColor={session.avatarColor}
+      userId={session.userId}
       initialMondayStr={startStr}
       initialPreferences={initialPreferences}
       workspaces={workspaces}

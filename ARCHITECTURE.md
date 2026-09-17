@@ -61,6 +61,7 @@ flowchart TD
             ProjectUtils["Project Utils (Palette Styles & Tokens)"]
             TagUtils["Tag Utils (Palette Styles & Tokens)"]
             StatusUtils["Status Utils (Palette Styles & Tokens)"]
+            AvatarUtils["Avatar Utils (Palette Styles & Deterministic Fallback)"]
         end
     end
 
@@ -137,7 +138,7 @@ flowchart TD
 ### 4.2. Domain Models & Schema
 
 The data model enforces strict workspace multi-tenancy scoped to the active workspace (`tasks.workspaceId`, `docs.workspaceId`, `projects.workspaceId`, `tags.workspaceId`, `taskStatuses.workspaceId`, `recurringRules.workspaceId`):
-- **Authentication & Sessions**: Better Auth managed tables (`users`, `sessions`, `accounts`, `verifications`) with custom user fields (`preferences`, `last_login_at`) and UUID primary keys.
+- **Authentication & Sessions**: Better Auth managed tables (`users`, `sessions`, `accounts`, `verifications`) with custom user fields (`preferences`, `avatar_color`, `last_login_at`) and UUID primary keys.
 - **Workspaces & Membership**: `workspaces` (UUID, `name`, `ownerId`, `isDefault`, timestamps), `workspace_members` (UUID, `workspaceId`, `userId`, `role`, `joinedAt`), and `workspace_invites` (UUID, `workspaceId`, `invitedBy`, `token`, `email`, `role`, `status`, `expiresAt`, timestamps) supporting multi-user collaboration via secure shareable links and extensible email invitations.
 - **Task Statuses & Workflow**: `task_statuses` (UUID, `workspaceId`, `name`, `color`, `category` (`todo`/`doing`/`done`), `order`, `isDefault`, timestamps) providing customizable board columns strictly scoped per workspace.
 - **Tasks, Recurrence & Assignees**: Weekly scheduled, backlog, or kanban items strictly isolated by `workspaceId`, supporting a 1-level subtask hierarchy (`parentId`), `statusId` reference (with `set null` on status deletion), natural duration, and project/tag relations. Workspace member collaboration is enabled through `task_assignees` (UUID, `taskId`, `userId`, `assignedAt`) linking tasks to active workspace members with cascade cleanup. Recurring routines are managed via `recurring_rules` using an on-demand window projection strategy.

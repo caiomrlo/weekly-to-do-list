@@ -19,6 +19,7 @@ import {
   getWorkspaceMembersAction,
   WorkspaceMemberItem,
 } from "@/app/actions/workspace-invites";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 export interface WorkspaceInvitePopoverProps {
   isOpen: boolean;
@@ -312,18 +313,16 @@ export function WorkspaceInvitePopover({
                   className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-xs"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    {member.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={member.image}
-                        alt={member.name}
-                        className="w-5 h-5 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold text-[10px] flex items-center justify-center shrink-0 uppercase">
-                        {member.name.charAt(0) || member.email.charAt(0)}
-                      </div>
-                    )}
+                    <UserAvatar
+                      size="sm"
+                      name={member.name}
+                      email={member.email}
+                      image={member.image}
+                      color={member.avatarColor}
+                      userId={member.userId}
+                      showBorder={false}
+                      className="w-5 h-5 text-[10px]"
+                    />
 
                     <span className="font-medium text-slate-700 dark:text-slate-200 truncate">
                       {member.name}

@@ -25,6 +25,7 @@ export interface WorkspaceMemberItem {
   name: string;
   email: string;
   image?: string | null;
+  avatarColor?: string | null;
   role: string;
   isOwner: boolean;
   isCurrentUser: boolean;
@@ -298,6 +299,7 @@ export async function getWorkspaceMembersAction(
         name: users.name,
         email: users.email,
         image: users.image,
+        avatarColor: users.avatarColor,
         ownerId: workspaces.ownerId,
         workspaceName: workspaces.name,
       })
@@ -313,6 +315,7 @@ export async function getWorkspaceMembersAction(
       name: r.name || r.email.split("@")[0],
       email: r.email,
       image: r.image,
+      avatarColor: r.avatarColor,
       role: r.role,
       isOwner: r.userId === r.ownerId,
       isCurrentUser: r.userId === session.userId,

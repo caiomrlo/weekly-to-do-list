@@ -26,6 +26,7 @@ describe("Better Auth configuration & session helpers", () => {
         id: "user-uuid-1234",
         email: "user@example.com",
         name: "user",
+        avatarColor: "indigo",
         createdAt: new Date(),
         updatedAt: new Date(),
         emailVerified: false,
@@ -48,6 +49,7 @@ describe("Better Auth configuration & session helpers", () => {
       expect(result).not.toBeNull();
       expect(result?.userId).toBe("user-uuid-1234");
       expect(result?.email).toBe("user@example.com");
+      expect(result?.avatarColor).toBe("indigo");
 
       spy.mockRestore();
     });

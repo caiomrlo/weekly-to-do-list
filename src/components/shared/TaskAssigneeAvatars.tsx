@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { TaskAssigneeUser } from "@/db/schema";
+import { UserAvatar } from "./UserAvatar";
 
+// Retained for backward-compatibility if imported elsewhere
 export const AVATAR_BG_COLORS = [
   "bg-amber-500 text-white",
   "bg-indigo-500 text-white",
@@ -25,15 +26,9 @@ export function TaskAssigneeAvatars({
   size = "xs",
   className = "",
 }: TaskAssigneeAvatarsProps) {
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-
   if (!assignees || assignees.length === 0) {
     return null;
   }
-
-  const handleImageError = (id: string) => {
-    setImageErrors((prev) => ({ ...prev, [id]: true }));
-  };
 
   const displayed = assignees.slice(0, max);
   const overflow = Math.max(0, assignees.length - max);
@@ -55,39 +50,18 @@ export function TaskAssigneeAvatars({
       className={`inline-flex items-center ${spacingClass} ${className}`}
       aria-label="Assigned members"
     >
-      {displayed.map((assignee, idx) => {
-        const hasFailed = imageErrors[assignee.id];
-        const showImage = Boolean(assignee.image && !hasFailed);
-        const bgColor = AVATAR_BG_COLORS[idx % AVATAR_BG_COLORS.length];
-        const initial = (
-          assignee.name?.charAt(0) ||
-          assignee.email?.charAt(0) ||
-          "?"
-        ).toUpperCase();
-        const displayName = assignee.name || assignee.email;
-
-        return (
-          <div
-            key={assignee.id}
-            className={`relative rounded-full border-white dark:border-slate-900 overflow-hidden shrink-0 flex items-center justify-center font-semibold select-none shadow-2xs transition-transform hover:scale-110 hover:z-20 ${sizeClasses} ${
-              !showImage ? bgColor : "bg-slate-100 dark:bg-slate-800"
-            }`}
-            title={displayName}
-          >
-            {showImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={assignee.image!}
-                alt={displayName}
-                onError={() => handleImageError(assignee.id)}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span>{initial}</span>
-            )}
-          </div>
-        );
-      })}
+      {displayed.map((assignee) => (
+        <UserAvatar
+          key={assignee.id}
+          size={size}
+          name={assignee.name}
+          email={assignee.email}
+          image={assignee.image}
+          color={assignee.avatarColor}
+          userId={assignee.id}
+          className="hover:scale-110 hover:z-20 transition-transform"
+        />
+      ))}
 
       {overflow > 0 && (
         <div

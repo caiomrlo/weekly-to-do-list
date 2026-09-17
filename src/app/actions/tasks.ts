@@ -59,6 +59,7 @@ export async function batchFetchTaskAssignees(
       name: users.name,
       email: users.email,
       image: users.image,
+      avatarColor: users.avatarColor,
     })
     .from(taskAssignees)
     .innerJoin(users, eq(taskAssignees.userId, users.id))
@@ -72,6 +73,7 @@ export async function batchFetchTaskAssignees(
       name: row.name,
       email: row.email,
       image: row.image,
+      avatarColor: row.avatarColor,
     });
     map.set(row.taskId, list);
   }

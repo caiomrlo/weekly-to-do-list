@@ -48,6 +48,10 @@ export default async function DocDetailPage({
       initialDocs={initialDocs}
       userProjects={userProjects}
       userEmail={session.email}
+      userName={session.name}
+      userImage={session.image}
+      userAvatarColor={session.avatarColor}
+      userId={session.userId}
       activeDocIdFromRoute={id}
       initialSelectedDoc={initialSelectedDoc}
       initialPreferences={initialPreferences}

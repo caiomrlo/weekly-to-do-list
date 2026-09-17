@@ -13,10 +13,15 @@ import { BackgroundThemeId, UserPreferences, Workspace } from "@/db/schema";
 import { SettingsMenu } from "./SettingsMenu";
 import { NavTabs } from "./NavTabs";
 import { WorkspaceToolbar } from "@/components/workspace/WorkspaceToolbar";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 export interface AppHeaderProps {
   title?: React.ReactNode;
   userEmail: string;
+  userName?: string;
+  userImage?: string | null;
+  userAvatarColor?: string | null;
+  userId?: string;
   isDarkMode: boolean;
   onToggleTheme: () => void;
   preferences?: UserPreferences;
@@ -31,6 +36,10 @@ export interface AppHeaderProps {
 export function AppHeader({
   title,
   userEmail,
+  userName,
+  userImage,
+  userAvatarColor,
+  userId,
   isDarkMode,
   onToggleTheme,
   preferences,
@@ -97,13 +106,16 @@ export function AppHeader({
           <div className="h-5 w-px bg-slate-200/80 dark:bg-slate-700/80 mx-0.5 hidden sm:block" />
 
           {/* User Avatar Circle */}
-          <div
-            className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-white font-bold text-xs flex items-center justify-center shadow-xs select-none uppercase shrink-0"
+          <UserAvatar
+            size="md"
+            name={userName}
+            email={userEmail}
+            image={userImage}
+            color={userAvatarColor}
+            userId={userId}
+            className="w-8 h-8 text-xs shrink-0"
             title={userEmail}
-            aria-label={`Logged in as ${userEmail}`}
-          >
-            {userEmail ? userEmail.charAt(0).toUpperCase() : "U"}
-          </div>
+          />
 
           {/* Logout Button */}
           <form action={logoutAction}>

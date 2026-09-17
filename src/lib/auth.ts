@@ -36,6 +36,10 @@ export const auth = betterAuth({
         type: "date",
         required: false,
       },
+      avatarColor: {
+        type: "string",
+        required: false,
+      },
     },
   },
   advanced: {
@@ -51,6 +55,9 @@ export const AUTH_COOKIE_NAME = "better-auth.session_token";
 export interface SessionPayload {
   userId: string;
   email: string;
+  name?: string;
+  image?: string | null;
+  avatarColor?: string | null;
 }
 
 export async function getSessionUser(): Promise<SessionPayload | null> {
@@ -66,6 +73,10 @@ export async function getSessionUser(): Promise<SessionPayload | null> {
     return {
       userId: session.user.id,
       email: session.user.email,
+      name: session.user.name,
+      image: session.user.image,
+      avatarColor:
+        (session.user as { avatarColor?: string | null }).avatarColor || null,
     };
   } catch (err: unknown) {
     if (

@@ -7,7 +7,7 @@ import {
   WorkspaceMemberItem,
 } from "@/app/actions/workspace-invites";
 import { updateTaskAssigneesAction } from "@/app/actions/tasks";
-import { AVATAR_BG_COLORS } from "@/components/shared/TaskAssigneeAvatars";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import {
   UserPlus,
   ChevronDown,
@@ -34,7 +34,6 @@ export function TaskAssigneeSelector({
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isTogglingId, setIsTogglingId] = useState<string | null>(null);
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -73,10 +72,6 @@ export function TaskAssigneeSelector({
     }
   };
 
-  const handleImageError = (id: string) => {
-    setImageErrors((prev) => ({ ...prev, [id]: true }));
-  };
-
   const assignedUserIds = new Set(assignees.map((a) => a.id));
 
   const handleToggleMember = async (member: WorkspaceMemberItem) => {
@@ -93,6 +88,7 @@ export function TaskAssigneeSelector({
         name: member.name,
         email: member.email,
         image: member.image,
+        avatarColor: member.avatarColor,
       };
       updatedAssignees = [...assignees, newAssignee];
       nextUserIds = [...assignees.map((a) => a.id), member.userId];
@@ -145,37 +141,17 @@ export function TaskAssigneeSelector({
         ) : (
           <div className="flex items-center gap-1.5">
             <div className="flex items-center -space-x-1.5">
-              {assignees.slice(0, 2).map((a, idx) => {
-                const hasFailed = imageErrors[a.id];
-                const showImage = Boolean(a.image && !hasFailed);
-                const bgColor = AVATAR_BG_COLORS[idx % AVATAR_BG_COLORS.length];
-                const initial = (
-                  a.name?.charAt(0) ||
-                  a.email?.charAt(0) ||
-                  "?"
-                ).toUpperCase();
-
-                return (
-                  <div
-                    key={a.id}
-                    className={`w-4.5 h-4.5 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center font-bold text-[9px] overflow-hidden shadow-2xs shrink-0 select-none ${
-                      !showImage ? bgColor : "bg-slate-100 dark:bg-slate-800"
-                    }`}
-                  >
-                    {showImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={a.image!}
-                        alt={a.name}
-                        onError={() => handleImageError(a.id)}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      initial
-                    )}
-                  </div>
-                );
-              })}
+              {assignees.slice(0, 2).map((a) => (
+                <UserAvatar
+                  key={a.id}
+                  size="xs"
+                  name={a.name}
+                  email={a.email}
+                  image={a.image}
+                  color={a.avatarColor}
+                  userId={a.id}
+                />
+              ))}
             </div>
             <span className="truncate max-w-[110px]">
               {assignees.length === 1
@@ -231,17 +207,9 @@ export function TaskAssigneeSelector({
                 {searchQuery ? "No members found" : "No members available"}
               </div>
             ) : (
-              filteredMembers.map((member, idx) => {
+              filteredMembers.map((member) => {
                 const isAssigned = assignedUserIds.has(member.userId);
                 const isToggling = isTogglingId === member.userId;
-                const hasFailed = imageErrors[member.id];
-                const showImage = Boolean(member.image && !hasFailed);
-                const bgColor = AVATAR_BG_COLORS[idx % AVATAR_BG_COLORS.length];
-                const initial = (
-                  member.name?.charAt(0) ||
-                  member.email?.charAt(0) ||
-                  "?"
-                ).toUpperCase();
 
                 return (
                   <button
@@ -257,23 +225,15 @@ export function TaskAssigneeSelector({
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                       {/* Avatar */}
-                      <div
-                        className={`w-6 h-6 rounded-full border border-white dark:border-slate-800 flex items-center justify-center font-bold text-[10px] shrink-0 overflow-hidden shadow-2xs select-none ${
-                          !showImage ? bgColor : "bg-slate-100 dark:bg-slate-800"
-                        }`}
-                      >
-                        {showImage ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={member.image!}
-                            alt={member.name}
-                            onError={() => handleImageError(member.id)}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          initial
-                        )}
-                      </div>
+                      <UserAvatar
+                        size="sm"
+                        name={member.name}
+                        email={member.email}
+                        image={member.image}
+                        color={member.avatarColor}
+                        userId={member.userId}
+                        borderColor="border-white dark:border-slate-800"
+                      />
 
                       {/* Name & Email */}
                       <div className="min-w-0 flex-1">
