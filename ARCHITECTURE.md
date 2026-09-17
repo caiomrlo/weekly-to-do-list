@@ -122,8 +122,8 @@ flowchart TD
 - **UX Principles**: Inline grouping over deep card nesting, zero redundant labels/clutter, progressive disclosure via popovers, and transient mutation feedback (`Saving...`).
 
 ### 3.2. Backend & API (`src/app/actions/`, `src/app/api/`)
-- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `workspace-invites`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` preferences.
-- **Route Handlers (`src/app/api/`, `src/app/invite/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`; `invite/[token]` validates invite tokens, auto-joins authenticated users, updates active workspace cookies, and handles unauthenticated auth redirects.
+- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `workspace-invites`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` (preferences, avatar upload & deletion).
+- **Route Handlers (`src/app/api/`, `src/app/invite/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access; `avatar/[id]` serves unauthenticated public WebP user avatars with immutable HTTP caching or redirects to `R2_PUBLIC_URL`; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`; `invite/[token]` validates invite tokens, auto-joins authenticated users, updates active workspace cookies, and handles unauthenticated auth redirects.
 - **Middleware (`src/middleware.ts`)**: Edge runtime session cookie validation (`better-auth/cookies`) protecting root and authentication routes with redirect parameter preservation.
 - *For detailed action signatures or component props, refer directly to the respective files in `src/app/actions/` and `src/components/`.*
 
@@ -154,8 +154,9 @@ The data model enforces strict workspace multi-tenancy scoped to the active work
 - **Object Storage (Cloudflare R2)**:
   - S3-compatible cloud object storage without egress fees.
   - Interfaced via `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner`.
-  - Enforces private bucket security model; objects accessed exclusively via authenticated signed URLs generated on-demand (`files/{attachmentId}/{fileName}`).
-  - Automated physical file deletion on task and attachment removal.
+  - Task & Doc attachments enforce private bucket security model; objects accessed exclusively via authenticated signed URLs generated on-demand (`files/{attachmentId}/{fileName}`).
+  - User profile avatars are processed with `sharp` into optimized 150x150 WebP thumbnails stored at `avatars/{avatarId}.webp` (raw originals discarded) and served unauthenticated via `/api/avatar/[id]` or direct `R2_PUBLIC_URL` CDN domain.
+  - Automated physical file deletion on task, attachment, and avatar removal/replacement.
 - **Static Assets & Fonts**: Google Fonts (`Geist` and `Geist_Mono`) via `next/font/google`.
 
 ---

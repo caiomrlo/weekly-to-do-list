@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, UserPen, LogOut } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { UserAvatar } from "@/components/shared/UserAvatar";
+import { ProfilePictureModal } from "@/components/profile/ProfilePictureModal";
 
 export interface ProfileMenuProps {
   userEmail: string;
@@ -21,7 +22,25 @@ export function ProfileMenu({
   userId,
 }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPictureModalOpen, setIsPictureModalOpen] = useState(false);
+  const [overrideImage, setOverrideImage] = useState<string | null | undefined>(undefined);
+  const currentImage = overrideImage !== undefined ? overrideImage : userImage;
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Listen to global user avatar update events
+  useEffect(() => {
+    function handleAvatarEvent(e: Event) {
+      const customEvent = e as CustomEvent<{ image?: string | null }>;
+      if (customEvent.detail && "image" in customEvent.detail) {
+        setOverrideImage(customEvent.detail.image);
+      }
+    }
+
+    window.addEventListener("user-avatar-updated", handleAvatarEvent);
+    return () => {
+      window.removeEventListener("user-avatar-updated", handleAvatarEvent);
+    };
+  }, []);
 
   // Close profile menu on click outside
   useEffect(() => {
@@ -77,7 +96,7 @@ export function ProfileMenu({
           size="md"
           name={userName}
           email={userEmail}
-          image={userImage}
+          image={currentImage}
           color={userAvatarColor}
           userId={userId}
           className="w-8 h-8 text-xs shrink-0"
@@ -97,7 +116,7 @@ export function ProfileMenu({
               size="md"
               name={userName}
               email={userEmail}
-              image={userImage}
+              image={currentImage}
               color={userAvatarColor}
               userId={userId}
               className="w-9 h-9 text-xs shrink-0"
@@ -119,8 +138,8 @@ export function ProfileMenu({
               type="button"
               role="menuitem"
               onClick={() => {
-                // Action placeholder for future profile photo management
                 setIsOpen(false);
+                setIsPictureModalOpen(true);
               }}
               className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
             >
@@ -158,6 +177,20 @@ export function ProfileMenu({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Profile Picture Management Modal */}
+      {isPictureModalOpen && (
+        <ProfilePictureModal
+          isOpen={isPictureModalOpen}
+          onClose={() => setIsPictureModalOpen(false)}
+          userEmail={userEmail}
+          userName={userName}
+          currentImage={currentImage}
+          userAvatarColor={userAvatarColor}
+          userId={userId}
+          onAvatarUpdated={(newImageUrl) => setOverrideImage(newImageUrl)}
+        />
       )}
     </div>
   );

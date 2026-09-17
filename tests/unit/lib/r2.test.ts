@@ -3,6 +3,8 @@ import {
   sanitizeFileName,
   generateFilePath,
   generateThumbnailPath,
+  generateAvatarKey,
+  extractAvatarKeyFromUrl,
 } from "@/lib/r2";
 
 describe("r2 storage utils", () => {
@@ -55,6 +57,43 @@ describe("r2 storage utils", () => {
     it("should generate standardized thumbnail path with attachment ID", () => {
       const path = generateThumbnailPath("att-456");
       expect(path).toBe("files/att-456/thumb.webp");
+    });
+  });
+
+  describe("generateAvatarKey", () => {
+    it("should generate proper avatar path with UUID", () => {
+      const uuid = "e2d8471b-3b3d-4c31-9cc4-749e67a71234";
+      const key = generateAvatarKey(uuid);
+      expect(key).toBe(`avatars/${uuid}.webp`);
+    });
+
+    it("should sanitize the avatarId argument", () => {
+      const key = generateAvatarKey("../../../malicious-id");
+      expect(key).toBe("avatars/malicious-id.webp");
+    });
+  });
+
+  describe("extractAvatarKeyFromUrl", () => {
+    it("should extract avatar key from relative api url", () => {
+      const uuid = "e2d8471b-3b3d-4c31-9cc4-749e67a71234";
+      const key = extractAvatarKeyFromUrl(`/api/avatar/${uuid}.webp`);
+      expect(key).toBe(`avatars/${uuid}.webp`);
+    });
+
+    it("should extract avatar key from full cdn url", () => {
+      const uuid = "e2d8471b-3b3d-4c31-9cc4-749e67a71234";
+      const key = extractAvatarKeyFromUrl(
+        `https://pub-12345.r2.dev/avatars/${uuid}.webp`
+      );
+      expect(key).toBe(`avatars/${uuid}.webp`);
+    });
+
+    it("should return null for non-avatar or falsy urls", () => {
+      expect(extractAvatarKeyFromUrl(null)).toBeNull();
+      expect(extractAvatarKeyFromUrl(undefined)).toBeNull();
+      expect(extractAvatarKeyFromUrl("")).toBeNull();
+      expect(extractAvatarKeyFromUrl("https://lh3.googleusercontent.com/a/abc123xyz")).toBeNull();
+      expect(extractAvatarKeyFromUrl("/files/att-123/image.png")).toBeNull();
     });
   });
 });

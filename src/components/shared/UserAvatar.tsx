@@ -9,7 +9,7 @@ export interface UserAvatarProps {
   image?: string | null;
   color?: string | null;
   userId?: string | null;
-  size?: "xs" | "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   showBorder?: boolean;
   borderColor?: string;
   className?: string;
@@ -49,9 +49,11 @@ export function UserAvatar({
     sm: "w-6 h-6 text-[10px]",
     md: "w-7 h-7 sm:w-8 sm:h-8 text-xs",
     lg: "w-9 h-9 sm:w-10 sm:h-10 text-sm",
+    xl: "w-28 h-28 text-3xl",
   }[size];
 
-  const borderThicknessClass = size === "xs" ? "border-[1.5px]" : "border-2";
+  const borderThicknessClass =
+    size === "xs" ? "border-[1.5px]" : size === "xl" ? "border-[3px]" : "border-2";
 
   return (
     <div

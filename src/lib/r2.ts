@@ -110,3 +110,24 @@ export async function getPresignedDownloadUrl(
 
   return getSignedUrl(r2, command, { expiresIn: expiresInSeconds });
 }
+
+export function generateAvatarKey(avatarId: string): string {
+  const cleanId = sanitizeFileName(avatarId);
+  return `avatars/${cleanId}.webp`;
+}
+
+export function extractAvatarKeyFromUrl(
+  imageUrl: string | null | undefined
+): string | null {
+  if (!imageUrl) return null;
+  const match = imageUrl.match(/([a-f0-9-]{36})\.webp/i);
+  return match ? `avatars/${match[1]}.webp` : null;
+}
+
+export async function getR2Object(key: string) {
+  const command = new GetObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+  });
+  return r2.send(command);
+}
