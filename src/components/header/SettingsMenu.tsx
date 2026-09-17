@@ -113,7 +113,7 @@ export function SettingsMenu({
 
       {/* Settings Popover */}
       {isOpen && (
-        <div className="fixed inset-x-3.5 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 max-h-[calc(100dvh-5rem)] sm:max-h-none overflow-y-auto sm:overflow-visible p-3.5 rounded-2xl glass-panel shadow-xl border border-white/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-x-3.5 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 max-h-[calc(100dvh-5rem)] sm:max-h-none overflow-y-auto sm:overflow-visible p-3.5 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
           <div className="pb-2.5 mb-3 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">

@@ -158,7 +158,7 @@ export function WorkspaceInvitePopover({
   return (
     <div
       ref={popoverRef}
-      className="absolute left-0 mt-2 w-80 sm:w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/90 shadow-2xl p-4 z-50 flex flex-col gap-3.5 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100"
+      className="absolute left-0 mt-2 w-80 sm:w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-4 z-50 flex flex-col gap-3.5 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100"
       role="dialog"
       aria-label="Invite members"
     >

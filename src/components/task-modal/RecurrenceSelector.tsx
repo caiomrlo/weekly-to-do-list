@@ -109,7 +109,7 @@ function RecurrenceSelectorContent({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-2xs animate-in fade-in duration-100">
       <div
         ref={popoverRef}
-        className="w-full max-w-sm rounded-2xl glass-panel bg-white/95 dark:bg-slate-900/95 shadow-xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-4 text-slate-800 dark:text-slate-100 z-10"
+        className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 p-4 space-y-4 text-slate-800 dark:text-slate-100 z-10"
       >
         <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
           <div className="flex items-center gap-2">

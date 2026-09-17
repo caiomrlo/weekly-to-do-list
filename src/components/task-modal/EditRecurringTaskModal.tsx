@@ -19,7 +19,7 @@ export function EditRecurringTaskModal({
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-2xs animate-in fade-in duration-150">
-      <div className="w-full max-w-sm rounded-2xl glass-panel bg-white/95 dark:bg-slate-900/95 shadow-2xl border border-slate-200/80 dark:border-slate-800 p-5 space-y-4 text-slate-800 dark:text-slate-100 z-10">
+      <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 text-slate-800 dark:text-slate-100 z-10">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
           <div className="w-8 h-8 rounded-full bg-amber-500/10 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0">
             <Repeat className="w-4 h-4" />

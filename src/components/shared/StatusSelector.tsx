@@ -48,7 +48,7 @@ export function StatusSelector({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-44 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl border border-slate-200/80 dark:border-slate-800 p-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute left-0 mt-1.5 w-44 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 p-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
             Status
           </div>

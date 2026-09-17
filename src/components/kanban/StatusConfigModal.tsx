@@ -109,7 +109,7 @@ function StatusConfigModalContent({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
         ref={modalRef}
-        className="w-full max-w-sm rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl border border-white/60 dark:border-slate-800 p-5 space-y-4 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 animate-in zoom-in-95 duration-150"
       >
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 tracking-tight">

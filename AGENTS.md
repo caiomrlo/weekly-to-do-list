@@ -57,6 +57,7 @@ Strictly adhere to cognitive load reduction and clean interface rules across all
 - **Inline Grouping Over Deep Card Nesting**: Prevent "card-inside-card" fatigue and heavy border stacking. Group related metadata, pills, and controls into compact, cohesive horizontal rows instead of wrapping them in nested containers.
 - **Zero Redundant Labels / Clutter**: Eliminate obvious static meta-labels (e.g. "Description:", "Tags:") and explicit optionality markers like "(Optional)" whenever semantic icons, clean typography, formatted values, or contextual placeholders make the element self-explanatory.
 - **Progressive Disclosure via Popovers**: Keep primary views high-signal and distraction-free. Secondary controls, advanced configurations, and tag/project pickers must be revealed on-demand through compact inline triggers and lightweight popovers rather than occupying permanent screen real estate.
+- **Solid Opaque Floating Surfaces**: Never use semi-transparent backgrounds (`glass-panel`, translucent opacity like `/95`, or blur filters) on popovers, dropdowns, or floating panels. Always enforce 100% solid, opaque backgrounds (`bg-white dark:bg-slate-900`) with solid borders and deep shadows to prevent visual bleed-through and guarantee high readability.
 - **Transient-Only Mutation Feedback**: Never leave static status indicators (e.g. permanent "Saved" text) polluting the layout. Feedback must be strictly transient and visible exclusively during active state transitions (e.g. animated `"Saving..."`), silently fading back to a clean state once resolved.
 
 

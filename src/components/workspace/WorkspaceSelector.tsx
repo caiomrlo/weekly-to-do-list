@@ -216,7 +216,7 @@ export function WorkspaceSelector({
 
       {/* Popover Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-72 sm:w-80 rounded-2xl glass-panel border border-white/80 dark:border-slate-700/80 shadow-2xl p-2 z-50 flex flex-col gap-1 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2 z-50 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
           {/* Section Header */}
           <div className="flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
             <span>Workspaces</span>
