@@ -29,6 +29,7 @@ import { TaskModal } from "@/components/task-modal/TaskModal";
 import { KanbanColumn } from "./KanbanColumn";
 import { StatusConfigModal } from "./StatusConfigModal";
 import { Plus } from "lucide-react";
+import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 
 export interface KanbanBoardProps {
   initialTasks: TaskWithTag[];
@@ -505,7 +506,7 @@ export function KanbanBoard({
       </AppHeader>
 
       {/* Main Kanban Board Canvas */}
-      <main className="flex-1 overflow-x-auto px-4 sm:px-6 md:px-8 pb-8 custom-scrollbar">
+      <main className="flex-1 overflow-x-auto px-4 sm:px-6 md:px-8 pb-20 md:pb-8 custom-scrollbar">
         <div className="flex items-start gap-4 min-w-max pb-4">
           {sortedStatuses.map((status) => (
             <KanbanColumn
@@ -570,6 +571,9 @@ export function KanbanBoard({
         onSave={handleSaveStatus}
         onDelete={handleDeleteStatus}
       />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav />
     </div>
   );
 }

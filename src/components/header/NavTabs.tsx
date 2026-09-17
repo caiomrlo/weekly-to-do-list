@@ -33,7 +33,7 @@ export function NavTabs() {
 
   return (
     <nav
-      className="flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 shrink-0"
+      className="hidden md:flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 shrink-0"
       aria-label="Workspace views"
     >
       {navItems.map((item) => {

@@ -30,6 +30,7 @@ import { formatMonthYear } from "@/lib/date-utils";
 import { DayColumn } from "./DayColumn";
 import { UnscheduledSection } from "./UnscheduledSection";
 import { TaskModal } from "@/components/task-modal/TaskModal";
+import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 
 export interface WeeklyBoardProps {
   initialTasks: TaskWithTag[];
@@ -535,7 +536,7 @@ export function WeeklyBoard({
       </AppHeader>
 
       {/* Main Board Container */}
-      <main className="flex-1 px-3 sm:px-6 pb-8 w-full">
+      <main className="flex-1 px-3 sm:px-6 pb-20 md:pb-8 w-full">
         <div
           className={`grid grid-cols-1 md:grid-cols-2 ${gridColsClass} gap-3.5 items-start`}
         >
@@ -590,6 +591,9 @@ export function WeeklyBoard({
         currentWeekRange={currentWeekRange}
         onTasksBatchSync={handleTasksBatchSync}
       />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav />
     </div>
   );
 }
