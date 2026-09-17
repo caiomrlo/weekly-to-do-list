@@ -1,106 +1,154 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
+import {
+  getWorkspaceMembersAction,
+  WorkspaceMemberItem,
+} from "@/app/actions/workspace-invites";
+import { WorkspaceInvitePopover } from "./WorkspaceInvitePopover";
 
-interface MemberMock {
-  id: string;
-  name: string;
-  role: string;
-  type: "image" | "initial";
-  avatarUrl?: string;
-  initial?: string;
-  bgColor?: string;
-}
-
-const MOCK_MEMBERS: MemberMock[] = [
-  {
-    id: "m1",
-    name: "Alex Miller",
-    role: "Admin",
-    type: "image",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=faces&q=80",
-    initial: "A",
-  },
-  {
-    id: "m2",
-    name: "Sarah Chen",
-    role: "Member",
-    type: "image",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=faces&q=80",
-    initial: "S",
-  },
-  {
-    id: "m3",
-    name: "Julia Santos",
-    role: "Member",
-    type: "initial",
-    initial: "J",
-    bgColor: "bg-indigo-500 text-white",
-  },
-  {
-    id: "m4",
-    name: "Lucas Lima",
-    role: "Member",
-    type: "initial",
-    initial: "L",
-    bgColor: "bg-teal-400 text-white",
-  },
+const AVATAR_BG_COLORS = [
+  "bg-amber-500 text-white",
+  "bg-indigo-500 text-white",
+  "bg-teal-500 text-white",
+  "bg-rose-500 text-white",
+  "bg-violet-500 text-white",
+  "bg-sky-500 text-white",
 ];
 
-export function WorkspaceMemberAvatars() {
+export interface WorkspaceMemberAvatarsProps {
+  workspaceId?: string;
+  workspaceName?: string;
+}
+
+export function WorkspaceMemberAvatars({
+  workspaceId,
+  workspaceName,
+}: WorkspaceMemberAvatarsProps) {
+  const [members, setMembers] = useState<WorkspaceMemberItem[]>([]);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const refreshMembers = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!workspaceId) return;
+
+    void (async () => {
+      try {
+        const res = await getWorkspaceMembersAction(workspaceId);
+        if (isMounted && res.members) {
+          setMembers(res.members);
+        }
+      } catch (err) {
+        console.error("Failed to load workspace members:", err);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [workspaceId, refreshTrigger]);
 
   const handleImageError = (id: string) => {
     setImageErrors((prev) => ({ ...prev, [id]: true }));
   };
 
+  const displayedMembers = members.slice(0, 4);
+  const remainingCount = Math.max(0, members.length - 4);
+
   return (
-    <div className="flex items-center" aria-label="Workspace members">
-      <div className="flex items-center -space-x-1.5 sm:-space-x-2">
-        {MOCK_MEMBERS.map((member) => {
-          const hasImageFailed = imageErrors[member.id];
-          const showImage = member.type === "image" && member.avatarUrl && !hasImageFailed;
+    <div className="relative">
+      <div className="flex items-center" aria-label="Workspace members">
+        <div className="flex items-center -space-x-1.5 sm:-space-x-2">
+          {displayedMembers.map((member, idx) => {
+            const hasImageFailed = imageErrors[member.id];
+            const showImage = Boolean(member.image && !hasImageFailed);
+            const bgColor = AVATAR_BG_COLORS[idx % AVATAR_BG_COLORS.length];
+            const initial =
+              member.name?.charAt(0) || member.email.charAt(0).toUpperCase();
 
-          return (
+            return (
+              <div
+                key={member.id}
+                onClick={() => setIsPopoverOpen((prev) => !prev)}
+                className="relative group transition-transform hover:scale-110 hover:z-20 cursor-pointer"
+                title={`${member.name} (${member.isOwner ? "Owner" : "Member"})`}
+              >
+                {showImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={member.image!}
+                    alt={member.name}
+                    onError={() => handleImageError(member.id)}
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-2xs"
+                  />
+                ) : (
+                  <div
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-xs font-semibold shadow-2xs select-none uppercase ${bgColor}`}
+                  >
+                    {initial}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Overflow Pill */}
+          {remainingCount > 0 && (
             <div
-              key={member.id}
-              className="relative group transition-transform hover:scale-110 hover:z-20 cursor-pointer"
-              title={`${member.name} (${member.role})`}
+              onClick={() => setIsPopoverOpen((prev) => !prev)}
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] sm:text-xs font-bold flex items-center justify-center shadow-2xs cursor-pointer hover:scale-110 hover:z-20 transition-transform"
+              title={`${remainingCount} more member${
+                remainingCount > 1 ? "s" : ""
+              }`}
             >
-              {showImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={member.avatarUrl}
-                  alt={member.name}
-                  onError={() => handleImageError(member.id)}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white dark:border-slate-900 object-cover shadow-2xs"
-                />
-              ) : (
-                <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-xs font-semibold shadow-2xs select-none ${
-                    member.bgColor || "bg-amber-500 text-white"
-                  }`}
-                >
-                  {member.initial || member.name.charAt(0)}
-                </div>
-              )}
+              +{remainingCount}
             </div>
-          );
-        })}
+          )}
 
-        {/* Add Member Button (Mock Action) */}
-        <button
-          type="button"
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white dark:border-slate-900 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white shadow-2xs flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:z-20 group"
-          title="Invite members (Coming soon)"
-          aria-label="Invite members"
-        >
-          <Plus className="w-3.5 h-3.5 transition-transform group-hover:rotate-90 duration-200" />
-        </button>
+          {/* Add / Invite Member Button */}
+          <button
+            type="button"
+            onClick={() => setIsPopoverOpen((prev) => !prev)}
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 transition-all shadow-2xs flex items-center justify-center cursor-pointer group ${
+              isPopoverOpen
+                ? "border-amber-500 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 scale-110 z-20"
+                : "border-white dark:border-slate-900 bg-white/90 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:scale-110 hover:z-20"
+            }`}
+            title="Invite members to workspace"
+            aria-label="Invite members to workspace"
+            aria-haspopup="dialog"
+            aria-expanded={isPopoverOpen}
+          >
+            <Plus
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                isPopoverOpen
+                  ? "rotate-45 text-amber-600 dark:text-amber-400"
+                  : "group-hover:rotate-90"
+              }`}
+            />
+          </button>
+        </div>
       </div>
+
+      {workspaceId && (
+        <WorkspaceInvitePopover
+          isOpen={isPopoverOpen}
+          onClose={() => {
+            setIsPopoverOpen(false);
+            refreshMembers();
+          }}
+          workspaceId={workspaceId}
+          workspaceName={workspaceName}
+          onMembersUpdated={refreshMembers}
+        />
+      )}
     </div>
   );
 }

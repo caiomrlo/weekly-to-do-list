@@ -45,6 +45,7 @@ flowchart TD
         subgraph ServerActions["Server Actions (app/actions/*)"]
             AuthActions["Auth Actions\n(login, register, logout)"]
             WorkspaceActions["Workspace Actions\n(getUserWorkspaces, createWorkspace, renameWorkspace, deleteWorkspace, switchWorkspace)"]
+            InviteActions["Workspace Invite Actions\n(getInviteLink, toggleInviteLink, regenerateInviteLink, getMembers)"]
             DocActions["Doc Actions\n(getDocs, getDocById, createDoc, updateDoc, deleteDoc, link/unlink)"]
             ProjectActions["Project Actions\n(getProjects, createProject, deleteProject)"]
             TagActions["Tag Actions (Backend)\n(getTags, createTag, deleteTag)"]
@@ -65,7 +66,7 @@ flowchart TD
 
     subgraph DataLayer["Persistence Layer"]
         Drizzle["Drizzle ORM (node-postgres pool)"]
-        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• workspaces\n• workspace_members\n• task_statuses\n• projects\n• tags\n• tasks\n• recurring_rules\n• attachments\n• docs\n• task_docs")]
+        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• workspaces\n• workspace_members\n• workspace_invites\n• task_statuses\n• projects\n• tags\n• tasks\n• recurring_rules\n• attachments\n• docs\n• task_docs")]
     end
 
     %% Flow connections
@@ -112,15 +113,16 @@ flowchart TD
   - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Interactive weekly planner with HTML5 Drag & Drop, subtask nesting/reordering, week navigation, day visibility toggles, and persistent unscheduled backlog panel.
   - **`KanbanBoard` (`src/components/kanban/KanbanBoard.tsx`)**: Columnar workflow board (`/kanban`) organizing workspace tasks into status columns (`To Do`, `Doing`, `Done`, and custom statuses) with HTML5 Drag & Drop, inline card creation, and status modal configurations.
   - **`WorkspaceSelector` (`src/components/workspace/WorkspaceSelector.tsx`)**: Header popover dropdown allowing instant workspace switching, creating new workspaces (+ New Workspace), inline renaming, and protected deletion (guarding against deleting default workspaces).
+  - **`WorkspaceMemberAvatars` (`src/components/workspace/WorkspaceMemberAvatars.tsx`) & `WorkspaceInvitePopover` (`src/components/workspace/WorkspaceInvitePopover.tsx`)**: Dynamic workspace member stack with initial avatars and member count overflow, launching a lightweight anchored popover with shareable invite link management (toggle, copy, regenerate), integrated email invite structure, and real-time member directory.
   - **`TaskModal` (`src/components/TaskModal.tsx`)**: Task details modal featuring Tiptap WYSIWYG editor (`TaskDescriptionEditor`), subtask hierarchy, project selector, status picker popover, attachments, and linked docs.
   - **`DocsWorkspace` (`src/components/docs/DocsWorkspace.tsx`)**: Split-pane notes/documentation workspace with Tiptap editor (`DocRichEditor`), search/filters, linked tasks, and attachments.
-  - **`LoginPage` (`src/app/login/page.tsx`)**: Authentication card (login and registration with password visibility toggles).
+  - **`LoginPage` (`src/app/login/page.tsx`)**: Authentication card (login and registration with password visibility toggles, preserved post-auth redirect navigation, and contextual invite notifications).
 - **UX Principles**: Inline grouping over deep card nesting, zero redundant labels/clutter, progressive disclosure via popovers, and transient mutation feedback (`Saving...`).
 
 ### 3.2. Backend & API (`src/app/actions/`, `src/app/api/`)
-- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` preferences.
-- **Route Handlers (`src/app/api/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`.
-- **Middleware (`src/middleware.ts`)**: Edge runtime session cookie validation (`better-auth/cookies`) protecting root and authentication routes.
+- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `workspace-invites`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` preferences.
+- **Route Handlers (`src/app/api/`, `src/app/invite/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`; `invite/[token]` validates invite tokens, auto-joins authenticated users, updates active workspace cookies, and handles unauthenticated auth redirects.
+- **Middleware (`src/middleware.ts`)**: Edge runtime session cookie validation (`better-auth/cookies`) protecting root and authentication routes with redirect parameter preservation.
 - *For detailed action signatures or component props, refer directly to the respective files in `src/app/actions/` and `src/components/`.*
 
 ---
@@ -136,7 +138,7 @@ flowchart TD
 
 The data model enforces strict workspace multi-tenancy scoped to the active workspace (`tasks.workspaceId`, `docs.workspaceId`, `projects.workspaceId`, `tags.workspaceId`, `taskStatuses.workspaceId`, `recurringRules.workspaceId`):
 - **Authentication & Sessions**: Better Auth managed tables (`users`, `sessions`, `accounts`, `verifications`) with custom user fields (`preferences`, `last_login_at`) and UUID primary keys.
-- **Workspaces & Membership**: `workspaces` (UUID, `name`, `ownerId`, `isDefault`, timestamps) and `workspace_members` (UUID, `workspaceId`, `userId`, `role`, `joinedAt`), architected for future multi-user teams while providing a streamlined individual workflow.
+- **Workspaces & Membership**: `workspaces` (UUID, `name`, `ownerId`, `isDefault`, timestamps), `workspace_members` (UUID, `workspaceId`, `userId`, `role`, `joinedAt`), and `workspace_invites` (UUID, `workspaceId`, `invitedBy`, `token`, `email`, `role`, `status`, `expiresAt`, timestamps) supporting multi-user collaboration via secure shareable links and extensible email invitations.
 - **Task Statuses & Workflow**: `task_statuses` (UUID, `workspaceId`, `name`, `color`, `category` (`todo`/`doing`/`done`), `order`, `isDefault`, timestamps) providing customizable board columns strictly scoped per workspace.
 - **Tasks & Recurrence**: Weekly scheduled, backlog, or kanban items strictly isolated by `workspaceId`, supporting a 1-level subtask hierarchy (`parentId`), `statusId` reference (with `set null` on status deletion), natural duration, and project/tag relations. Recurring routines are managed via `recurring_rules` using an on-demand window projection strategy.
 - **Documents & Attachments**: Rich-text workspace notes isolated by `workspaceId` and Cloudflare R2 file attachments linked polymorphically to tasks and docs.

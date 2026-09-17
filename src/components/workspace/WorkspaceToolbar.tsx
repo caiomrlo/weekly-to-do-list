@@ -17,6 +17,8 @@ export function WorkspaceToolbar({
   displayTitle,
   children,
 }: WorkspaceToolbarProps) {
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
+
   return (
     <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap w-full py-1">
       {/* Left: Workspace Selector + Separator + Member Avatars */}
@@ -33,7 +35,10 @@ export function WorkspaceToolbar({
         />
 
         {/* Member Avatars Stack */}
-        <WorkspaceMemberAvatars />
+        <WorkspaceMemberAvatars
+          workspaceId={activeWorkspaceId}
+          workspaceName={activeWorkspace?.name}
+        />
       </div>
 
       {/* Right: Contextual Controls & Display Title */}

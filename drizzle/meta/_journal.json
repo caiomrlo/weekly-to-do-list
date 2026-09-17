@@ -141,6 +141,13 @@
       "when": 1789505488231,
       "tag": "0019_icy_vapor",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789653341702,
+      "tag": "0020_freezing_silver_sable",
+      "breakpoints": true
     }
   ]
 }

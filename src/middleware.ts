@@ -8,15 +8,26 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = Boolean(sessionCookie);
 
   const isLoginPage = pathname === "/login" || pathname === "/login/";
+  const isInviteRoute = pathname.startsWith("/invite");
 
-  if (!isAuthenticated && !isLoginPage) {
+  if (!isAuthenticated && !isLoginPage && !isInviteRoute) {
     const loginUrl = new URL("/login", request.url);
+    if (pathname !== "/") {
+      loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
+    }
     return NextResponse.redirect(loginUrl);
   }
 
   if (isAuthenticated && isLoginPage) {
-    const homeUrl = new URL("/", request.url);
-    return NextResponse.redirect(homeUrl);
+    const redirectParam = request.nextUrl.searchParams.get("redirect");
+    const target =
+      redirectParam &&
+      redirectParam.startsWith("/") &&
+      !redirectParam.startsWith("//")
+        ? redirectParam
+        : "/";
+    const targetUrl = new URL(target, request.url);
+    return NextResponse.redirect(targetUrl);
   }
 
   return NextResponse.next();

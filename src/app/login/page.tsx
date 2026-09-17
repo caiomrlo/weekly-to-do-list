@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { loginAction, registerAction } from "@/app/actions/auth";
 import {
   CalendarDays,
@@ -12,10 +12,20 @@ import {
   EyeOff,
   Sparkles,
   Loader2,
+  Users,
 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect");
+  const redirectTarget =
+    rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/";
+
+  const isInvite = redirectTarget.startsWith("/invite");
+
   const [tab, setTab] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +46,7 @@ export default function LoginPage() {
       if (res.error) {
         setError(res.error);
       } else {
-        router.push("/");
+        router.push(redirectTarget);
         router.refresh();
       }
     });
@@ -62,6 +72,15 @@ export default function LoginPage() {
         </div>
 
         <div className="glass-panel rounded-3xl p-7 sm:p-9 border border-white/80 dark:border-slate-800">
+          {isInvite && (
+            <div className="mb-5 p-3 sm:p-3.5 bg-amber-50/90 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-900/60 text-amber-800 dark:text-amber-200 rounded-2xl flex items-start gap-2.5 text-xs sm:text-sm">
+              <Users className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <span>
+                Sign in or create an account to accept your workspace invitation.
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 p-1 bg-slate-100/70 dark:bg-slate-800/70 rounded-xl mb-6 text-sm font-medium text-slate-600 dark:text-slate-400">
             <button
               type="button"
@@ -187,5 +206,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
