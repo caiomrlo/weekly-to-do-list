@@ -2,18 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { logoutAction } from "@/app/actions/auth";
 import {
   CalendarDays,
   Sun,
   Moon,
-  LogOut,
 } from "lucide-react";
 import { BackgroundThemeId, UserPreferences, Workspace } from "@/db/schema";
 import { SettingsMenu } from "./SettingsMenu";
 import { NavTabs } from "./NavTabs";
+import { ProfileMenu } from "./ProfileMenu";
 import { WorkspaceToolbar } from "@/components/workspace/WorkspaceToolbar";
-import { UserAvatar } from "@/components/shared/UserAvatar";
 
 export interface AppHeaderProps {
   title?: React.ReactNode;
@@ -105,29 +103,14 @@ export function AppHeader({
           {/* Separator (visible on desktop) */}
           <div className="h-5 w-px bg-slate-200/80 dark:bg-slate-700/80 mx-0.5 hidden sm:block" />
 
-          {/* User Avatar Circle */}
-          <UserAvatar
-            size="md"
-            name={userName}
-            email={userEmail}
-            image={userImage}
-            color={userAvatarColor}
+          {/* User Profile Popover Menu */}
+          <ProfileMenu
+            userEmail={userEmail}
+            userName={userName}
+            userImage={userImage}
+            userAvatarColor={userAvatarColor}
             userId={userId}
-            className="w-8 h-8 text-xs shrink-0"
-            title={userEmail}
           />
-
-          {/* Logout Button */}
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 bg-white/60 hover:bg-rose-50/80 dark:bg-slate-800/60 dark:hover:bg-rose-950/50 rounded-xl border border-slate-200/70 dark:border-slate-700/70 transition-colors cursor-pointer flex items-center justify-center"
-              title="Log out"
-              aria-label="Log out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </form>
         </div>
       </div>
 
