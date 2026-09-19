@@ -28,7 +28,7 @@ import { AppHeader } from "@/components/header/AppHeader";
 import { TaskModal } from "@/components/task-modal/TaskModal";
 import { KanbanColumn } from "./KanbanColumn";
 import { StatusConfigModal } from "./StatusConfigModal";
-import { Plus } from "lucide-react";
+import { Plus, Repeat } from "lucide-react";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 
 export interface KanbanBoardProps {
@@ -61,6 +61,25 @@ export function KanbanBoard({
   );
   const [tasks, setTasks] = useState<TaskWithTag[]>(initialTasks);
   const [statuses, setStatuses] = useState<TaskStatus[]>(initialStatuses);
+  const [collapseRecurring, setCollapseRecurring] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("kanban_collapse_recurring");
+      if (saved !== null) {
+        return saved === "true";
+      }
+    }
+    return true;
+  });
+
+  const handleToggleCollapseRecurring = () => {
+    setCollapseRecurring((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("kanban_collapse_recurring", String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   // Task details modal state
   const [selectedTask, setSelectedTask] = useState<TaskWithTag | null>(null);
@@ -146,14 +165,76 @@ export function KanbanBoard({
     return sortedStatuses.find((s) => s.category === "done");
   }, [sortedStatuses]);
 
-  // Group tasks by status ID with fallback
+  // Group tasks by status ID with fallback and optional recurrence collapsing
   const tasksByStatus = useMemo(() => {
     const map = new Map<string, TaskWithTag[]>();
     for (const status of sortedStatuses) {
       map.set(status.id, []);
     }
 
-    for (const task of tasks) {
+    let candidateTasks = tasks;
+
+    if (collapseRecurring) {
+      const nonRecurring: TaskWithTag[] = [];
+      const recurringGroups = new Map<string, TaskWithTag[]>();
+
+      for (const task of tasks) {
+        if (!task.recurringRuleId) {
+          nonRecurring.push(task);
+        } else {
+          const group = recurringGroups.get(task.recurringRuleId) || [];
+          group.push(task);
+          recurringGroups.set(task.recurringRuleId, group);
+        }
+      }
+
+      const collapsedRecurring: TaskWithTag[] = [];
+
+      for (const group of recurringGroups.values()) {
+        const uncompleted: TaskWithTag[] = [];
+        const completed: TaskWithTag[] = [];
+
+        for (const task of group) {
+          const statusCat =
+            task.status?.category ||
+            (task.statusId && statuses.find((s) => s.id === task.statusId)?.category);
+          const isDone = task.completed || statusCat === "done";
+          if (isDone) {
+            completed.push(task);
+          } else {
+            uncompleted.push(task);
+          }
+        }
+
+        // Earliest uncompleted occurrence first (current/next upcoming task)
+        if (uncompleted.length > 0) {
+          uncompleted.sort((a, b) => {
+            const dateA = a.date || a.originalDate || "9999-99-99";
+            const dateB = b.date || b.originalDate || "9999-99-99";
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
+            return a.order - b.order;
+          });
+          collapsedRecurring.push(uncompleted[0]);
+        }
+
+        // Most recent completed occurrence (shown in Done column)
+        if (completed.length > 0) {
+          completed.sort((a, b) => {
+            const dateA = a.date || a.originalDate || "";
+            const dateB = b.date || b.originalDate || "";
+            if (dateA !== dateB) return dateB.localeCompare(dateA);
+            const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+            const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+            return timeB - timeA;
+          });
+          collapsedRecurring.push(completed[0]);
+        }
+      }
+
+      candidateTasks = [...nonRecurring, ...collapsedRecurring];
+    }
+
+    for (const task of candidateTasks) {
       let targetStatusId = task.statusId;
 
       if (!targetStatusId || !map.has(targetStatusId)) {
@@ -175,7 +256,7 @@ export function KanbanBoard({
     }
 
     return map;
-  }, [tasks, sortedStatuses, defaultStatus, defaultDoneStatus]);
+  }, [tasks, sortedStatuses, defaultStatus, defaultDoneStatus, collapseRecurring, statuses]);
 
   // Drag and Drop handlers
   const handleDragStart = (e: React.DragEvent, task: TaskWithTag) => {
@@ -495,14 +576,35 @@ export function KanbanBoard({
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
       >
-        <button
-          type="button"
-          onClick={handleOpenCreateStatus}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-xs shadow-amber-500/20 transition-all cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>New Column</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleCollapseRecurring}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer select-none ${
+              collapseRecurring
+                ? "bg-amber-500/10 border-amber-300/80 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
+                : "bg-white/80 dark:bg-slate-900/80 border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-900"
+            }`}
+            title={
+              collapseRecurring
+                ? "Showing only the next recurring task. Click to show all."
+                : "Showing all recurring tasks. Click to collapse."
+            }
+          >
+            <Repeat className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">
+              {collapseRecurring ? "Next only" : "All repeats"}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenCreateStatus}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-xs shadow-amber-500/20 transition-all cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Column</span>
+          </button>
+        </div>
       </AppHeader>
 
       {/* Main Kanban Board Canvas */}

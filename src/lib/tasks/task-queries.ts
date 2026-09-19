@@ -15,6 +15,8 @@ import { alias } from "drizzle-orm/pg-core";
 import { TaskJoinRow } from "./task-types";
 import { batchFetchTaskAssignees } from "./task-assignees";
 import { projectRecurringTasksForWindow } from "./task-recurrence";
+import { toDateString } from "@/lib/date-utils";
+import { addDaysToStr } from "@/lib/recurrence-utils";
 
 export async function hydrateTaskRows(
   rows: TaskJoinRow[]
@@ -154,6 +156,11 @@ export async function getKanbanTasksInternal(
   userId: string,
   workspaceId: string
 ): Promise<TaskWithTag[]> {
+  const todayStr = toDateString(new Date());
+  const startDate = addDaysToStr(todayStr, -7);
+  const endDate = addDaysToStr(todayStr, 14);
+  await projectRecurringTasksForWindow(userId, workspaceId, startDate, endDate);
+
   const rows = await db
     .select({
       task: tasks,

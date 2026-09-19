@@ -14,6 +14,7 @@ import {
   CheckSquare,
   Paperclip,
   FileText,
+  Repeat,
 } from "lucide-react";
 
 export interface KanbanCardProps {
@@ -144,6 +145,23 @@ export function KanbanCard({
               >
                 <Calendar className="w-2.5 h-2.5" />
                 <span>{task.date}</span>
+              </span>
+            )}
+
+            {/* Recurring Badge */}
+            {task.recurringRuleId && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-50/80 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60"
+                title={
+                  task.recurringRule?.frequency
+                    ? `Recurring: ${task.recurringRule.frequency}`
+                    : "Recurring task"
+                }
+              >
+                <Repeat className="w-2.5 h-2.5 shrink-0" />
+                {task.recurringRule?.frequency && (
+                  <span className="capitalize">{task.recurringRule.frequency}</span>
+                )}
               </span>
             )}
 
