@@ -4,6 +4,7 @@ import { getKanbanTasksAction } from "@/app/actions/tasks";
 import { getWorkspaceTaskStatusesAction } from "@/app/actions/task-statuses";
 import { getUserPreferencesAction } from "@/app/actions/user";
 import { getUserWorkspacesAction } from "@/app/actions/workspaces";
+import { getUserProjectsAction } from "@/app/actions/projects";
 import { DEFAULT_USER_PREFERENCES } from "@/db/schema";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 
@@ -14,11 +15,12 @@ export default async function KanbanPage() {
     redirect("/login");
   }
 
-  const [taskRes, statusRes, prefRes, workspacesRes] = await Promise.all([
+  const [taskRes, statusRes, prefRes, workspacesRes, projectRes] = await Promise.all([
     getKanbanTasksAction(),
     getWorkspaceTaskStatusesAction(),
     getUserPreferencesAction(),
     getUserWorkspacesAction(),
+    getUserProjectsAction(),
   ]);
 
   const initialTasks = taskRes.tasks || [];
@@ -26,12 +28,14 @@ export default async function KanbanPage() {
   const initialPreferences = prefRes.preferences || DEFAULT_USER_PREFERENCES;
   const workspaces = workspacesRes.workspaces || [];
   const activeWorkspaceId = workspacesRes.activeWorkspaceId || "";
+  const initialProjects = projectRes.projects || [];
 
   return (
     <KanbanBoard
       key={activeWorkspaceId}
       initialTasks={initialTasks}
       initialStatuses={initialStatuses}
+      initialProjects={initialProjects}
       userEmail={session.email}
       userName={session.name}
       userImage={session.image}

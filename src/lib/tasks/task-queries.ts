@@ -157,8 +157,8 @@ export async function getKanbanTasksInternal(
   workspaceId: string
 ): Promise<TaskWithTag[]> {
   const todayStr = toDateString(new Date());
-  const startDate = addDaysToStr(todayStr, -7);
-  const endDate = addDaysToStr(todayStr, 14);
+  const startDate = addDaysToStr(todayStr, -35);
+  const endDate = addDaysToStr(todayStr, 35);
   await projectRecurringTasksForWindow(userId, workspaceId, startDate, endDate);
 
   const rows = await db

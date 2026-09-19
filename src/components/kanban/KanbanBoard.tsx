@@ -28,12 +28,20 @@ import { AppHeader } from "@/components/header/AppHeader";
 import { TaskModal } from "@/components/task-modal/TaskModal";
 import { KanbanColumn } from "./KanbanColumn";
 import { StatusConfigModal } from "./StatusConfigModal";
-import { Plus, Repeat } from "lucide-react";
+import { KanbanFilters } from "./KanbanFilters";
+import {
+  KanbanDateFilter,
+  KanbanProjectFilter,
+  filterKanbanTasks,
+} from "@/lib/kanban-filter-utils";
+import { Plus } from "lucide-react";
+import { useLocalStorage } from "@/lib/hooks/useLocalStorage";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 
 export interface KanbanBoardProps {
   initialTasks: TaskWithTag[];
   initialStatuses: TaskStatus[];
+  initialProjects?: Project[];
   userEmail: string;
   userName?: string;
   userImage?: string | null;
@@ -47,6 +55,7 @@ export interface KanbanBoardProps {
 export function KanbanBoard({
   initialTasks,
   initialStatuses,
+  initialProjects,
   userEmail,
   userName,
   userImage,
@@ -61,25 +70,18 @@ export function KanbanBoard({
   );
   const [tasks, setTasks] = useState<TaskWithTag[]>(initialTasks);
   const [statuses, setStatuses] = useState<TaskStatus[]>(initialStatuses);
-  const [collapseRecurring, setCollapseRecurring] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("kanban_collapse_recurring");
-      if (saved !== null) {
-        return saved === "true";
-      }
-    }
-    return true;
-  });
+  const collapseRecurring = true;
 
-  const handleToggleCollapseRecurring = () => {
-    setCollapseRecurring((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("kanban_collapse_recurring", String(next));
-      } catch {}
-      return next;
-    });
-  };
+  const [projects, setProjects] = useState<Project[]>(initialProjects || []);
+  const [selectedProjectId, handleSelectProject] = useLocalStorage<KanbanProjectFilter>(
+    "kanban_project_filter",
+    "all"
+  );
+  const [dateFilter, handleSelectDateFilter] = useLocalStorage<KanbanDateFilter>(
+    "kanban_date_filter",
+    "default",
+    (val) => ["default", "this_week", "this_month", "all"].includes(val)
+  );
 
   // Task details modal state
   const [selectedTask, setSelectedTask] = useState<TaskWithTag | null>(null);
@@ -172,13 +174,18 @@ export function KanbanBoard({
       map.set(status.id, []);
     }
 
-    let candidateTasks = tasks;
+    const filteredTasks = filterKanbanTasks(tasks, {
+      dateFilter,
+      projectFilter: selectedProjectId,
+    });
+
+    let candidateTasks = filteredTasks;
 
     if (collapseRecurring) {
       const nonRecurring: TaskWithTag[] = [];
       const recurringGroups = new Map<string, TaskWithTag[]>();
 
-      for (const task of tasks) {
+      for (const task of filteredTasks) {
         if (!task.recurringRuleId) {
           nonRecurring.push(task);
         } else {
@@ -256,7 +263,16 @@ export function KanbanBoard({
     }
 
     return map;
-  }, [tasks, sortedStatuses, defaultStatus, defaultDoneStatus, collapseRecurring, statuses]);
+  }, [
+    tasks,
+    sortedStatuses,
+    defaultStatus,
+    defaultDoneStatus,
+    collapseRecurring,
+    statuses,
+    dateFilter,
+    selectedProjectId,
+  ]);
 
   // Drag and Drop handlers
   const handleDragStart = (e: React.DragEvent, task: TaskWithTag) => {
@@ -410,9 +426,15 @@ export function KanbanBoard({
   // Quick task creation
   const handleQuickAddTask = async (title: string, statusId: string) => {
     try {
+      const assignedProjectId =
+        selectedProjectId !== "all" && selectedProjectId !== "none"
+          ? selectedProjectId
+          : undefined;
+
       const res = await createTaskAction({
         title,
         statusId,
+        projectId: assignedProjectId,
         workspaceId: activeWorkspaceId,
       });
 
@@ -488,6 +510,13 @@ export function KanbanBoard({
   };
 
   const handleProjectUpdated = (updatedProject: Project) => {
+    setProjects((prev) => {
+      const exists = prev.some((p) => p.id === updatedProject.id);
+      if (exists) {
+        return prev.map((p) => (p.id === updatedProject.id ? updatedProject : p));
+      }
+      return [...prev, updatedProject];
+    });
     setTasks((prev) =>
       prev.map((t) =>
         t.projectId === updatedProject.id
@@ -576,26 +605,15 @@ export function KanbanBoard({
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
       >
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleToggleCollapseRecurring}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer select-none ${
-              collapseRecurring
-                ? "bg-amber-500/10 border-amber-300/80 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
-                : "bg-white/80 dark:bg-slate-900/80 border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-900"
-            }`}
-            title={
-              collapseRecurring
-                ? "Showing only the next recurring task. Click to show all."
-                : "Showing all recurring tasks. Click to collapse."
-            }
-          >
-            <Repeat className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">
-              {collapseRecurring ? "Next only" : "All repeats"}
-            </span>
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <KanbanFilters
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            onSelectProject={handleSelectProject}
+            dateFilter={dateFilter}
+            onSelectDateFilter={handleSelectDateFilter}
+          />
+
           <button
             type="button"
             onClick={handleOpenCreateStatus}
