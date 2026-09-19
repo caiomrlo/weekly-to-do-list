@@ -180,6 +180,15 @@ function TaskModalDialog({
     }
   }, [task.recurringRuleId, currentRule, hasFieldEdits, onClose]);
 
+  // Prevent page scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Handle escape key to close modal
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
