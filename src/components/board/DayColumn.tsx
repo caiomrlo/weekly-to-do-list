@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { TaskWithTag } from "@/db/schema";
 import { useBoardDnD } from "./hooks/useBoardDnD";
 import { TaskCard } from "./TaskCard";
+import { TaskSubtasksList } from "./TaskSubtasksList";
 import { Plus } from "lucide-react";
 
 export interface DayInfo {
@@ -47,6 +49,15 @@ export function DayColumn({
     handleDrop,
   } = dnd;
   const completedCount = tasks.filter((t) => t.completed).length;
+
+  const [collapsedParentIds, setCollapsedParentIds] = useState<Record<string, boolean>>({});
+
+  const handleToggleSubtasks = (taskId: string) => {
+    setCollapsedParentIds((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
+  };
 
   const mainTasks = tasks.filter((t) => !t.parentId);
   const diffDaySubtasks = tasks.filter(
@@ -116,29 +127,28 @@ export function DayColumn({
                 onDrop={handleDrop}
                 onOpenTask={onOpenTask}
                 onToggleCompleted={onToggleCompleted}
+                onToggleSubtasks={
+                  sameDaySubtasks.length > 0
+                    ? () => handleToggleSubtasks(mainTask.id)
+                    : undefined
+                }
+                isSubtasksCollapsed={Boolean(collapsedParentIds[mainTask.id])}
               />
 
-              {/* Same day subtasks nested with left indent */}
-              {sameDaySubtasks.length > 0 && (
-                <div className="ml-4 space-y-1.5 my-1">
-                  {sameDaySubtasks.map((sub) => (
-                    <TaskCard
-                      key={sub.id}
-                      task={sub}
-                      isSameDaySubtask={true}
-                      draggedTaskId={draggedTaskId}
-                      draggedTask={draggedTask}
-                      dropTarget={dropTarget}
-                      onDragStart={handleDragStart}
-                      onDragEnd={handleDragEnd}
-                      onCardDragOver={handleCardDragOver}
-                      onDrop={handleDrop}
-                      onOpenTask={onOpenTask}
-                      onToggleCompleted={onToggleCompleted}
-                    />
-                  ))}
-                </div>
-              )}
+              {/* Same day subtasks nested with limit and progressive disclosure */}
+              <TaskSubtasksList
+                subtasks={sameDaySubtasks}
+                draggedTaskId={draggedTaskId}
+                draggedTask={draggedTask}
+                dropTarget={dropTarget}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onCardDragOver={handleCardDragOver}
+                onDrop={handleDrop}
+                onOpenTask={onOpenTask}
+                onToggleCompleted={onToggleCompleted}
+                isCollapsed={Boolean(collapsedParentIds[mainTask.id])}
+              />
             </div>
           );
         })}

@@ -41,6 +41,8 @@ interface TaskCardProps {
   ) => void;
   onOpenTask: (taskOrId: TaskWithTag | string) => void;
   onToggleCompleted: (e: React.MouseEvent, task: TaskWithTag) => void;
+  onToggleSubtasks?: (e: React.MouseEvent) => void;
+  isSubtasksCollapsed?: boolean;
 }
 
 export function TaskCard({
@@ -57,6 +59,8 @@ export function TaskCard({
   onDrop,
   onOpenTask,
   onToggleCompleted,
+  onToggleSubtasks,
+  isSubtasksCollapsed,
 }: TaskCardProps) {
   const projectStyles = task.project ? getProjectColorStyles(task.project.color) : null;
   const isDragging = draggedTaskId === task.id;
@@ -199,28 +203,60 @@ export function TaskCard({
 
             {/* Subtask progress count badge for main tasks */}
             {Boolean(task.subtaskCount != null && task.subtaskCount > 0) && (
-              <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
-                  task.completed ||
-                  task.completedSubtaskCount === task.subtaskCount
-                    ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                    : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
-                }`}
-                title={`Subtasks: ${task.completedSubtaskCount || 0} of ${
-                  task.subtaskCount
-                } completed`}
-              >
-                <ListTree
-                  className={`w-2.5 h-2.5 ${
-                    task.completed
-                      ? "text-slate-400 dark:text-slate-500"
-                      : "text-amber-500"
+              onToggleSubtasks ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleSubtasks(e);
+                  }}
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs cursor-pointer hover:ring-1 hover:ring-amber-400/50 transition-all ${
+                    task.completed ||
+                    task.completedSubtaskCount === task.subtaskCount
+                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                      : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                   }`}
-                />
-                <span>
-                  {task.completedSubtaskCount || 0}/{task.subtaskCount}
+                  title={
+                    isSubtasksCollapsed
+                      ? `Subtasks (${task.completedSubtaskCount || 0}/${task.subtaskCount}) - Click to expand`
+                      : `Subtasks (${task.completedSubtaskCount || 0}/${task.subtaskCount}) - Click to collapse`
+                  }
+                >
+                  <ListTree
+                    className={`w-2.5 h-2.5 ${
+                      task.completed
+                        ? "text-slate-400 dark:text-slate-500"
+                        : "text-amber-500"
+                    }`}
+                  />
+                  <span>
+                    {task.completedSubtaskCount || 0}/{task.subtaskCount}
+                  </span>
+                </button>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
+                    task.completed ||
+                    task.completedSubtaskCount === task.subtaskCount
+                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                      : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
+                  }`}
+                  title={`Subtasks: ${task.completedSubtaskCount || 0} of ${
+                    task.subtaskCount
+                  } completed`}
+                >
+                  <ListTree
+                    className={`w-2.5 h-2.5 ${
+                      task.completed
+                        ? "text-slate-400 dark:text-slate-500"
+                        : "text-amber-500"
+                    }`}
+                  />
+                  <span>
+                    {task.completedSubtaskCount || 0}/{task.subtaskCount}
+                  </span>
                 </span>
-              </span>
+              )
             )}
 
             {/* Attachment count badge */}

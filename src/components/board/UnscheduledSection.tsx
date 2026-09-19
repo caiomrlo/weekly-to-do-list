@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { TaskWithTag } from "@/db/schema";
 import { useBoardDnD } from "./hooks/useBoardDnD";
 import { TaskCard } from "./TaskCard";
+import { TaskSubtasksList } from "./TaskSubtasksList";
 import { CalendarOff, ChevronDown, Plus } from "lucide-react";
 
 interface UnscheduledSectionProps {
@@ -45,6 +47,15 @@ export function UnscheduledSection({
   const isUnscheduledDropTarget =
     dropTarget?.dateStr === "unscheduled" &&
     (dropTarget.position === "column" || !dropTarget.targetTaskId);
+
+  const [collapsedParentIds, setCollapsedParentIds] = useState<Record<string, boolean>>({});
+
+  const handleToggleSubtasks = (taskId: string) => {
+    setCollapsedParentIds((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
+  };
 
   return (
     <section className="mt-6 glass-panel rounded-3xl p-5 sm:p-6 border border-white/80 dark:border-slate-800 shadow-sm transition-all">
@@ -119,30 +130,28 @@ export function UnscheduledSection({
                       onDrop={handleDrop}
                       onOpenTask={onOpenTask}
                       onToggleCompleted={onToggleCompleted}
+                      onToggleSubtasks={
+                        subtasksOfMain.length > 0
+                          ? () => handleToggleSubtasks(mainTask.id)
+                          : undefined
+                      }
+                      isSubtasksCollapsed={Boolean(collapsedParentIds[mainTask.id])}
                     />
 
-                    {/* Subtasks */}
-                    {subtasksOfMain.length > 0 && (
-                      <div className="ml-4 space-y-1.5 my-1">
-                        {subtasksOfMain.map((sub) => (
-                          <TaskCard
-                            key={sub.id}
-                            task={sub}
-                            isSameDaySubtask={true}
-                            scheduledDate={sub.date}
-                            draggedTaskId={draggedTaskId}
-                            draggedTask={draggedTask}
-                            dropTarget={dropTarget}
-                            onDragStart={handleDragStart}
-                            onDragEnd={handleDragEnd}
-                            onCardDragOver={handleCardDragOver}
-                            onDrop={handleDrop}
-                            onOpenTask={onOpenTask}
-                            onToggleCompleted={onToggleCompleted}
-                          />
-                        ))}
-                      </div>
-                    )}
+                    {/* Subtasks with limit and progressive disclosure */}
+                    <TaskSubtasksList
+                      subtasks={subtasksOfMain}
+                      draggedTaskId={draggedTaskId}
+                      draggedTask={draggedTask}
+                      dropTarget={dropTarget}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      onCardDragOver={handleCardDragOver}
+                      onDrop={handleDrop}
+                      onOpenTask={onOpenTask}
+                      onToggleCompleted={onToggleCompleted}
+                      isCollapsed={Boolean(collapsedParentIds[mainTask.id])}
+                    />
                   </div>
                 );
               })}
