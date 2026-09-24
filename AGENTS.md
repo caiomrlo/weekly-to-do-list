@@ -38,7 +38,6 @@ Always validate your changes before considering a task completed:
 - **Be Self-Critical When Updating [ARCHITECTURE.md](./ARCHITECTURE.md)**: When the user requests an update or after implementing changes, critically evaluate whether an update is truly warranted.
 - **Do NOT update for trivial changes**: Minor bug fixes, cosmetic styling adjustments, small copy tweaks, or internal component logic tweaks that do not change system design should not trigger an architecture document rewrite.
 - **DO update for significant architectural changes**:
-  - New or modified database tables, schema relations, or migration strategies.
   - New core architectural layers, major feature modules, or routes.
   - Changes in authentication, session management, or authorization strategies.
   - Introduction of new infrastructure components, external integrations, services, or significant package additions.

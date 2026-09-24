@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Weekly To-Do List** is a modern, responsive web application for weekly task management. Built with a **Modular Full-Stack Monolith** architecture utilizing **Next.js 16 (App Router)**, **React 19**, **Drizzle ORM**, and **PostgreSQL 17**, the application delivers a clean, glassmorphic light-themed user interface focused on cognitive simplicity, zero timezone drift, and seamless productivity.
+**Weekly To-Do List** is a weekly task management web application built as a **Modular Full-Stack Monolith** using **Next.js 16 (App Router)**, **React 19**, **Drizzle ORM**, and **PostgreSQL 17**.
 
 ---
 
@@ -22,94 +22,9 @@ High-signal architectural boundaries and folder responsibilities:
 
 ---
 
-## 2. High-Level System Diagram
+## 2. Core Components
 
-```mermaid
-flowchart TD
-    User["👤 User (Web Browser)"]
-
-    subgraph EdgeLayer["Edge / Middleware Layer"]
-        Middleware["🛡️ Next.js Middleware (middleware.ts)\nSession Cookie Verification via Better Auth"]
-    end
-
-    subgraph AppLayer["Next.js 16 Application Layer"]
-        subgraph UI["Frontend UI (React 19)"]
-            LoginPage["/login (LoginPage)"]
-            WeeklyBoard["/ (WeeklyBoard Component)"]
-            KanbanBoard["/kanban (KanbanBoard Component)"]
-            DocsWorkspace["/docs (DocsWorkspace Component)"]
-            WorkspaceSelector["WorkspaceSelector (Switch, Create, Rename & Delete)"]
-            TaskModal["TaskModal (Project & Status Selector, Attachments, Docs & Auto-Save)"]
-        end
-
-        subgraph ServerActions["Server Actions (app/actions/*)"]
-            AuthActions["Auth Actions\n(login, register, logout)"]
-            WorkspaceActions["Workspace Actions\n(getUserWorkspaces, createWorkspace, renameWorkspace, deleteWorkspace, switchWorkspace)"]
-            InviteActions["Workspace Invite Actions\n(getInviteLink, toggleInviteLink, regenerateInviteLink, getMembers)"]
-            DocActions["Doc Actions\n(getDocs, getDocById, createDoc, updateDoc, deleteDoc, link/unlink)"]
-            ProjectActions["Project Actions\n(getProjects, createProject, deleteProject)"]
-            TagActions["Tag Actions (Backend)\n(getTags, createTag, deleteTag)"]
-            TaskStatusActions["Status Actions\n(getStatuses, createStatus, updateStatus, deleteStatus, reorderStatuses)"]
-            TaskActions["Task Actions\n(create, update, toggle, delete, move/reorder, moveKanban, query with projects/tags/statuses)"]
-            UserActions["User Actions\n(getPreferences, updatePreferences, updateProfile)"]
-        end
-
-        subgraph Lib["Core Utilities (src/lib/*)"]
-            AuthLib["Auth Lib (Better Auth + Drizzle Adapter)"]
-            WorkspaceLib["Workspace Lib (Active Context Resolution & Auto-Provisioning)"]
-            DateUtils["Date Utils (ISO YYYY-MM-DD)"]
-            ProjectUtils["Project Utils (Palette Styles & Tokens)"]
-            TagUtils["Tag Utils (Palette Styles & Tokens)"]
-            StatusUtils["Status Utils (Palette Styles & Tokens)"]
-            AvatarUtils["Avatar Utils (Palette Styles & Deterministic Fallback)"]
-            TaskServices["Task Domain Services (src/lib/tasks/*)\n(Queries & Hydration, Mutations, Recurrence, Reorder, Cleanup, Assignees)"]
-        end
-    end
-
-    subgraph DataLayer["Persistence Layer"]
-        Drizzle["Drizzle ORM (node-postgres pool)"]
-        Postgres[("🐘 PostgreSQL 17 (weekly_todo_db)\n• users\n• workspaces\n• workspace_members\n• workspace_invites\n• task_statuses\n• projects\n• tags\n• tasks\n• task_assignees\n• recurring_rules\n• attachments\n• docs\n• task_docs")]
-    end
-
-    %% Flow connections
-    User -->|"HTTP Request"| Middleware
-    Middleware -->|"Authorized (Cookie Valid)"| WeeklyBoard
-    Middleware -->|"Authorized (Cookie Valid)"| KanbanBoard
-    Middleware -->|"Authorized (Cookie Valid)"| DocsWorkspace
-    Middleware -->|"Unauthorized"| LoginPage
-    LoginPage -->|"Submit Credentials"| AuthActions
-    AuthActions --> AuthLib
-    AuthActions --> WorkspaceLib
-    AuthActions --> Drizzle
-    WeeklyBoard -->|"Switch / Manage Workspaces"| WorkspaceActions
-    WeeklyBoard -->|"Manage Tasks / Navigate Weeks"| TaskActions
-    WeeklyBoard -->|"Toggle Visible Days"| UserActions
-    WeeklyBoard --> TaskModal
-    KanbanBoard -->|"Manage Column Statuses"| TaskStatusActions
-    KanbanBoard -->|"Move / Reorder Tasks"| TaskActions
-    KanbanBoard --> TaskModal
-    DocsWorkspace -->|"Manage Documents & Notes"| DocActions
-    DocsWorkspace -->|"Switch / Manage Workspaces"| WorkspaceActions
-    TaskModal -->|"Manage Projects & Statuses"| ProjectActions
-    TaskModal -->|"Debounced Auto-Save"| TaskActions
-    TaskModal -->|"Link & Create Notes"| DocActions
-    WorkspaceActions --> Drizzle
-    DocActions --> Drizzle
-    WeeklyBoard --> DateUtils
-    WeeklyBoard --> ProjectUtils
-    TaskActions --> Drizzle
-    TaskStatusActions --> Drizzle
-    ProjectActions --> Drizzle
-    TagActions --> Drizzle
-    UserActions --> Drizzle
-    Drizzle -->|"SQL Queries / Migrations"| Postgres
-```
-
----
-
-## 3. Core Components
-
-### 3.1. Frontend (`src/components/`, `src/app/`)
+### 2.1. Frontend (`src/components/`, `src/app/`)
 - **Stack**: Next.js (App Router), React 19, Tailwind CSS v4 (custom glassmorphism design tokens), `lucide-react`.
 - **Main Views & Components**:
   - **`WeeklyBoard` (`src/components/WeeklyBoard.tsx`)**: Interactive weekly planner with HTML5 Drag & Drop, subtask nesting/reordering, week navigation, day visibility toggles, and persistent unscheduled backlog panel.
@@ -121,7 +36,7 @@ flowchart TD
   - **`LoginPage` (`src/app/login/page.tsx`)**: Authentication card (login and registration with password visibility toggles, preserved post-auth redirect navigation, and contextual invite notifications).
 - **UX Principles**: Inline grouping over deep card nesting, zero redundant labels/clutter, progressive disclosure via popovers, and transient mutation feedback (`Saving...`).
 
-### 3.2. Backend & API (`src/app/actions/`, `src/app/api/`)
+### 2.2. Backend & API (`src/app/actions/`, `src/app/api/`)
 - **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `workspace-invites`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` (preferences, avatar upload & deletion, profile updates).
 - **Route Handlers (`src/app/api/`, `src/app/invite/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access; `avatar/[id]` serves unauthenticated public WebP user avatars with immutable HTTP caching or redirects to `R2_PUBLIC_URL`; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`; `invite/[token]` validates invite tokens, auto-joins authenticated users, updates active workspace cookies, and handles unauthenticated auth redirects.
 - **Middleware (`src/middleware.ts`)**: Edge runtime session cookie validation (`better-auth/cookies`) protecting root and authentication routes with redirect parameter preservation.
@@ -129,27 +44,22 @@ flowchart TD
 
 ---
 
-## 4. Data Stores & Persistence
+## 3. Data Stores & Persistence
 
-### 4.1. Primary Database & ORM
+### 3.1. Primary Database & ORM
 - **Engine**: PostgreSQL 17 (Alpine container).
 - **ORM & Migrations**: Drizzle ORM (`drizzle-orm/node-postgres`) with Drizzle Kit (`npm run db:generate`, `npm run db:migrate`).
 - **Connection Pool**: Cached connection pooling in development.
 
-### 4.2. Domain Models & Schema
+### 3.2. Domain Models & Schema
 
-The data model enforces strict workspace multi-tenancy scoped to the active workspace (`tasks.workspaceId`, `docs.workspaceId`, `projects.workspaceId`, `tags.workspaceId`, `taskStatuses.workspaceId`, `recurringRules.workspaceId`):
-- **Authentication & Sessions**: Better Auth managed tables (`users`, `sessions`, `accounts`, `verifications`) with custom user fields (`preferences`, `avatar_color`, `last_login_at`) and UUID primary keys.
-- **Workspaces & Membership**: `workspaces` (UUID, `name`, `ownerId`, `isDefault`, timestamps), `workspace_members` (UUID, `workspaceId`, `userId`, `role`, `joinedAt`), and `workspace_invites` (UUID, `workspaceId`, `invitedBy`, `token`, `email`, `role`, `status`, `expiresAt`, timestamps) supporting multi-user collaboration via secure shareable links and extensible email invitations.
-- **Task Statuses & Workflow**: `task_statuses` (UUID, `workspaceId`, `name`, `color`, `category` (`todo`/`doing`/`done`), `order`, `isDefault`, timestamps) providing customizable board columns strictly scoped per workspace.
-- **Tasks, Recurrence & Assignees**: Weekly scheduled, backlog, or kanban items strictly isolated by `workspaceId`, supporting a 1-level subtask hierarchy (`parentId`), `statusId` reference (with `set null` on status deletion), natural duration, and project/tag relations. Workspace member collaboration is enabled through `task_assignees` (UUID, `taskId`, `userId`, `assignedAt`) linking tasks to active workspace members with cascade cleanup. Recurring routines are managed via `recurring_rules` using an on-demand window projection strategy.
-- **Documents & Attachments**: Rich-text workspace notes isolated by `workspaceId` and Cloudflare R2 file attachments linked polymorphically to tasks and docs.
+The data model enforces strict workspace multi-tenancy across all core domain entities (tasks, documents, projects, tags, statuses, and recurring rules). Key patterns include single-level subtask hierarchies, member task assignments, on-demand recurrence projections, and polymorphic Cloudflare R2 attachments.
 
 > **Single Source of Truth**: All table schemas, foreign key constraints, indexes, and Drizzle relational mappings are defined strictly in [`src/db/schema.ts`](./src/db/schema.ts). Always inspect that file directly before writing database queries or migrations.
 
 ---
 
-## 5. External Integrations & APIs
+## 4. External Integrations & APIs
 
 - **Object Storage (Cloudflare R2)**:
   - S3-compatible cloud object storage without egress fees.
@@ -161,12 +71,10 @@ The data model enforces strict workspace multi-tenancy scoped to the active work
 
 ---
 
-## 6. Security & Authentication
+## 5. Security & Authentication
 
 - **Authentication Mechanism**: Session-based authentication managed by **Better Auth** (`better-auth` + `@better-auth/drizzle-adapter`). Session tokens stored in signed, HTTP-only, `SameSite=Lax`, secure cookies (`better-auth.session_token`).
 - **Session & Account Storage**: Persisted in PostgreSQL database tables (`sessions`, `accounts`, `verifications`, and `users`), using UUID primary keys and standard Drizzle schema relations.
 - **Password Security**: Managed internally by Better Auth via standard one-way password hashing (Scrypt/bcrypt).
 - **Edge Middleware Protection**: Fast cookie presence check via `getSessionCookie(request)` from `better-auth/cookies` without cold-start database roundtrips on edge route transitions.
 - **Multi-Tenant Data Protection & Isolation**: All task, document, project, tag, and recurring rule queries and mutations strictly verify workspace membership and user session ownership via `getActiveWorkspaceContext(session.userId)` and enforce cascade deletion upon workspace or user removal.
-
-
