@@ -64,5 +64,22 @@ vi.mock("@/lib/r2", async (importOriginal) => {
       async (filePath: string, _expires?: number, fileName?: string) =>
         `https://signed-download.r2.test/${filePath}?name=${fileName || ""}`
     ),
+    getR2Object: vi.fn(async () => {
+      const sampleText = "%PDF-1.4 sample stream";
+      const bytes = new TextEncoder().encode(sampleText);
+      return {
+        Body: {
+          transformToWebStream: () =>
+            new ReadableStream({
+              start(controller) {
+                controller.enqueue(bytes);
+                controller.close();
+              },
+            }),
+          transformToByteArray: async () => bytes,
+        },
+        ContentLength: bytes.length,
+      };
+    }),
   };
 });

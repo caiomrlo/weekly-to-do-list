@@ -131,4 +131,60 @@ describe("Integration: API Route /api/attachments/[id]", () => {
     const location = res.headers.get("location");
     expect(location).toContain(`files/${attId}/thumb.webp`);
   });
+
+  it("should stream inline PDF with strict sandbox and nosniff headers", async () => {
+    userA = await createTestUser();
+    await loginAsTestUser(userA);
+
+    const attId = randomUUID();
+    await db.insert(attachments).values({
+      id: attId,
+      userId: userA.id,
+      fileName: "document.pdf",
+      filePath: `files/${attId}/document.pdf`,
+      contentType: "application/pdf",
+      fileSize: 1024,
+    });
+
+    const req = new NextRequest(`http://localhost:3000/api/attachments/${attId}`);
+    const res = await GET(req, {
+      params: Promise.resolve({ id: attId }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/pdf");
+    expect(res.headers.get("content-security-policy")).toBe("sandbox");
+    expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(res.headers.get("content-disposition")).toBe('inline; filename="document.pdf"');
+
+    const text = await res.text();
+    expect(text).toContain("%PDF-1.4 sample stream");
+  });
+
+  it("should redirect to signed download URL for PDF when ?download=1 is specified", async () => {
+    userA = await createTestUser();
+    await loginAsTestUser(userA);
+
+    const attId = randomUUID();
+    await db.insert(attachments).values({
+      id: attId,
+      userId: userA.id,
+      fileName: "document.pdf",
+      filePath: `files/${attId}/document.pdf`,
+      contentType: "application/pdf",
+      fileSize: 1024,
+    });
+
+    const req = new NextRequest(
+      `http://localhost:3000/api/attachments/${attId}?download=1`
+    );
+    const res = await GET(req, {
+      params: Promise.resolve({ id: attId }),
+    });
+
+    expect(res.status).toBe(307);
+    const location = res.headers.get("location");
+    expect(location).toContain("signed-download.r2.test");
+    expect(location).toContain(`files/${attId}/document.pdf`);
+  });
 });

@@ -20,14 +20,10 @@ import { eq, and, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import sharp from "sharp";
-
-const ALLOWED_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "application/pdf",
-]);
+import {
+  validateFileBuffer,
+  ALLOWED_ATTACHMENT_MIME_TYPES,
+} from "@/lib/file-validation";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -132,13 +128,6 @@ export async function uploadAttachmentAction(
     return { error: "No file provided." };
   }
 
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    return {
-      error:
-        "Unsupported format. Only images (PNG, JPG, WebP, GIF) and PDF documents are allowed.",
-    };
-  }
-
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return {
       error: `The file exceeds the maximum allowed limit of ${
@@ -146,6 +135,33 @@ export async function uploadAttachmentAction(
       }MB.`,
     };
   }
+
+  // Fast pre-check if client explicitly advertises an unsupported MIME type
+  if (file.type && !ALLOWED_ATTACHMENT_MIME_TYPES.has(file.type)) {
+    return {
+      error:
+        "Unsupported format. Only images (PNG, JPG, WebP, GIF) and PDF documents are allowed.",
+    };
+  }
+
+  let buffer: Buffer;
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    buffer = Buffer.from(arrayBuffer);
+  } catch {
+    return { error: "Failed to read file." };
+  }
+
+  // Authoritative server-side validation using magic bytes
+  const validation = await validateFileBuffer(buffer, ALLOWED_ATTACHMENT_MIME_TYPES);
+  if (!validation.valid) {
+    return {
+      error:
+        "Unsupported format. Only images (PNG, JPG, WebP, GIF) and PDF documents are allowed.",
+    };
+  }
+
+  const validatedMime = validation.mime;
 
   if (validTaskId) {
     const [task] = await db
@@ -176,12 +192,9 @@ export async function uploadAttachmentAction(
   let thumbnailPath: string | null = null;
 
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    await uploadToR2(filePath, buffer, validatedMime);
 
-    await uploadToR2(filePath, buffer, file.type);
-
-    if (file.type.startsWith("image/")) {
+    if (validatedMime.startsWith("image/")) {
       try {
         const thumbBuffer = await sharp(buffer)
           .resize({
@@ -214,7 +227,7 @@ export async function uploadAttachmentAction(
           fileName: file.name,
           filePath,
           thumbnailPath,
-          contentType: file.type,
+          contentType: validatedMime,
           fileSize: file.size,
         })
         .returning();

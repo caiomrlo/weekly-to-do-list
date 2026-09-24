@@ -157,6 +157,20 @@ describe("Integration: User Preferences Actions", () => {
       expect(res.error).toContain("Unsupported format");
     });
 
+    it("should reject spoofed avatar when client MIME is image/png but bytes are not an image", async () => {
+      testUser = await createTestUser();
+      await loginAsTestUser(testUser);
+
+      const formData = new FormData();
+      const spoofedFile = new File([Buffer.from("malicious executable or text")], "avatar.png", {
+        type: "image/png",
+      });
+      formData.append("file", spoofedFile);
+
+      const res = await uploadUserAvatarAction(formData);
+      expect(res.error).toContain("Unsupported format");
+    });
+
     it("should optimize image to 150x150 webp, upload to R2, and save relative url to users.image", async () => {
       testUser = await createTestUser();
       await loginAsTestUser(testUser);

@@ -87,6 +87,46 @@ describe("Integration: Attachments Actions", () => {
       expect(res.error).toContain("Unsupported format.");
     });
 
+    it("should reject spoofed image uploads where client MIME is image/png but bytes are plain text", async () => {
+      userA = await createTestUser();
+      await loginAsTestUser(userA);
+
+      const task = await createTaskAction({ title: "Task for spoof upload" });
+      const taskId = task.task!.id;
+
+      // Spoofed file: Advertises image/png but body is plain text
+      const spoofedFile = new File([Buffer.from("not a real png")], "exploit.png", {
+        type: "image/png",
+      });
+      const fd = new FormData();
+      fd.set("taskId", taskId);
+      fd.set("file", spoofedFile);
+
+      const res = await uploadAttachmentAction(fd);
+      expect(res.error).toContain("Unsupported format.");
+    });
+
+    it("should reject spoofed PDF uploads where client MIME is application/pdf but bytes are HTML/JS", async () => {
+      userA = await createTestUser();
+      await loginAsTestUser(userA);
+
+      const task = await createTaskAction({ title: "Task for script upload" });
+      const taskId = task.task!.id;
+
+      // Spoofed file: Advertises application/pdf but body is HTML
+      const spoofedFile = new File(
+        [Buffer.from("<script>alert('xss')</script>")],
+        "malicious.pdf",
+        { type: "application/pdf" }
+      );
+      const fd = new FormData();
+      fd.set("taskId", taskId);
+      fd.set("file", spoofedFile);
+
+      const res = await uploadAttachmentAction(fd);
+      expect(res.error).toContain("Unsupported format.");
+    });
+
     it("should reject upload if target task belongs to another user", async () => {
       userA = await createTestUser();
       userB = await createTestUser();

@@ -13,6 +13,10 @@ import {
   extractAvatarKeyFromUrl,
 } from "@/lib/r2";
 import { randomUUID } from "node:crypto";
+import {
+  validateFileBuffer,
+  ALLOWED_AVATAR_MIME_TYPES,
+} from "@/lib/file-validation";
 
 export async function getUserPreferencesAction(): Promise<{
   preferences?: UserPreferences;
@@ -75,14 +79,6 @@ export async function updateUserPreferencesAction(
   }
 }
 
-const ALLOWED_AVATAR_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/avif",
-]);
-
 const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 export async function uploadUserAvatarAction(formData: FormData): Promise<{
@@ -100,12 +96,6 @@ export async function uploadUserAvatarAction(formData: FormData): Promise<{
     return { error: "No image file provided." };
   }
 
-  if (!ALLOWED_AVATAR_MIME_TYPES.has(file.type)) {
-    return {
-      error: "Unsupported format. Please upload a JPG, PNG, WebP, GIF, or AVIF image.",
-    };
-  }
-
   if (file.size > MAX_AVATAR_SIZE_BYTES) {
     return {
       error: `The image exceeds the maximum allowed limit of ${
@@ -114,9 +104,23 @@ export async function uploadUserAvatarAction(formData: FormData): Promise<{
     };
   }
 
+  if (file.type && !ALLOWED_AVATAR_MIME_TYPES.has(file.type)) {
+    return {
+      error: "Unsupported format. Please upload a JPG, PNG, WebP, GIF, or AVIF image.",
+    };
+  }
+
   try {
     const arrayBuffer = await file.arrayBuffer();
     const rawBuffer = Buffer.from(arrayBuffer);
+
+    // Validate avatar image magic numbers before processing with sharp
+    const validation = await validateFileBuffer(rawBuffer, ALLOWED_AVATAR_MIME_TYPES);
+    if (!validation.valid) {
+      return {
+        error: "Unsupported format. Please upload a JPG, PNG, WebP, GIF, or AVIF image.",
+      };
+    }
 
     const thumbBuffer = await sharp(rawBuffer)
       .rotate()

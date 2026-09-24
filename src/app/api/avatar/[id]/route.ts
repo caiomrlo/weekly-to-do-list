@@ -36,6 +36,7 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": "image/webp",
+        "X-Content-Type-Options": "nosniff",
         "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Length": buffer.length.toString(),
       },
