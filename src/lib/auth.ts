@@ -9,6 +9,9 @@ import { DEFAULT_USER_PREFERENCES } from "@/db/schema";
 export function getAuthSecret(): string {
   const secret = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET;
   if (!secret) {
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return "build-phase-placeholder-secret-at-least-32-chars";
+    }
     throw new Error(
       "Better Auth secret is missing. Please define BETTER_AUTH_SECRET or AUTH_SECRET in your environment variables."
     );

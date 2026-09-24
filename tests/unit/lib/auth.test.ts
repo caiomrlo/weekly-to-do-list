@@ -45,6 +45,21 @@ describe("Better Auth configuration & session helpers", () => {
       process.env.AUTH_SECRET = originalAuth;
     });
 
+    it("should return a placeholder secret during phase-production-build when secret is missing", () => {
+      const originalBetter = process.env.BETTER_AUTH_SECRET;
+      const originalAuth = process.env.AUTH_SECRET;
+      const originalPhase = process.env.NEXT_PHASE;
+      delete process.env.BETTER_AUTH_SECRET;
+      delete process.env.AUTH_SECRET;
+      process.env.NEXT_PHASE = "phase-production-build";
+
+      expect(getAuthSecret()).toBe("build-phase-placeholder-secret-at-least-32-chars");
+
+      process.env.BETTER_AUTH_SECRET = originalBetter;
+      process.env.AUTH_SECRET = originalAuth;
+      process.env.NEXT_PHASE = originalPhase;
+    });
+
     it("should throw an error during module initialization when secrets are missing", async () => {
       vi.resetModules();
       const originalBetter = process.env.BETTER_AUTH_SECRET;

@@ -14,6 +14,15 @@ RUN --mount=type=cache,target=/root/.npm \
 
 # Stage 2: Build the Next.js standalone application
 FROM base AS builder
+ARG BETTER_AUTH_SECRET
+ARG AUTH_SECRET
+ARG BETTER_AUTH_URL
+ARG DATABASE_URL
+ENV BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
+ENV AUTH_SECRET=$AUTH_SECRET
+ENV BETTER_AUTH_URL=$BETTER_AUTH_URL
+ENV DATABASE_URL=$DATABASE_URL
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NODE_ENV=production
