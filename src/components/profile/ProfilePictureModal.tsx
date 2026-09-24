@@ -245,13 +245,13 @@ export function ProfilePictureModal({
               userId={userId}
               showBorder
               borderColor="border-slate-200 dark:border-neutral-700"
-              className="shadow-md transition-transform group-hover:scale-105"
+              className="shadow-md"
             />
 
             {/* Quick change camera badge (hidden while previewing a newly chosen file) */}
             {!isBusy && !selectedFile && (
               <div
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border-2 border-white dark:border-neutral-900 flex items-center justify-center transition-all group-hover:scale-110 pointer-events-none"
+                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-amber-500 group-hover:bg-amber-600 text-white shadow-md border-2 border-white dark:border-neutral-900 flex items-center justify-center transition-colors pointer-events-none"
                 aria-hidden="true"
               >
                 <Camera className="w-3.5 h-3.5" />

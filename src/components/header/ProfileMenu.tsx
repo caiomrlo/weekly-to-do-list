@@ -97,8 +97,8 @@ export function ProfileMenu({
         onClick={() => setIsOpen((prev) => !prev)}
         className={`rounded-full p-0.5 transition-all cursor-pointer flex items-center justify-center focus:outline-none ${
           isOpen
-            ? "ring-2 ring-amber-500 dark:ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-105"
-            : "hover:ring-2 hover:ring-slate-300 dark:hover:ring-slate-700 hover:scale-105"
+            ? "ring-2 ring-amber-500 dark:ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900"
+            : "hover:ring-2 hover:ring-slate-300 dark:hover:ring-slate-700"
         }`}
         aria-haspopup="menu"
         aria-expanded={isOpen}
@@ -154,9 +154,9 @@ export function ProfileMenu({
                 setIsOpen(false);
                 setIsPictureModalOpen(true);
               }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer text-left"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer text-left group"
             >
-              <Camera className="w-4 h-4 text-slate-500 dark:text-neutral-400 shrink-0" />
+              <Camera className="w-4 h-4 text-slate-500 dark:text-neutral-400 group-hover:text-slate-700 dark:group-hover:text-neutral-200 transition-colors shrink-0" />
               <span>Profile picture</span>
             </button>
 
@@ -168,9 +168,9 @@ export function ProfileMenu({
                 setIsOpen(false);
                 setIsEditProfileModalOpen(true);
               }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer text-left"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer text-left group"
             >
-              <UserPen className="w-4 h-4 text-slate-500 dark:text-neutral-400 shrink-0" />
+              <UserPen className="w-4 h-4 text-slate-500 dark:text-neutral-400 group-hover:text-slate-700 dark:group-hover:text-neutral-200 transition-colors shrink-0" />
               <span>Edit profile</span>
             </button>
 
@@ -184,7 +184,7 @@ export function ProfileMenu({
                 role="menuitem"
                 className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left group"
               >
-                <LogOut className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                <LogOut className="w-4 h-4 text-rose-500 dark:text-rose-400 group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors shrink-0" />
                 <span>Log out</span>
               </button>
             </form>

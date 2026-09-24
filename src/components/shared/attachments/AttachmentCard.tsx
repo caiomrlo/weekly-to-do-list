@@ -61,7 +61,7 @@ export function AttachmentCard({
             src={attachment.thumbUrl || attachment.url}
             alt={attachment.fileName}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-rose-500">

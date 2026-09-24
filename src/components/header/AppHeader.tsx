@@ -94,9 +94,9 @@ export function AppHeader({
             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? (
-              <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
+              <Sun className="w-4 h-4 text-amber-400 group-hover:text-amber-500 dark:group-hover:text-amber-300 transition-colors duration-200" />
             ) : (
-              <Moon className="w-4 h-4 text-slate-600 group-hover:-rotate-12 transition-transform duration-300" />
+              <Moon className="w-4 h-4 text-slate-600 group-hover:text-slate-900 dark:text-slate-300 dark:group-hover:text-white transition-colors duration-200" />
             )}
           </button>
 
