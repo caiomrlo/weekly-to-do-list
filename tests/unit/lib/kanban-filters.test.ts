@@ -78,6 +78,41 @@ describe("kanban-filter-utils", () => {
       });
     });
 
+    describe("today filter", () => {
+      it("should match tasks scheduled for today", () => {
+        const todayTask = createMockTask({ date: "2026-09-19" });
+        const tomorrowTask = createMockTask({ date: "2026-09-20" });
+        const yesterdayTask = createMockTask({ date: "2026-09-18" });
+
+        expect(isTaskMatchingDateFilter(todayTask, "today", refDate)).toBe(true);
+        expect(isTaskMatchingDateFilter(tomorrowTask, "today", refDate)).toBe(false);
+        expect(isTaskMatchingDateFilter(yesterdayTask, "today", refDate)).toBe(false);
+      });
+
+      it("should match recurring projected tasks with originalDate today if date is unset", () => {
+        const recurringToday = createMockTask({ date: null, originalDate: "2026-09-19" });
+        const recurringTomorrow = createMockTask({ date: null, originalDate: "2026-09-20" });
+
+        expect(isTaskMatchingDateFilter(recurringToday, "today", refDate)).toBe(true);
+        expect(isTaskMatchingDateFilter(recurringTomorrow, "today", refDate)).toBe(false);
+      });
+
+      it("should match unscheduled tasks modified or created today", () => {
+        const unscheduledToday = createMockTask({
+          date: null,
+          updatedAt: new Date("2026-09-19T08:30:00Z"),
+        });
+        const unscheduledPast = createMockTask({
+          date: null,
+          updatedAt: new Date("2026-09-18T20:00:00Z"),
+          createdAt: new Date("2026-09-18T20:00:00Z"),
+        });
+
+        expect(isTaskMatchingDateFilter(unscheduledToday, "today", refDate)).toBe(true);
+        expect(isTaskMatchingDateFilter(unscheduledPast, "today", refDate)).toBe(false);
+      });
+    });
+
     describe("default filter (+/- 30 days)", () => {
       it("should match tasks scheduled within +/- 30 days", () => {
         // Today is 2026-09-19. 30 days before is 2026-08-20. 30 days after is 2026-10-19.
@@ -236,6 +271,19 @@ describe("kanban-filter-utils", () => {
         refDate,
       });
       expect(filtered3).toEqual([task1, task3]);
+
+      // Filter: project p1, today -> only todayTask
+      const todayTask = createMockTask({
+        id: "t-today",
+        projectId: "p1",
+        date: "2026-09-19",
+      });
+      const filteredToday = filterKanbanTasks([...allList, todayTask], {
+        projectFilter: "p1",
+        dateFilter: "today",
+        refDate,
+      });
+      expect(filteredToday).toEqual([todayTask]);
     });
   });
 });

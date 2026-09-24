@@ -24,6 +24,7 @@ export interface KanbanFiltersProps {
 
 const DATE_FILTER_OPTIONS: { id: KanbanDateFilter; label: string }[] = [
   { id: "default", label: "Default" },
+  { id: "today", label: "Today" },
   { id: "this_week", label: "This Week" },
   { id: "this_month", label: "This Month" },
   { id: "all", label: "All Time" },

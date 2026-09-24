@@ -4,6 +4,7 @@ import React from "react";
 import { TaskWithTag } from "@/db/schema";
 import { getProjectColorStyles } from "@/lib/project-utils";
 import { TAG_COLORS } from "@/lib/tag-utils";
+import { toDateString } from "@/lib/date-utils";
 import { TaskAssigneeAvatars } from "@/components/shared/TaskAssigneeAvatars";
 import {
   GripVertical,
@@ -19,6 +20,7 @@ import {
 
 export interface KanbanCardProps {
   task: TaskWithTag;
+  todayStr?: string;
   isDragging?: boolean;
   isDropTarget?: boolean;
   onTaskClick: (task: TaskWithTag) => void;
@@ -31,6 +33,7 @@ export interface KanbanCardProps {
 
 export function KanbanCard({
   task,
+  todayStr,
   isDragging,
   isDropTarget,
   onTaskClick,
@@ -40,6 +43,10 @@ export function KanbanCard({
   onDragOver,
   onDrop,
 }: KanbanCardProps) {
+  const effectiveTodayStr = todayStr || toDateString(new Date());
+  const taskDate = task.date || task.originalDate || null;
+  const isToday = Boolean(taskDate && taskDate === effectiveTodayStr);
+
   const projectStyles = task.project
     ? getProjectColorStyles(task.project.color)
     : null;
@@ -69,8 +76,12 @@ export function KanbanCard({
           : isDropTarget
             ? "border-amber-500 ring-2 ring-amber-500/30 bg-amber-50/40 dark:bg-amber-950/40"
             : task.completed
-              ? "bg-white/60 hover:bg-white/80 dark:bg-slate-900/40 dark:hover:bg-slate-900/60 border-slate-200/50 dark:border-slate-800/50 text-slate-400 dark:text-slate-500"
-              : "bg-white/90 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs hover:shadow-xs hover:border-amber-300 dark:hover:border-amber-500/40"
+              ? isToday
+                ? "bg-amber-50/15 hover:bg-amber-50/25 dark:bg-amber-950/15 dark:hover:bg-amber-950/25 border-amber-300/40 dark:border-amber-700/40 text-slate-400 dark:text-slate-500"
+                : "bg-white/60 hover:bg-white/80 dark:bg-slate-900/40 dark:hover:bg-slate-900/60 border-slate-200/50 dark:border-slate-800/50 text-slate-400 dark:text-slate-500"
+              : isToday
+                ? "bg-amber-50/30 hover:bg-amber-50/50 dark:bg-amber-950/20 dark:hover:bg-amber-950/35 border-amber-300/80 dark:border-amber-600/50 text-slate-800 dark:text-slate-100 shadow-2xs hover:shadow-xs ring-1 ring-amber-400/25 dark:ring-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/70"
+                : "bg-white/90 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs hover:shadow-xs hover:border-amber-300 dark:hover:border-amber-500/40"
       }`}
     >
       <div className="flex items-start gap-2">
@@ -138,13 +149,29 @@ export function KanbanCard({
             )}
 
             {/* Date Badge */}
-            {task.date && (
+            {taskDate && (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60"
-                title={`Scheduled: ${task.date}`}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border transition-colors ${
+                  task.completed
+                    ? isToday
+                      ? "bg-amber-500/10 text-amber-600/70 dark:text-amber-400/60 border-amber-200/50 dark:border-amber-900/40"
+                      : "bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700"
+                    : isToday
+                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-300/80 dark:border-amber-600/50 font-semibold"
+                      : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60"
+                }`}
+                title={`Scheduled: ${taskDate}${isToday ? " (Today)" : ""}`}
               >
-                <Calendar className="w-2.5 h-2.5" />
-                <span>{task.date}</span>
+                <Calendar
+                  className={`w-2.5 h-2.5 ${
+                    isToday
+                      ? task.completed
+                        ? "text-amber-500/60 dark:text-amber-400/50"
+                        : "text-amber-600 dark:text-amber-400"
+                      : ""
+                  }`}
+                />
+                <span>{isToday ? "Today" : taskDate}</span>
               </span>
             )}
 

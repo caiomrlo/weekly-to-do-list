@@ -34,6 +34,7 @@ import {
   KanbanProjectFilter,
   filterKanbanTasks,
 } from "@/lib/kanban-filter-utils";
+import { toDateString } from "@/lib/date-utils";
 import { Plus } from "lucide-react";
 import { useLocalStorage } from "@/lib/hooks/useLocalStorage";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
@@ -80,8 +81,10 @@ export function KanbanBoard({
   const [dateFilter, handleSelectDateFilter] = useLocalStorage<KanbanDateFilter>(
     "kanban_date_filter",
     "default",
-    (val) => ["default", "this_week", "this_month", "all"].includes(val)
+    (val) => ["default", "today", "this_week", "this_month", "all"].includes(val)
   );
+
+  const todayStr = useMemo(() => toDateString(new Date()), []);
 
   // Task details modal state
   const [selectedTask, setSelectedTask] = useState<TaskWithTag | null>(null);
@@ -633,6 +636,7 @@ export function KanbanBoard({
               key={status.id}
               status={status}
               tasks={tasksByStatus.get(status.id) || []}
+              todayStr={todayStr}
               draggedTaskId={draggedTaskId}
               dragOverCardId={dragOverCardId}
               isDragOverColumn={dragOverColumnId === status.id}

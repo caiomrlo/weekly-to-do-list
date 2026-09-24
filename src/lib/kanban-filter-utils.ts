@@ -2,7 +2,7 @@ import { TaskWithTag } from "@/db/schema";
 import { toDateString, getMondayOfWeek } from "./date-utils";
 import { addDaysToStr } from "./recurrence-utils";
 
-export type KanbanDateFilter = "default" | "this_week" | "this_month" | "all";
+export type KanbanDateFilter = "default" | "today" | "this_week" | "this_month" | "all";
 export type KanbanProjectFilter = "all" | "none" | string;
 
 export function getTaskTimestampDateStr(
@@ -38,6 +38,24 @@ export function isTaskMatchingDateFilter(
 
   const effectiveDate = task.date || task.originalDate || null;
   const todayStr = toDateString(refDate);
+
+  if (filter === "today") {
+    if (effectiveDate) {
+      return effectiveDate === todayStr;
+    }
+
+    const updatedStr = getTaskTimestampDateStr(task.updatedAt);
+    if (updatedStr && updatedStr === todayStr) {
+      return true;
+    }
+
+    const createdStr = getTaskTimestampDateStr(task.createdAt);
+    if (createdStr && createdStr === todayStr) {
+      return true;
+    }
+
+    return false;
+  }
 
   if (filter === "default") {
     const min30DaysStr = addDaysToStr(todayStr, -30);

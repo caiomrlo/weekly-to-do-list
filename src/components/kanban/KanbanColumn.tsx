@@ -9,6 +9,7 @@ import { Plus, MoreHorizontal, X, Loader2 } from "lucide-react";
 export interface KanbanColumnProps {
   status: TaskStatus;
   tasks: TaskWithTag[];
+  todayStr?: string;
   draggedTaskId: string | null;
   dragOverCardId: string | null;
   isDragOverColumn: boolean;
@@ -27,6 +28,7 @@ export interface KanbanColumnProps {
 export function KanbanColumn({
   status,
   tasks,
+  todayStr,
   draggedTaskId,
   dragOverCardId,
   isDragOverColumn,
@@ -171,6 +173,7 @@ export function KanbanColumn({
           <KanbanCard
             key={task.id}
             task={task}
+            todayStr={todayStr}
             isDragging={draggedTaskId === task.id}
             isDropTarget={dragOverCardId === task.id}
             onTaskClick={onTaskClick}
