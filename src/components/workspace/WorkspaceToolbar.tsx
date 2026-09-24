@@ -30,7 +30,7 @@ export function WorkspaceToolbar({
 
         {/* Subtle Vertical Divider */}
         <div
-          className="h-6 w-px bg-slate-200/80 dark:bg-slate-700/80 shrink-0"
+          className="h-6 w-px bg-slate-200/80 dark:bg-neutral-700/80 shrink-0"
           aria-hidden="true"
         />
 

@@ -91,10 +91,10 @@ export function DocPickerPopover({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-slate-200 dark:border-neutral-800 p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
           {!isCreatingNewDoc ? (
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-neutral-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
                 <span className="flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-amber-500" />
                   Link Document
@@ -127,7 +127,7 @@ export function DocPickerPopover({
                   onChange={(e) => setDocSearch(e.target.value)}
                   placeholder="Search existing docs..."
                   autoFocus
-                  className="w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500 transition-all"
+                  className="w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500 transition-all"
                 />
               </div>
 
@@ -195,7 +195,7 @@ export function DocPickerPopover({
           ) : (
             /* Inline Doc Creation Form */
             <form onSubmit={handleSubmitNewDoc} className="space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
                 <span>Create & Link Doc</span>
                 <button
                   type="button"
@@ -213,7 +213,7 @@ export function DocPickerPopover({
                 placeholder="Document title..."
                 autoFocus
                 required
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500 transition-all"
+                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500 transition-all"
               />
 
               {userProjects.length > 0 && (
@@ -225,7 +225,7 @@ export function DocPickerPopover({
                   <select
                     value={newDocProjectId || ""}
                     onChange={(e) => setNewDocProjectId(e.target.value || null)}
-                    className="w-full text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-slate-800 dark:text-slate-100 focus:outline-none"
                   >
                     <option value="">No Project</option>
                     {userProjects.map((p) => (
@@ -237,11 +237,11 @@ export function DocPickerPopover({
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
                 <button
                   type="button"
                   onClick={() => setIsCreatingNewDoc(false)}
-                  className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>

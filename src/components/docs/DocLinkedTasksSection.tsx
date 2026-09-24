@@ -46,7 +46,7 @@ export function DocLinkedTasksSection({
   };
 
   return (
-    <div className="rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/80 p-3 sm:p-4 space-y-2.5">
+    <div className="rounded-2xl bg-slate-50/70 dark:bg-neutral-900/50 border border-slate-200/70 dark:border-neutral-800/80 p-3 sm:p-4 space-y-2.5">
       <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-1.5 uppercase tracking-wider">
           <Link2 className="w-3.5 h-3.5 text-amber-500" />
@@ -64,7 +64,7 @@ export function DocLinkedTasksSection({
           return (
             <div
               key={task.id}
-              className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/70 dark:border-slate-700/70 text-xs shadow-2xs group hover:border-amber-400/50 transition-all"
+              className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white dark:bg-neutral-800/90 border border-slate-200/70 dark:border-neutral-700/70 text-xs shadow-2xs group hover:border-amber-400/50 transition-all"
             >
               <div className="flex items-center gap-1.5">
                 {task.completed ? (

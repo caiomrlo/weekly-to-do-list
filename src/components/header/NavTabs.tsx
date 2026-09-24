@@ -33,7 +33,7 @@ export function NavTabs() {
 
   return (
     <nav
-      className="hidden md:flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 shrink-0"
+      className="hidden md:flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80 dark:bg-neutral-800/80 border border-slate-200/60 dark:border-neutral-700/60 shrink-0"
       aria-label="Workspace views"
     >
       {navItems.map((item) => {
@@ -44,7 +44,7 @@ export function NavTabs() {
             href={item.href}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm transition-all duration-200 ${
               item.isActive
-                ? "font-semibold bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
+                ? "font-semibold bg-white dark:bg-neutral-900 text-amber-600 dark:text-amber-400 shadow-2xs"
                 : "font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >

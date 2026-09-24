@@ -190,7 +190,7 @@ export function WorkspaceSelector({
         className={`flex items-center gap-2.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-2xl border text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer select-none max-w-[190px] sm:max-w-[240px] shadow-xs ${
           isOpen
             ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300/80 dark:border-amber-700/80 ring-2 ring-amber-500/20"
-            : "bg-white/90 hover:bg-white dark:bg-slate-800/90 dark:hover:bg-slate-850 text-slate-800 dark:text-slate-100 border-slate-200/80 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600"
+            : "bg-white/90 hover:bg-white dark:bg-neutral-900/90 dark:hover:bg-neutral-850 text-slate-800 dark:text-neutral-100 border-slate-200/80 dark:border-neutral-700/80 hover:border-slate-300 dark:hover:border-neutral-600"
         }`}
         title={`Current Workspace: ${activeWorkspace?.name || "Workspace"}`}
         aria-label={`Current Workspace: ${activeWorkspace?.name || "Workspace"}`}
@@ -208,7 +208,7 @@ export function WorkspaceSelector({
           {activeWorkspace?.name || "My Workspace"}
         </span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 shrink-0 ${
+          className={`w-3.5 h-3.5 text-slate-400 dark:text-neutral-500 transition-transform duration-200 shrink-0 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
@@ -216,9 +216,9 @@ export function WorkspaceSelector({
 
       {/* Popover Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2 z-50 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-2xl p-2 z-50 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
           {/* Section Header */}
-          <div className="flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
+          <div className="flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold tracking-wider uppercase text-slate-400 dark:text-neutral-500">
             <span>Workspaces</span>
             {isPending && (
               <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-normal">
@@ -239,7 +239,7 @@ export function WorkspaceSelector({
                   <form
                     key={ws.id}
                     onSubmit={(e) => handleRenameSubmit(ws.id, e)}
-                    className="p-1.5 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 border border-amber-300 dark:border-amber-700 flex flex-col gap-1.5"
+                    className="p-1.5 rounded-xl bg-slate-100/90 dark:bg-neutral-800/90 border border-amber-300 dark:border-amber-700 flex flex-col gap-1.5"
                   >
                     <input
                       type="text"
@@ -247,7 +247,7 @@ export function WorkspaceSelector({
                       onChange={(e) => setRenameValue(e.target.value)}
                       placeholder="Workspace name"
                       autoFocus
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-amber-500"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-800 dark:text-neutral-100 outline-none focus:ring-1 focus:ring-amber-500"
                     />
                     {renameError && (
                       <span className="text-[10px] text-rose-500 px-1">
@@ -378,13 +378,13 @@ export function WorkspaceSelector({
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-slate-200/80 dark:bg-slate-700/80 my-1" />
+          <div className="h-px bg-slate-200/80 dark:bg-neutral-800/80 my-1" />
 
           {/* Creation Form / Action */}
           {isCreating ? (
             <form
               onSubmit={handleCreateSubmit}
-              className="p-1.5 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 border border-amber-300 dark:border-amber-700 flex flex-col gap-1.5"
+              className="p-1.5 rounded-xl bg-slate-100/90 dark:bg-neutral-800/90 border border-amber-300 dark:border-amber-700 flex flex-col gap-1.5"
             >
               <input
                 type="text"
@@ -392,7 +392,7 @@ export function WorkspaceSelector({
                 onChange={(e) => setNewWorkspaceName(e.target.value)}
                 placeholder="Workspace name..."
                 autoFocus
-                className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-amber-500"
+                className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 text-slate-800 dark:text-neutral-100 outline-none focus:ring-1 focus:ring-amber-500"
               />
               {createError && (
                 <span className="text-[10px] text-rose-500 px-1">

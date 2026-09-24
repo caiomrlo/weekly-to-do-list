@@ -40,7 +40,7 @@ export function AttachmentCard({
 
   return (
     <div
-      className={`group relative flex items-center border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-2xs overflow-hidden ${
+      className={`group relative flex items-center border border-slate-200/70 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-900/60 hover:bg-white dark:hover:bg-neutral-900 transition-all hover:shadow-2xs overflow-hidden ${
         isCardVariant
           ? "gap-2.5 p-1.5 rounded-lg"
           : "gap-3 p-2 rounded-xl"
@@ -52,7 +52,7 @@ export function AttachmentCard({
         rel="noopener noreferrer"
         className={`relative ${
           isCardVariant ? "rounded-md w-9 h-9" : "rounded-lg w-10 h-10"
-        } overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90`}
+        } overflow-hidden shrink-0 bg-slate-100 dark:bg-neutral-800 border border-slate-200/50 dark:border-neutral-700/50 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90`}
         title="Open original file"
       >
         {isImage ? (
@@ -99,7 +99,7 @@ export function AttachmentCard({
           href={attachment.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors"
           title="Open original file in new tab"
         >
           <ExternalLink className="w-3.5 h-3.5" />

@@ -19,7 +19,7 @@ export function WeekNavControls({
         type="button"
         onClick={onPrevWeek}
         disabled={isNavigating}
-        className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+        className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-neutral-800/70 dark:hover:bg-neutral-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-neutral-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
         title="Previous week"
         aria-label="Previous week"
       >
@@ -40,7 +40,7 @@ export function WeekNavControls({
         type="button"
         onClick={onNextWeek}
         disabled={isNavigating}
-        className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+        className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-neutral-800/70 dark:hover:bg-neutral-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-neutral-700/70 shadow-xs transition-all cursor-pointer disabled:opacity-50"
         title="Next week"
         aria-label="Next week"
       >

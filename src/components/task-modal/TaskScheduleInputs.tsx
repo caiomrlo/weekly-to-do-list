@@ -41,7 +41,7 @@ export function TaskScheduleInputs({
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium border transition-all cursor-pointer ${
             recurringRule
               ? "bg-amber-50/90 hover:bg-amber-100/90 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/80 shadow-2xs"
-              : "bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200"
+              : "bg-slate-100/70 hover:bg-slate-100 dark:bg-neutral-800/70 dark:hover:bg-neutral-800 border-slate-200/70 dark:border-neutral-700/70 text-slate-700 dark:text-slate-200"
           }`}
           title={recurringRule ? "Edit recurrence rule" : "Repeat this task"}
         >
@@ -52,7 +52,7 @@ export function TaskScheduleInputs({
         </button>
       )}
       {/* Date Pill */}
-      <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
+      <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-neutral-800/70 dark:hover:bg-neutral-800 border border-slate-200/70 dark:border-neutral-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
         <Calendar className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 pointer-events-none" />
         <span className="pointer-events-none">
           {date ? date.split("-").reverse().join("/") : "No date (Fixed)"}
@@ -87,7 +87,7 @@ export function TaskScheduleInputs({
       </div>
 
       {/* Time Pill */}
-      <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
+      <div className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-neutral-800/70 dark:hover:bg-neutral-800 border border-slate-200/70 dark:border-neutral-700/70 text-slate-700 dark:text-slate-200 transition-all cursor-pointer group">
         <Clock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 pointer-events-none" />
         {time ? (
           <>
@@ -124,7 +124,7 @@ export function TaskScheduleInputs({
       </div>
 
       {/* Duration Pill */}
-      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 text-slate-700 dark:text-slate-200 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/20 transition-all">
+      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium bg-slate-100/70 hover:bg-slate-100 dark:bg-neutral-800/70 dark:hover:bg-neutral-800 border border-slate-200/70 dark:border-neutral-700/70 text-slate-700 dark:text-slate-200 focus-within:bg-white dark:focus-within:bg-neutral-900 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/20 transition-all">
         <Timer className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
         <input
           type="text"

@@ -93,7 +93,7 @@ export function KanbanFilters({
           className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer select-none max-w-[160px] sm:max-w-[200px] ${
             isProjectFiltered
               ? "bg-amber-500/10 border-amber-300/80 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
-              : "bg-white/80 dark:bg-slate-900/80 border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-900"
+              : "bg-white/80 dark:bg-neutral-900/80 border-slate-200/80 dark:border-neutral-800 text-slate-600 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-neutral-900"
           }`}
           title={`Filter by Project: ${projectButtonLabel}`}
         >
@@ -104,14 +104,14 @@ export function KanbanFilters({
               }`}
             />
           ) : (
-            <FolderKanban className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+            <FolderKanban className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-neutral-500" />
           )}
           <span className="truncate">{projectButtonLabel}</span>
           <ChevronDown className="w-3 h-3 shrink-0 text-slate-400 opacity-70 ml-0.5" />
         </button>
 
         {isProjectOpen && (
-          <div className="absolute left-0 mt-1.5 w-56 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute left-0 mt-1.5 w-56 z-50 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-xl rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-100">
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -122,7 +122,7 @@ export function KanbanFilters({
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer text-left ${
                   selectedProjectId === "all"
                     ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold"
-                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                    : "text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-800/60"
                 }`}
               >
                 <span>All Projects</span>
@@ -132,7 +132,7 @@ export function KanbanFilters({
               </button>
 
               {projects.length > 0 && (
-                <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+                <div className="h-px bg-slate-100 dark:bg-neutral-800 my-1" />
               )}
 
               {projects.map((proj) => {
@@ -180,17 +180,17 @@ export function KanbanFilters({
           className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer select-none ${
             isDateFiltered
               ? "bg-amber-500/10 border-amber-300/80 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15"
-              : "bg-white/80 dark:bg-slate-900/80 border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-900"
+              : "bg-white/80 dark:bg-neutral-900/80 border-slate-200/80 dark:border-neutral-800 text-slate-600 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-neutral-900"
           }`}
           title={`Filter by Date: ${dateButtonLabel}`}
         >
-          <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+          <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-neutral-500" />
           <span>{dateButtonLabel}</span>
           <ChevronDown className="w-3 h-3 shrink-0 text-slate-400 opacity-70 ml-0.5" />
         </button>
 
         {isDateOpen && (
-          <div className="absolute left-0 mt-1.5 w-44 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute left-0 mt-1.5 w-44 z-50 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-xl rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-100">
             <div className="space-y-0.5">
               {DATE_FILTER_OPTIONS.map((opt) => {
                 const isSelected = dateFilter === opt.id;
@@ -205,7 +205,7 @@ export function KanbanFilters({
                     className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer text-left ${
                       isSelected
                         ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                        : "text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-800/60"
                     }`}
                   >
                     <span>{opt.label}</span>

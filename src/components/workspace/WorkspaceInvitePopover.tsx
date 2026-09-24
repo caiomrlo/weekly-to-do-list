@@ -158,17 +158,17 @@ export function WorkspaceInvitePopover({
   return (
     <div
       ref={popoverRef}
-      className="absolute left-0 mt-2 w-80 sm:w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-4 z-50 flex flex-col gap-3.5 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100"
+      className="absolute left-0 mt-2 w-80 sm:w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-2xl p-4 z-50 flex flex-col gap-3.5 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-neutral-100"
       role="dialog"
       aria-label="Invite members"
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/60 dark:border-neutral-800/60">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <UserPlus className="w-3.5 h-3.5" />
           </div>
-          <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
+          <span className="text-xs font-semibold text-slate-800 dark:text-neutral-100 truncate">
             Invite to {workspaceName}
           </span>
         </div>
@@ -176,7 +176,7 @@ export function WorkspaceInvitePopover({
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
           aria-label="Close"
         >
           <X className="w-3.5 h-3.5" />
@@ -193,7 +193,7 @@ export function WorkspaceInvitePopover({
           {/* 1. Shareable Invite Link */}
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-neutral-300">
                 <Link2 className="w-3.5 h-3.5 text-amber-500" />
                 <span>Invite link</span>
               </div>
@@ -207,7 +207,7 @@ export function WorkspaceInvitePopover({
                   disabled={isToggling}
                   className="sr-only peer"
                 />
-                <div className="w-8 h-4.5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-amber-500"></div>
+                <div className="w-8 h-4.5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-amber-500"></div>
                 <span className="ml-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                   {isToggling ? "..." : linkEnabled ? "On" : "Off"}
                 </span>
@@ -221,7 +221,7 @@ export function WorkspaceInvitePopover({
                     type="text"
                     readOnly
                     value={fullInviteUrl}
-                    className="flex-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 select-all font-mono focus:outline-none truncate"
+                    className="flex-1 bg-slate-50 dark:bg-neutral-800/80 border border-slate-200 dark:border-neutral-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 dark:text-neutral-200 select-all font-mono focus:outline-none truncate"
                   />
                   <button
                     type="button"
@@ -272,13 +272,13 @@ export function WorkspaceInvitePopover({
           </div>
 
           {/* 2. Invite by Email (Prepared for future) */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
+          <div className="pt-2 border-t border-slate-100 dark:border-neutral-800/80 space-y-1.5">
             <div className="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
               <div className="flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
                 <span>Invite by email</span>
               </div>
-              <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold tracking-wider">
+              <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-400 dark:text-slate-500 font-semibold tracking-wider">
                 Coming soon
               </span>
             </div>
@@ -288,12 +288,12 @@ export function WorkspaceInvitePopover({
                 type="email"
                 disabled
                 placeholder="colleague@example.com"
-                className="flex-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-500"
+                className="flex-1 bg-slate-50 dark:bg-neutral-800/80 border border-slate-200 dark:border-neutral-700 rounded-xl px-2.5 py-1 text-xs text-slate-500"
               />
               <button
                 type="button"
                 disabled
-                className="px-2.5 py-1 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-400 text-xs font-medium"
+                className="px-2.5 py-1 rounded-xl bg-slate-200 dark:bg-neutral-700 text-slate-400 text-xs font-medium"
               >
                 Send
               </button>
@@ -301,7 +301,7 @@ export function WorkspaceInvitePopover({
           </div>
 
           {/* 3. Members List */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
+          <div className="pt-2 border-t border-slate-100 dark:border-neutral-800/80 space-y-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Members ({members.length})
             </span>
@@ -310,7 +310,7 @@ export function WorkspaceInvitePopover({
               {members.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-xs"
+                  className="flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-neutral-800/50 transition-colors text-xs"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <UserAvatar
@@ -342,7 +342,7 @@ export function WorkspaceInvitePopover({
                         Owner
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded-full">
                         Member
                       </span>
                     )}

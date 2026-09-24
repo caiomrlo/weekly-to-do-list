@@ -55,9 +55,9 @@ export function DocsSidebar({
   }, [docs, filterFavorite, filterProjectId, searchQuery]);
 
   return (
-    <div className="w-full lg:w-80 xl:w-96 flex flex-col h-full border-r border-slate-200/60 dark:border-slate-800/80 bg-slate-50/40 dark:bg-slate-900/30">
+    <div className="w-full lg:w-80 xl:w-96 flex flex-col h-full border-r border-slate-200/60 dark:border-neutral-800/80 bg-slate-50/40 dark:bg-neutral-900/30">
       {/* Search & Actions Header */}
-      <div className="p-4 space-y-3 border-b border-slate-200/60 dark:border-slate-800/80">
+      <div className="p-4 space-y-3 border-b border-slate-200/60 dark:border-neutral-800/80">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
@@ -77,7 +77,7 @@ export function DocsSidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search documents..."
-            className="w-full pl-9 pr-7 py-1.5 rounded-xl text-xs bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+            className="w-full pl-9 pr-7 py-1.5 rounded-xl text-xs bg-white/80 dark:bg-neutral-800/80 border border-slate-200/80 dark:border-neutral-700/80 text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
           />
           {searchQuery && (
             <button
@@ -171,8 +171,8 @@ export function DocsSidebar({
                 onClick={() => onSelectDoc(doc)}
                 className={`group relative p-3 rounded-2xl border transition-all cursor-pointer select-none ${
                   isSelected
-                    ? "bg-white dark:bg-slate-800/90 border-amber-500/40 shadow-sm ring-1 ring-amber-500/20"
-                    : "bg-white/60 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/70 hover:bg-white dark:hover:bg-slate-800/70 hover:shadow-2xs"
+                    ? "bg-white dark:bg-neutral-800/90 border-amber-500/40 shadow-sm ring-1 ring-amber-500/20"
+                    : "bg-white/60 dark:bg-neutral-900/50 border-slate-200/60 dark:border-neutral-800/70 hover:bg-white dark:hover:bg-neutral-800/70 hover:shadow-2xs"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -203,14 +203,14 @@ export function DocsSidebar({
                       )}
 
                       {(doc.taskCount ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-slate-400">
                           <Link2 className="w-2.5 h-2.5" />
                           <span>{doc.taskCount}</span>
                         </span>
                       )}
 
                       {(doc.attachmentCount ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-slate-400">
                           <Paperclip className="w-2.5 h-2.5" />
                           <span>{doc.attachmentCount}</span>
                         </span>

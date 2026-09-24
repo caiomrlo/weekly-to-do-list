@@ -56,9 +56,9 @@ export function AppHeader({
     title ?? (isDocsActive ? "Docs & Notes" : isKanbanActive ? "Kanban" : "");
 
   return (
-    <header className="sticky top-0 z-30 w-full mb-4 sm:mb-6 backdrop-blur-xl bg-white/75 dark:bg-slate-900/80 border-b border-white/60 dark:border-slate-800/80 shadow-xs transition-colors">
+    <header className="sticky top-0 z-30 w-full mb-4 sm:mb-6 backdrop-blur-xl bg-white/75 dark:bg-neutral-900/80 border-b border-white/60 dark:border-neutral-800/80 shadow-xs transition-colors">
       {/* Tier 1: Main Application Header (Brand, Navigation Views, System Controls) */}
-      <div className="px-3.5 sm:px-6 md:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-3 sm:gap-4 border-b border-slate-200/50 dark:border-slate-800/50">
+      <div className="px-3.5 sm:px-6 md:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-3 sm:gap-4 border-b border-slate-200/50 dark:border-neutral-800/50">
         {/* Left: Brand Icon + View Switcher Tabs */}
         <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
           <Link
@@ -89,7 +89,7 @@ export function AppHeader({
           <button
             type="button"
             onClick={onToggleTheme}
-            className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-slate-700/70 shadow-xs transition-all cursor-pointer flex items-center justify-center group"
+            className="p-2 rounded-xl bg-white/70 hover:bg-white dark:bg-neutral-800/70 dark:hover:bg-neutral-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200/70 dark:border-neutral-700/70 shadow-xs transition-all cursor-pointer flex items-center justify-center group"
             title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
@@ -101,7 +101,7 @@ export function AppHeader({
           </button>
 
           {/* Separator (visible on desktop) */}
-          <div className="h-5 w-px bg-slate-200/80 dark:bg-slate-700/80 mx-0.5 hidden sm:block" />
+          <div className="h-5 w-px bg-slate-200/80 dark:bg-neutral-700/80 mx-0.5 hidden sm:block" />
 
           {/* User Profile Popover Menu */}
           <ProfileMenu

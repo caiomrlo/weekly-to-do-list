@@ -178,10 +178,10 @@ export function ProjectSelector({
 
       {/* Popover */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-slate-200 dark:border-neutral-800 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
           {!isCreating ? (
             <div>
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-neutral-800 text-xs font-semibold text-slate-600 dark:text-neutral-300">
                 <span>Select Project</span>
                 <button
                   type="button"
@@ -196,7 +196,7 @@ export function ProjectSelector({
               {/* Project list */}
               <div className="max-h-52 overflow-y-auto space-y-1 pr-1">
                 {userProjects.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
+                  <div className="py-4 text-center text-xs text-slate-400 dark:text-neutral-500">
                     No projects created yet.
                   </div>
                 ) : (
@@ -210,7 +210,7 @@ export function ProjectSelector({
                         <div
                           key={project.id}
                           onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-amber-400/60 shadow-xs space-y-1"
+                          className="p-1.5 rounded-xl bg-slate-50 dark:bg-neutral-800/90 border border-amber-400/60 shadow-xs space-y-1"
                         >
                           <div className="flex items-center gap-1.5">
                             <span
@@ -280,7 +280,7 @@ export function ProjectSelector({
                         className={`group w-full rounded-xl text-xs font-medium flex items-center justify-between transition-all ${
                           isSelected
                             ? `${styles.badgeClass} ring-1 ring-amber-400/40 font-semibold`
-                            : "hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200"
+                            : "hover:bg-slate-100/80 dark:hover:bg-neutral-800/80 text-slate-700 dark:text-neutral-200"
                         }`}
                       >
                         <button
@@ -315,7 +315,7 @@ export function ProjectSelector({
                               setRenameValue(project.name);
                               setRenameError("");
                             }}
-                            className="p-1 rounded-md text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
+                            className="p-1 rounded-md text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-200/60 dark:hover:bg-neutral-700/60 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
                             title="Rename project"
                           >
                             <Pencil className="w-3 h-3" />
@@ -334,7 +334,7 @@ export function ProjectSelector({
           ) : (
             /* Inline Project Creation Form */
             <form onSubmit={handleCreate} className="space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800 text-xs font-semibold text-slate-700 dark:text-neutral-200">
                 <span>Create New Project</span>
                 <button
                   type="button"
@@ -342,7 +342,7 @@ export function ProjectSelector({
                     setIsCreating(false);
                     setError("");
                   }}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -361,7 +361,7 @@ export function ProjectSelector({
                 placeholder="Project name..."
                 maxLength={50}
                 autoFocus
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-slate-800 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
               />
 
               {/* Color swatches */}
@@ -388,14 +388,14 @@ export function ProjectSelector({
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
                 <button
                   type="button"
                   onClick={() => {
                     setIsCreating(false);
                     setError("");
                   }}
-                  className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>

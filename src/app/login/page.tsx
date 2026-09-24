@@ -73,7 +73,7 @@ function LoginForm() {
           </p>
         </div>
 
-        <div className="glass-panel rounded-3xl p-7 sm:p-9 border border-white/80 dark:border-slate-800">
+        <div className="glass-panel rounded-3xl p-7 sm:p-9 border border-white/80 dark:border-neutral-800">
           {isInvite && (
             <div className="mb-5 p-3 sm:p-3.5 bg-amber-50/90 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-900/60 text-amber-800 dark:text-amber-200 rounded-2xl flex items-start gap-2.5 text-xs sm:text-sm">
               <Users className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -83,7 +83,7 @@ function LoginForm() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 p-1 bg-slate-100/70 dark:bg-slate-800/70 rounded-xl mb-6 text-sm font-medium text-slate-600 dark:text-slate-400">
+          <div className="grid grid-cols-2 p-1 bg-slate-100/70 dark:bg-neutral-800/70 rounded-xl mb-6 text-sm font-medium text-slate-600 dark:text-slate-400">
             <button
               type="button"
               onClick={() => {
@@ -92,7 +92,7 @@ function LoginForm() {
               }}
               className={`py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                 tab === "login"
-                  ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-semibold"
+                  ? "bg-white dark:bg-neutral-900 text-amber-600 dark:text-amber-400 shadow-sm font-semibold"
                   : "hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -106,7 +106,7 @@ function LoginForm() {
               }}
               className={`py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                 tab === "register"
-                  ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-semibold"
+                  ? "bg-white dark:bg-neutral-900 text-amber-600 dark:text-amber-400 shadow-sm font-semibold"
                   : "hover:text-slate-900 dark:hover:text-white"
               }`}
             >

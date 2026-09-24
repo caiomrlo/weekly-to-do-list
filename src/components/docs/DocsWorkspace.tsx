@@ -253,7 +253,7 @@ export function DocsWorkspace({
 
       {/* Main Workspace Frame */}
       <main className="flex-1 px-3 sm:px-8 pb-20 md:pb-8 w-full">
-        <div className="w-full h-[calc(100dvh-220px)] md:h-[calc(100vh-130px)] glass-panel rounded-3xl border border-white/80 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col lg:flex-row">
+        <div className="w-full h-[calc(100dvh-220px)] md:h-[calc(100vh-130px)] glass-panel rounded-3xl border border-white/80 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col lg:flex-row">
           {/* Left Sidebar (Hidden on mobile if viewing a document via /docs/[id]) */}
           <div
             className={`w-full lg:w-80 xl:w-96 h-full flex flex-col ${
@@ -273,7 +273,7 @@ export function DocsWorkspace({
 
           {/* Right Editor Pane */}
           <div
-            className={`flex-1 h-full flex flex-col bg-white/40 dark:bg-slate-900/40 overflow-hidden ${
+            className={`flex-1 h-full flex flex-col bg-white/40 dark:bg-neutral-900/40 overflow-hidden ${
               !routeParamId && !selectedDoc ? "hidden lg:flex" : "flex"
             }`}
           >

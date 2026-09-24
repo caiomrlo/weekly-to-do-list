@@ -520,13 +520,13 @@ function TaskModalDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div
-        className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={handleCloseAttempt}
       />
 
-      <div className="relative w-full max-w-xl glass-panel rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col max-h-[90vh] overflow-hidden z-10 border border-white/80 dark:border-slate-800">
-        <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-200/50 dark:border-slate-800/60">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 min-h-[20px]">
+      <div className="relative w-full max-w-xl glass-panel rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col max-h-[90vh] overflow-hidden z-10 border border-white/80 dark:border-neutral-800">
+        <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-200/50 dark:border-neutral-800/60">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-neutral-400 min-h-[20px]">
             {isSaving && (
               <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium animate-in fade-in duration-150">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -539,7 +539,7 @@ function TaskModalDialog({
             <button
               type="button"
               onClick={handleCloseAttempt}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 hover:bg-slate-200/50 dark:hover:bg-neutral-800/60 transition-colors cursor-pointer"
               title="Close (Esc)"
             >
               <X className="w-4 h-4" />

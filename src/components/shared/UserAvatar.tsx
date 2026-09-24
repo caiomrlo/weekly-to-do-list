@@ -26,7 +26,7 @@ export function UserAvatar({
   userId,
   size = "md",
   showBorder = true,
-  borderColor = "border-white dark:border-slate-900",
+  borderColor = "border-white dark:border-neutral-900",
   className = "",
   title,
   alt,
@@ -61,7 +61,7 @@ export function UserAvatar({
       className={`relative rounded-full shrink-0 flex items-center justify-center font-bold select-none overflow-hidden shadow-2xs ${sizeClasses} ${
         showBorder ? `${borderThicknessClass} ${borderColor}` : ""
       } ${
-        !showImage ? colorStyles.bgClass : "bg-slate-100 dark:bg-slate-800"
+        !showImage ? colorStyles.bgClass : "bg-slate-100 dark:bg-neutral-800"
       } ${className}`}
       title={displayName}
       aria-label={displayName}

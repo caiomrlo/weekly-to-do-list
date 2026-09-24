@@ -23,7 +23,7 @@ export function LinkedDocCard({
 
   return (
     <div
-      className={`group relative flex items-center border border-slate-200/70 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 transition-all hover:shadow-2xs overflow-hidden ${
+      className={`group relative flex items-center border border-slate-200/70 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-900/60 hover:bg-white dark:hover:bg-neutral-900 transition-all hover:shadow-2xs overflow-hidden ${
         isCardVariant
           ? "gap-2 p-1.5 rounded-lg"
           : "gap-2.5 p-2 rounded-xl"
@@ -68,7 +68,7 @@ export function LinkedDocCard({
           href={`/docs/${doc.id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors"
           title="Open document in new tab"
         >
           <ExternalLink className="w-3.5 h-3.5" />

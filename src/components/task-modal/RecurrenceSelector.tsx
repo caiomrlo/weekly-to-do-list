@@ -109,9 +109,9 @@ function RecurrenceSelectorContent({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-2xs animate-in fade-in duration-100">
       <div
         ref={popoverRef}
-        className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 p-4 space-y-4 text-slate-800 dark:text-slate-100 z-10"
+        className="w-full max-w-sm rounded-2xl bg-white dark:bg-neutral-900 shadow-2xl border border-slate-200 dark:border-neutral-800 p-4 space-y-4 text-slate-800 dark:text-neutral-100 z-10"
       >
-        <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-neutral-800/60">
           <div className="flex items-center gap-2">
             <Repeat className="w-4 h-4 text-amber-500" />
             <h3 className="text-sm font-semibold">Recurrence</h3>
@@ -119,21 +119,21 @@ function RecurrenceSelectorContent({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 p-1 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Frequency selector buttons */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl text-xs font-medium">
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100/80 dark:bg-neutral-800/80 rounded-xl text-xs font-medium">
           <button
             type="button"
             onClick={() => setFrequency("none")}
             className={`py-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               frequency === "none"
-                ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                ? "bg-white dark:bg-neutral-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
+                : "text-slate-500 dark:text-neutral-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             {"Don't repeat"}
@@ -143,8 +143,8 @@ function RecurrenceSelectorContent({
             onClick={() => setFrequency("daily")}
             className={`py-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               frequency === "daily"
-                ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                ? "bg-white dark:bg-neutral-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
+                : "text-slate-500 dark:text-neutral-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             Daily
@@ -154,8 +154,8 @@ function RecurrenceSelectorContent({
             onClick={() => setFrequency("weekly")}
             className={`py-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               frequency === "weekly"
-                ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                ? "bg-white dark:bg-neutral-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
+                : "text-slate-500 dark:text-neutral-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             Weekly
@@ -165,7 +165,7 @@ function RecurrenceSelectorContent({
             onClick={() => setFrequency("monthly")}
             className={`py-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               frequency === "monthly"
-                ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
+                ? "bg-white dark:bg-neutral-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
@@ -176,7 +176,7 @@ function RecurrenceSelectorContent({
             onClick={() => setFrequency("yearly")}
             className={`col-span-2 py-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               frequency === "yearly"
-                ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
+                ? "bg-white dark:bg-neutral-700 text-slate-800 dark:text-white shadow-2xs font-semibold"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
@@ -199,7 +199,7 @@ function RecurrenceSelectorContent({
                   max={99}
                   value={interval}
                   onChange={(e) => setInterval(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                  className="w-14 px-2 py-1 text-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                  className="w-14 px-2 py-1 text-center bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                 />
                 <span className="text-slate-500 dark:text-slate-400">
                   {frequency === "daily" && (interval === 1 ? "day" : "days")}
@@ -228,7 +228,7 @@ function RecurrenceSelectorContent({
                         className={`w-8 h-8 rounded-lg font-semibold text-xs transition-all cursor-pointer ${
                           isSelected
                             ? "bg-amber-500 text-white shadow-2xs"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            : "bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-neutral-700"
                         }`}
                       >
                         {w.label}
@@ -253,7 +253,7 @@ function RecurrenceSelectorContent({
                   onChange={(e) =>
                     setDayOfMonth(Math.min(31, Math.max(1, parseInt(e.target.value, 10) || 1)))
                   }
-                  className="w-14 px-2 py-1 text-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                  className="w-14 px-2 py-1 text-center bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                 />
               </div>
             )}
@@ -268,7 +268,7 @@ function RecurrenceSelectorContent({
                   <select
                     value={monthOfYear}
                     onChange={(e) => setMonthOfYear(parseInt(e.target.value, 10))}
-                    className="px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="px-2 py-1 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   >
                     {[
                       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -287,14 +287,14 @@ function RecurrenceSelectorContent({
                     onChange={(e) =>
                       setDayOfMonth(Math.min(31, Math.max(1, parseInt(e.target.value, 10) || 1)))
                     }
-                    className="w-12 px-2 py-1 text-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-12 px-2 py-1 text-center bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
             )}
 
             {/* End Date */}
-            <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800/50 space-y-2">
+            <div className="pt-2 border-t border-slate-200/50 dark:border-neutral-800/50 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-slate-600 dark:text-slate-300 font-medium">
                   Ends
@@ -305,7 +305,7 @@ function RecurrenceSelectorContent({
                     onClick={() => setHasEndDate(false)}
                     className={`px-2 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       !hasEndDate
-                        ? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white"
+                        ? "bg-slate-200 dark:bg-neutral-700 text-slate-800 dark:text-white"
                         : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     }`}
                   >
@@ -316,7 +316,7 @@ function RecurrenceSelectorContent({
                     onClick={() => setHasEndDate(true)}
                     className={`px-2 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       hasEndDate
-                        ? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white"
+                        ? "bg-slate-200 dark:bg-neutral-700 text-slate-800 dark:text-white"
                         : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     }`}
                   >
@@ -326,7 +326,7 @@ function RecurrenceSelectorContent({
               </div>
 
               {hasEndDate && (
-                <div className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-700">
                   <Calendar className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                   <input
                     type="date"
@@ -341,11 +341,11 @@ function RecurrenceSelectorContent({
         )}
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60 dark:border-neutral-800/60">
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+            className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer"
           >
             Cancel
           </button>

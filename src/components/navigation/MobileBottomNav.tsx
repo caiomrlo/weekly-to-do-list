@@ -34,7 +34,7 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white dark:bg-slate-900 border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)] px-3 pt-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]"
+      className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white dark:bg-neutral-900 border-t border-slate-200/90 dark:border-neutral-800 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)] px-3 pt-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]"
     >
       <div className="flex items-center justify-around max-w-lg mx-auto">
         {navItems.map((item) => {

@@ -77,11 +77,11 @@ export function KanbanCard({
             ? "border-amber-500 ring-2 ring-amber-500/30 bg-amber-50/40 dark:bg-amber-950/40"
             : task.completed
               ? isToday
-                ? "bg-amber-50/15 hover:bg-amber-50/25 dark:bg-amber-950/15 dark:hover:bg-amber-950/25 border-amber-300/40 dark:border-amber-700/40 text-slate-400 dark:text-slate-500"
-                : "bg-white/60 hover:bg-white/80 dark:bg-slate-900/40 dark:hover:bg-slate-900/60 border-slate-200/50 dark:border-slate-800/50 text-slate-400 dark:text-slate-500"
+                ? "bg-amber-50/15 hover:bg-amber-50/25 dark:bg-amber-950/15 dark:hover:bg-amber-950/25 border-amber-300/40 dark:border-amber-700/40 text-slate-400 dark:text-neutral-500"
+                : "bg-white/60 hover:bg-white/80 dark:bg-neutral-900/40 dark:hover:bg-neutral-900/60 border-slate-200/50 dark:border-neutral-800/50 text-slate-400 dark:text-neutral-500"
               : isToday
-                ? "bg-amber-50/30 hover:bg-amber-50/50 dark:bg-amber-950/20 dark:hover:bg-amber-950/35 border-amber-300/80 dark:border-amber-600/50 text-slate-800 dark:text-slate-100 shadow-2xs hover:shadow-xs ring-1 ring-amber-400/25 dark:ring-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/70"
-                : "bg-white/90 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs hover:shadow-xs hover:border-amber-300 dark:hover:border-amber-500/40"
+                ? "bg-amber-50/30 hover:bg-amber-50/50 dark:bg-amber-950/20 dark:hover:bg-amber-950/35 border-amber-300/80 dark:border-amber-600/50 text-slate-800 dark:text-neutral-100 shadow-2xs hover:shadow-xs ring-1 ring-amber-400/25 dark:ring-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/70"
+                : "bg-white/90 hover:bg-white dark:bg-neutral-900/80 dark:hover:bg-neutral-900 border-slate-200/70 dark:border-neutral-800 text-slate-800 dark:text-neutral-100 shadow-2xs hover:shadow-xs hover:border-amber-300 dark:hover:border-amber-500/40"
       }`}
     >
       <div className="flex items-start gap-2">
@@ -127,7 +127,7 @@ export function KanbanCard({
             {task.project && projectStyles && (
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${
-                  task.completed ? "bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700" : projectStyles.badgeClass
+                  task.completed ? "bg-slate-100 text-slate-400 border-slate-200 dark:bg-neutral-800 dark:text-slate-500 dark:border-neutral-700" : projectStyles.badgeClass
                 }`}
                 title={`Project: ${task.project.name}`}
               >
@@ -140,7 +140,7 @@ export function KanbanCard({
             {task.tag && tagStyles && (
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${
-                  task.completed ? "bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700" : tagStyles.badgeClass
+                  task.completed ? "bg-slate-100 text-slate-400 border-slate-200 dark:bg-neutral-800 dark:text-slate-500 dark:border-neutral-700" : tagStyles.badgeClass
                 }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${tagStyles.dotClass}`} />
@@ -155,10 +155,10 @@ export function KanbanCard({
                   task.completed
                     ? isToday
                       ? "bg-amber-500/10 text-amber-600/70 dark:text-amber-400/60 border-amber-200/50 dark:border-amber-900/40"
-                      : "bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700"
+                      : "bg-slate-100 text-slate-400 border-slate-200 dark:bg-neutral-800 dark:text-slate-500 dark:border-neutral-700"
                     : isToday
                       ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-300/80 dark:border-amber-600/50 font-semibold"
-                      : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60"
+                      : "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-neutral-700/60"
                 }`}
                 title={`Scheduled: ${taskDate}${isToday ? " (Today)" : ""}`}
               >
@@ -198,7 +198,7 @@ export function KanbanCard({
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${
                   task.completedSubtaskCount === task.subtaskCount
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60"
-                    : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/60"
+                    : "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-neutral-700/60"
                 }`}
                 title={`Subtasks: ${task.completedSubtaskCount || 0}/${task.subtaskCount}`}
               >
@@ -212,7 +212,7 @@ export function KanbanCard({
             {/* Attachments Count */}
             {Boolean(task.attachmentCount && task.attachmentCount > 0) && (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100/80 dark:bg-neutral-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-neutral-700/60"
                 title={`Attachments: ${task.attachmentCount}`}
               >
                 <Paperclip className="w-2.5 h-2.5" />
@@ -223,7 +223,7 @@ export function KanbanCard({
             {/* Docs Count */}
             {Boolean(task.docCount && task.docCount > 0) && (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100/80 dark:bg-neutral-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-neutral-700/60"
                 title={`Linked Docs: ${task.docCount}`}
               >
                 <FileText className="w-2.5 h-2.5" />

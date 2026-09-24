@@ -65,7 +65,7 @@ export function TaskAssigneeAvatars({
 
       {overflow > 0 && (
         <div
-          className={`relative rounded-full border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold shrink-0 flex items-center justify-center shadow-2xs select-none hover:scale-110 hover:z-20 transition-transform ${sizeClasses}`}
+          className={`relative rounded-full border-white dark:border-neutral-900 bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-200 font-bold shrink-0 flex items-center justify-center shadow-2xs select-none hover:scale-110 hover:z-20 transition-transform ${sizeClasses}`}
           title={`${overflow} more assignee${overflow > 1 ? "s" : ""}`}
         >
           +{overflow}

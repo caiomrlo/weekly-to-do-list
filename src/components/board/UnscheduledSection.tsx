@@ -58,18 +58,18 @@ export function UnscheduledSection({
   };
 
   return (
-    <section className="mt-6 glass-panel rounded-3xl p-5 sm:p-6 border border-white/80 dark:border-slate-800 shadow-sm transition-all">
+    <section className="mt-6 glass-panel rounded-3xl p-5 sm:p-6 border border-white/80 dark:border-neutral-800 shadow-sm transition-all">
       {/* Section Header */}
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200/50 dark:border-slate-800/60">
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200/50 dark:border-neutral-800/60">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-900/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-2xs">
             <CalendarOff className="w-4 h-4" />
           </div>
           <div className="flex items-center gap-2">
-            <h2 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 tracking-tight">
+            <h2 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-neutral-100 tracking-tight">
               Unscheduled
             </h2>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300 border border-slate-200/60 dark:border-neutral-700/60 shadow-2xs">
               {pendingCount} {pendingCount === 1 ? "pending" : "pending"}
             </span>
           </div>
@@ -78,10 +78,10 @@ export function UnscheduledSection({
         <button
           type="button"
           onClick={onToggleOpen}
-          className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 dark:hover:text-slate-200 dark:hover:bg-slate-800/80 transition-all cursor-pointer flex items-center gap-1 text-xs font-medium"
+          className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 dark:hover:text-neutral-200 dark:hover:bg-neutral-800/80 transition-all cursor-pointer flex items-center gap-1 text-xs font-medium"
           title={isOpen ? "Collapse section" : "Expand section"}
         >
-          <span className="text-[11px] hidden sm:inline text-slate-500 dark:text-slate-400">
+          <span className="text-[11px] hidden sm:inline text-slate-500 dark:text-neutral-400">
             {isOpen ? "Collapse" : "Expand"}
           </span>
           <ChevronDown
@@ -102,7 +102,7 @@ export function UnscheduledSection({
               className={`h-12 border-2 border-dashed rounded-2xl flex items-center justify-center text-xs font-medium transition-all ${
                 isUnscheduledDropTarget
                   ? "border-amber-400 dark:border-amber-500 bg-amber-50/70 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 shadow-xs"
-                  : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-amber-300 hover:text-amber-600 bg-white/30 dark:bg-slate-800/30"
+                  : "border-slate-200/60 dark:border-neutral-700/60 text-slate-400 dark:text-neutral-500 hover:border-amber-300 hover:text-amber-600 bg-white/30 dark:bg-neutral-800/30"
               }`}
             >
               <span>Move to Unscheduled</span>
@@ -157,7 +157,7 @@ export function UnscheduledSection({
               })}
             </div>
           ) : (
-            <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+            <div className="py-6 text-center text-xs text-slate-400 dark:text-neutral-500 font-medium">
               No unscheduled tasks right now. Drag tasks here from any day or use the input below.
             </div>
           )}
@@ -176,7 +176,7 @@ export function UnscheduledSection({
                   }
                 }}
                 placeholder="+ New unscheduled task... (Press Enter to add)"
-                className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/70 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-500/30 focus:border-amber-400 dark:focus:border-amber-500 transition-all shadow-2xs"
+                className="w-full text-xs bg-white/80 hover:bg-white focus:bg-white dark:bg-neutral-900/60 dark:hover:bg-neutral-900/80 dark:focus:bg-neutral-900 border border-slate-200/70 dark:border-neutral-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-neutral-200 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-500/30 focus:border-amber-400 dark:focus:border-amber-500 transition-all shadow-2xs"
               />
               {Boolean(quickAddTitle.trim()) && (
                 <button

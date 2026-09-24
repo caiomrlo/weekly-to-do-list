@@ -128,7 +128,7 @@ export function TaskAssigneeSelector({
       <button
         type="button"
         onClick={handleOpenClick}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border border-slate-200/70 dark:border-slate-700/70 transition-all shadow-2xs cursor-pointer group"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium bg-slate-100/90 dark:bg-neutral-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-200/80 dark:hover:bg-neutral-700/80 border border-slate-200/70 dark:border-neutral-700/70 transition-all shadow-2xs cursor-pointer group"
         title="Assign members"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -169,7 +169,7 @@ export function TaskAssigneeSelector({
 
       {/* Popover Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-64 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute left-0 mt-1.5 w-64 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl border border-slate-200 dark:border-neutral-800 p-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase flex items-center justify-between">
             <span>Workspace Members</span>
             {isTogglingId && (
@@ -189,7 +189,7 @@ export function TaskAssigneeSelector({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search member..."
-                className="w-full pl-7 pr-2 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
+                className="w-full pl-7 pr-2 py-1 text-xs rounded-lg bg-slate-100 dark:bg-neutral-800/80 border border-slate-200/60 dark:border-neutral-700/60 text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
                 autoFocus
               />
             </div>
@@ -219,8 +219,8 @@ export function TaskAssigneeSelector({
                     disabled={isToggling}
                     className={`w-full flex items-center justify-between px-2 py-1.5 rounded-xl text-xs transition-colors cursor-pointer text-left ${
                       isAssigned
-                        ? "bg-amber-50/80 dark:bg-amber-950/40 text-slate-900 dark:text-slate-100 font-medium"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                        ? "bg-amber-50/80 dark:bg-amber-950/40 text-slate-900 dark:text-neutral-100 font-medium"
+                        : "text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-800/60"
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
@@ -232,7 +232,7 @@ export function TaskAssigneeSelector({
                         image={member.image}
                         color={member.avatarColor}
                         userId={member.userId}
-                        borderColor="border-white dark:border-slate-800"
+                        borderColor="border-white dark:border-neutral-800"
                       />
 
                       {/* Name & Email */}
@@ -260,7 +260,7 @@ export function TaskAssigneeSelector({
                           <Check className="w-3 h-3 stroke-[3]" />
                         </div>
                       ) : (
-                        <div className="w-4 h-4 rounded-md border border-slate-300 dark:border-slate-600 hover:border-amber-400" />
+                        <div className="w-4 h-4 rounded-md border border-slate-300 dark:border-neutral-600 hover:border-amber-400" />
                       )}
                     </div>
                   </button>

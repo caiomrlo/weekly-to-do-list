@@ -87,7 +87,7 @@ export function AttachmentsAndDocsSection({
     <div
       className={
         isCardVariant
-          ? "w-full rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/80 p-3 sm:p-4 space-y-2.5"
+          ? "w-full rounded-2xl bg-slate-50/70 dark:bg-neutral-900/50 border border-slate-200/70 dark:border-neutral-800/80 p-3 sm:p-4 space-y-2.5"
           : "space-y-3"
       }
     >
@@ -119,7 +119,7 @@ export function AttachmentsAndDocsSection({
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-medium border shrink-0 ${
                 isCardVariant
                   ? "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/60"
+                  : "bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-neutral-700/60"
               }`}
             >
               {totalItemsCount}

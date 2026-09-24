@@ -135,10 +135,10 @@ export function TaskTagSelector({
 
       {/* Popover */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-slate-200 dark:border-neutral-800 p-3 z-30 animate-in fade-in zoom-in-95 duration-150">
           {!isCreating ? (
             <div>
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-neutral-800 text-xs font-semibold text-slate-600 dark:text-neutral-300">
                 <span>Select Tag</span>
                 <button
                   type="button"
@@ -167,7 +167,7 @@ export function TaskTagSelector({
                 )}
 
                 {userTags.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
+                  <div className="py-4 text-center text-xs text-slate-400 dark:text-neutral-500">
                     No tags created yet.
                   </div>
                 ) : (
@@ -186,7 +186,7 @@ export function TaskTagSelector({
                         className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-all cursor-pointer ${
                           isSelected
                             ? `${styles.badgeClass} ring-1 ring-amber-400/40 font-semibold`
-                            : "hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200"
+                            : "hover:bg-slate-100/80 dark:hover:bg-neutral-800/80 text-slate-700 dark:text-neutral-200"
                         }`}
                       >
                         <span className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export function TaskTagSelector({
           ) : (
             /* Inline Tag Creation Form */
             <form onSubmit={handleCreate} className="space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800 text-xs font-semibold text-slate-700 dark:text-neutral-200">
                 <span>Create New Tag</span>
                 <button
                   type="button"
@@ -215,7 +215,7 @@ export function TaskTagSelector({
                     setIsCreating(false);
                     setError("");
                   }}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -228,7 +228,7 @@ export function TaskTagSelector({
               )}
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-neutral-400 mb-1">
                   Tag Name
                 </label>
                 <input
@@ -238,7 +238,7 @@ export function TaskTagSelector({
                   onChange={(e) => setNewTagName(e.target.value)}
                   placeholder="e.g. Work, Study, Personal..."
                   maxLength={50}
-                  className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  className="w-full text-xs bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl px-2.5 py-1.5 text-slate-700 dark:text-neutral-200 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                 />
               </div>
 
@@ -255,7 +255,7 @@ export function TaskTagSelector({
                       className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-[10px] font-medium transition-all cursor-pointer ${
                         newTagColor === colorOpt.key
                           ? `${colorOpt.badgeClass} ring-2 ring-amber-500/30 font-bold border-amber-400`
-                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                          : "bg-white dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-700"
                       }`}
                     >
                       <span
@@ -267,14 +267,14 @@ export function TaskTagSelector({
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
                 <button
                   type="button"
                   onClick={() => {
                     setIsCreating(false);
                     setError("");
                   }}
-                  className="px-2.5 py-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  className="px-2.5 py-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                 >
                   Back
                 </button>

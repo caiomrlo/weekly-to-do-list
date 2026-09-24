@@ -185,7 +185,7 @@ export function ProfilePictureModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleCloseModal();
@@ -197,10 +197,10 @@ export function ProfilePictureModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="profile-picture-title"
-        className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+        className="w-full max-w-sm rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-neutral-800/80">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Camera className="w-4 h-4" />
@@ -217,7 +217,7 @@ export function ProfilePictureModal({
             type="button"
             onClick={handleCloseModal}
             disabled={isBusy}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
@@ -244,14 +244,14 @@ export function ProfilePictureModal({
               color={userAvatarColor}
               userId={userId}
               showBorder
-              borderColor="border-slate-200 dark:border-slate-700"
+              borderColor="border-slate-200 dark:border-neutral-700"
               className="shadow-md transition-transform group-hover:scale-105"
             />
 
             {/* Quick change camera badge (hidden while previewing a newly chosen file) */}
             {!isBusy && !selectedFile && (
               <div
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border-2 border-white dark:border-slate-900 flex items-center justify-center transition-all group-hover:scale-110 pointer-events-none"
+                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border-2 border-white dark:border-neutral-900 flex items-center justify-center transition-all group-hover:scale-110 pointer-events-none"
                 aria-hidden="true"
               >
                 <Camera className="w-3.5 h-3.5" />
@@ -294,7 +294,7 @@ export function ProfilePictureModal({
                   type="button"
                   onClick={handleCancelPreview}
                   disabled={isBusy}
-                  className="flex-1 px-3.5 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer disabled:opacity-50 text-center"
+                  className="flex-1 px-3.5 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer disabled:opacity-50 text-center"
                 >
                   Cancel
                 </button>

@@ -82,25 +82,25 @@ export function DayColumn({
       }`}
     >
       {/* Column Day Header */}
-      <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/40 dark:border-slate-800/60">
+      <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/40 dark:border-neutral-800/60">
         <div className="flex items-center gap-2">
           <span
             className={`text-sm font-bold ${
               day.isToday
                 ? "text-amber-600 dark:text-amber-400"
-                : "text-slate-800 dark:text-slate-200"
+                : "text-slate-800 dark:text-neutral-200"
             }`}
           >
             {day.dayNameShort}
           </span>
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <span className="text-xs font-medium text-slate-500 dark:text-neutral-400">
             {day.dayNumber} {day.monthNameShort}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5">
           {tasks.length > 0 && (
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
               {completedCount}/{tasks.length}
             </span>
           )}
@@ -180,7 +180,7 @@ export function DayColumn({
             className={`h-10 border-2 border-dashed rounded-xl flex items-center justify-center text-[11px] font-medium transition-all ${
               isColumnDropTarget
                 ? "border-amber-400 dark:border-amber-500 bg-amber-50/70 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 shadow-xs"
-                : "border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 hover:border-amber-300 hover:text-amber-600 bg-white/20 dark:bg-slate-800/20"
+                : "border-slate-200/60 dark:border-neutral-700/60 text-slate-400 dark:text-slate-500 hover:border-amber-300 hover:text-amber-600 bg-white/20 dark:bg-neutral-800/20"
             }`}
           >
             <span>Move to {day.dayNameShort}</span>
@@ -201,7 +201,7 @@ export function DayColumn({
                 }
               }}
               placeholder="+ New task"
-              className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white dark:bg-slate-900/60 dark:hover:bg-slate-900/80 dark:focus:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-500/30 focus:border-amber-400 dark:focus:border-amber-500 transition-all shadow-2xs"
+              className="w-full text-xs bg-white/70 hover:bg-white focus:bg-white dark:bg-neutral-900/60 dark:hover:bg-neutral-900/80 dark:focus:bg-neutral-900 border border-slate-200/60 dark:border-neutral-800 rounded-xl pl-3 pr-8 py-2 text-slate-700 dark:text-neutral-200 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-500/30 focus:border-amber-400 dark:focus:border-amber-500 transition-all shadow-2xs"
             />
             {Boolean(quickAddTitle.trim()) && (
               <button

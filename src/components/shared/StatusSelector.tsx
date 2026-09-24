@@ -39,7 +39,7 @@ export function StatusSelector({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 border border-slate-200/70 dark:border-slate-700/70 transition-all shadow-2xs cursor-pointer"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium bg-slate-100/90 dark:bg-neutral-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-200/80 dark:hover:bg-neutral-700/80 border border-slate-200/70 dark:border-neutral-700/70 transition-all shadow-2xs cursor-pointer"
         title="Change status"
       >
         <span className={`w-2 h-2 rounded-full ${currentStyles.dotClass}`} />
@@ -48,7 +48,7 @@ export function StatusSelector({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-1.5 w-44 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 p-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute left-0 mt-1.5 w-44 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl border border-slate-200 dark:border-neutral-800 p-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
             Status
           </div>
@@ -67,8 +67,8 @@ export function StatusSelector({
                   }}
                   className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
                     isSelected
-                      ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      ? "bg-slate-100 dark:bg-neutral-800 text-slate-900 dark:text-neutral-100"
+                      : "text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800/50"
                   }`}
                 >
                   <span className="flex items-center gap-2 truncate">

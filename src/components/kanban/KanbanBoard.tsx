@@ -658,9 +658,9 @@ export function KanbanBoard({
             <button
               type="button"
               onClick={handleOpenCreateStatus}
-              className="w-full h-32 rounded-3xl border border-dashed border-slate-300/80 dark:border-slate-700/80 hover:border-amber-400 dark:hover:border-amber-500/60 bg-white/40 hover:bg-white/70 dark:bg-slate-900/30 dark:hover:bg-slate-900/60 transition-all flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 cursor-pointer shadow-2xs"
+              className="w-full h-32 rounded-3xl border border-dashed border-slate-300/80 dark:border-neutral-700/80 hover:border-amber-400 dark:hover:border-amber-500/60 bg-white/40 hover:bg-white/70 dark:bg-neutral-900/30 dark:hover:bg-neutral-900/60 transition-all flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-amber-600 dark:text-neutral-400 dark:hover:text-amber-400 cursor-pointer shadow-2xs"
             >
-              <div className="w-8 h-8 rounded-full bg-slate-200/60 dark:bg-slate-800/80 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-slate-200/60 dark:bg-neutral-800 flex items-center justify-center">
                 <Plus className="w-4 h-4" />
               </div>
               <span className="text-xs font-semibold">Add Column</span>

@@ -100,7 +100,7 @@ export function SettingsMenu({
         className={`p-2 rounded-xl border text-xs font-medium shadow-xs transition-all cursor-pointer flex items-center justify-center relative ${
           isOpen || hasCustomSettings
             ? "bg-amber-50/90 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/80"
-            : "bg-white/70 hover:bg-white dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-slate-200/70 dark:border-slate-700/70"
+            : "bg-white/70 hover:bg-white dark:bg-neutral-800/70 dark:hover:bg-neutral-800 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-slate-200/70 dark:border-neutral-700/70"
         }`}
         title="Settings"
         aria-label="Settings"
@@ -113,10 +113,10 @@ export function SettingsMenu({
 
       {/* Settings Popover */}
       {isOpen && (
-        <div className="fixed inset-x-3.5 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 max-h-[calc(100dvh-5rem)] sm:max-h-none overflow-y-auto sm:overflow-visible p-3.5 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-x-3.5 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 max-h-[calc(100dvh-5rem)] sm:max-h-none overflow-y-auto sm:overflow-visible p-3.5 rounded-2xl bg-white dark:bg-neutral-900 shadow-2xl border border-slate-200 dark:border-neutral-800 z-50 animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
-          <div className="pb-2.5 mb-3 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+          <div className="pb-2.5 mb-3 border-b border-slate-200/60 dark:border-neutral-800/60 flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-800 dark:text-neutral-100 uppercase tracking-wider">
               Settings
             </h3>
             {hasCustomSettings && (
@@ -148,13 +148,13 @@ export function SettingsMenu({
                     className={`group relative flex flex-col items-center gap-1.5 p-2 rounded-xl border text-center transition-all cursor-pointer ${
                       isSelected
                         ? "bg-amber-50/70 dark:bg-amber-950/40 border-amber-500/80 dark:border-amber-400/80 shadow-xs"
-                        : "bg-slate-50/70 hover:bg-slate-100/80 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 border-slate-200/70 dark:border-slate-700/60"
+                        : "bg-slate-50/70 hover:bg-slate-100/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/70 border-slate-200/70 dark:border-neutral-700/60"
                     }`}
                     title={`Select ${opt.label} background`}
                   >
                     {/* Gradient Preview Swatch */}
                     <div
-                      className={`w-7 h-7 rounded-full bg-gradient-to-tr ${opt.gradientClass} shadow-xs border border-white/60 dark:border-slate-700/60 flex items-center justify-center transition-transform group-hover:scale-105`}
+                      className={`w-7 h-7 rounded-full bg-gradient-to-tr ${opt.gradientClass} shadow-xs border border-white/60 dark:border-neutral-700/60 flex items-center justify-center transition-transform group-hover:scale-105`}
                     >
                       {isSelected && (
                         <Check className="w-3.5 h-3.5 text-amber-700 dark:text-amber-300 stroke-[2.5]" />
@@ -177,7 +177,7 @@ export function SettingsMenu({
 
           {/* Section 2: Days of the Week (Only rendered when planner day controls are provided) */}
           {onToggleDay && (
-            <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
+            <div className="pt-3 border-t border-slate-200/60 dark:border-neutral-800/60">
               <div className="pb-2 mb-1 flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                   Days of the Week
@@ -189,7 +189,7 @@ export function SettingsMenu({
 
               <div className="space-y-1">
                 {/* Mon to Fri indicator */}
-                <div className="px-2 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-slate-800/60 rounded-lg flex items-center justify-between">
+                <div className="px-2 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-neutral-800/60 rounded-lg flex items-center justify-between">
                   <span>Monday – Friday</span>
                   <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px]">
                     Default
@@ -200,7 +200,7 @@ export function SettingsMenu({
                 <button
                   type="button"
                   onClick={() => onToggleDay("showSaturday")}
-                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
+                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-neutral-800/70 cursor-pointer transition-colors text-left"
                 >
                   <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
                     Saturday
@@ -209,7 +209,7 @@ export function SettingsMenu({
                     className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
                       preferences.showSaturday
                         ? "bg-amber-500"
-                        : "bg-slate-300 dark:bg-slate-700"
+                        : "bg-slate-300 dark:bg-neutral-700"
                     }`}
                   >
                     <div
@@ -226,7 +226,7 @@ export function SettingsMenu({
                 <button
                   type="button"
                   onClick={() => onToggleDay("showSunday")}
-                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-left"
+                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-neutral-800/70 cursor-pointer transition-colors text-left"
                 >
                   <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
                     Sunday
@@ -235,7 +235,7 @@ export function SettingsMenu({
                     className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
                       preferences.showSunday
                         ? "bg-amber-500"
-                        : "bg-slate-300 dark:bg-slate-700"
+                        : "bg-slate-300 dark:bg-neutral-700"
                     }`}
                   >
                     <div

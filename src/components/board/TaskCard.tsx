@@ -108,10 +108,10 @@ export function TaskCard({
             : isAttachedToDragged
               ? "opacity-60 border-dashed border-amber-300 dark:border-amber-600 bg-amber-50/10 dark:bg-amber-950/20"
               : task.completed
-                ? "bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 text-slate-400 dark:text-slate-500"
+                ? "bg-slate-50/50 dark:bg-neutral-900/40 border-slate-200/40 dark:border-neutral-800/50 text-slate-400 dark:text-neutral-500"
                 : isSameDaySubtask
-                  ? "bg-white/95 hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-900 border-slate-200/70 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-amber-300 dark:hover:border-amber-500/50"
-                  : "bg-white/85 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200/60 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:shadow-xs hover:border-amber-200 dark:hover:border-amber-500/40"
+                  ? "bg-white/95 hover:bg-white dark:bg-neutral-900/80 dark:hover:bg-neutral-900 border-slate-200/70 dark:border-neutral-800 text-slate-800 dark:text-neutral-100 hover:shadow-xs hover:border-amber-300 dark:hover:border-amber-500/50"
+                  : "bg-white/85 hover:bg-white dark:bg-neutral-900/75 dark:hover:bg-neutral-900 border-slate-200/60 dark:border-neutral-800 text-slate-800 dark:text-neutral-100 hover:shadow-xs hover:border-amber-200 dark:hover:border-amber-500/40"
       }`}
     >
       {/* Drop Indicator Line: Before */}
@@ -191,7 +191,7 @@ export function TaskCard({
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold border shadow-2xs ${
                   task.completed
-                    ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                    ? "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-neutral-700/50"
                     : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                 }`}
                 title={`Scheduled for ${formatDayShort(scheduledDate)}`}
@@ -213,7 +213,7 @@ export function TaskCard({
                   className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs cursor-pointer hover:ring-1 hover:ring-amber-400/50 transition-all ${
                     task.completed ||
                     task.completedSubtaskCount === task.subtaskCount
-                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                      ? "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-neutral-700/50"
                       : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                   }`}
                   title={
@@ -238,7 +238,7 @@ export function TaskCard({
                   className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
                     task.completed ||
                     task.completedSubtaskCount === task.subtaskCount
-                      ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                      ? "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-neutral-700/50"
                       : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                   }`}
                   title={`Subtasks: ${task.completedSubtaskCount || 0} of ${
@@ -264,8 +264,8 @@ export function TaskCard({
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
                   task.completed
-                    ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                    : "bg-slate-50/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60"
+                    ? "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-neutral-700/50"
+                    : "bg-slate-50/90 dark:bg-neutral-800/60 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-neutral-700/60"
                 }`}
                 title={`Attachments: ${task.attachmentCount}`}
               >
@@ -285,8 +285,8 @@ export function TaskCard({
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
                   task.completed
-                    ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
-                    : "bg-slate-50/90 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60"
+                    ? "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-neutral-700/50"
+                    : "bg-slate-50/90 dark:bg-neutral-800/60 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-neutral-700/60"
                 }`}
                 title={`Linked docs: ${task.docCount}`}
               >
@@ -306,7 +306,7 @@ export function TaskCard({
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border shadow-2xs ${
                   task.completed
-                    ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                    ? "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-neutral-700/50"
                     : projectStyles.badgeClass
                 }`}
               >
@@ -342,7 +342,7 @@ export function TaskCard({
               <span
                 className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border shadow-2xs ${
                   task.completed
-                    ? "bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-slate-700/50"
+                    ? "bg-slate-100/80 dark:bg-neutral-800/80 text-slate-400 dark:text-slate-500 border-slate-200/50 dark:border-neutral-700/50"
                     : "bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60"
                 }`}
                 title={`Estimated duration: ${formatDuration(task.duration!)}`}

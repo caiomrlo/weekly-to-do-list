@@ -88,17 +88,17 @@ export function KanbanColumn({
       className={`w-72 sm:w-80 flex-shrink-0 flex flex-col rounded-3xl p-3 border transition-all glass-panel ${
         isDragOverColumn
           ? "ring-2 ring-amber-500/50 border-amber-400/80 bg-amber-50/30 dark:bg-amber-950/30"
-          : "border-white/60 dark:border-slate-800/80"
+          : "border-white/60 dark:border-neutral-800/80"
       }`}
     >
       {/* Column Header */}
       <div className="flex items-center justify-between px-2 py-1.5 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${styles.dotClass}`} />
-          <h2 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 tracking-tight truncate">
+          <h2 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-neutral-100 tracking-tight truncate">
             {status.name}
           </h2>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300">
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/70 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300">
             {tasks.length}
           </span>
         </div>
@@ -110,7 +110,7 @@ export function KanbanColumn({
               setIsAddingTask(true);
               setTimeout(() => inputRef.current?.focus(), 50);
             }}
-            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800/60 transition-colors cursor-pointer"
             title="Add task to column"
           >
             <Plus className="w-4 h-4" />
@@ -119,7 +119,7 @@ export function KanbanColumn({
           <button
             type="button"
             onClick={() => onEditStatus(status)}
-            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800/60 transition-colors cursor-pointer"
             title="Configure column"
           >
             <MoreHorizontal className="w-4 h-4" />
@@ -130,7 +130,7 @@ export function KanbanColumn({
       {/* Quick Task Input Form */}
       {isAddingTask && (
         <form onSubmit={handleQuickSubmit} className="mb-3 px-1">
-          <div className="rounded-2xl p-2 bg-white dark:bg-slate-900 border border-amber-400 dark:border-amber-500 shadow-sm space-y-2 animate-in fade-in duration-100">
+          <div className="rounded-2xl p-2 bg-white dark:bg-neutral-900 border border-amber-400 dark:border-amber-500 shadow-sm space-y-2 animate-in fade-in duration-100">
             <input
               ref={inputRef}
               type="text"
@@ -186,7 +186,7 @@ export function KanbanColumn({
         ))}
 
         {tasks.length === 0 && !isAddingTask && (
-          <div className="h-28 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center p-3 text-slate-400 dark:text-slate-500 text-xs">
+          <div className="h-28 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-neutral-800 text-center p-3 text-slate-400 dark:text-slate-500 text-xs">
             <span>No tasks in this column</span>
             <button
               type="button"

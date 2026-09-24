@@ -106,19 +106,19 @@ function StatusConfigModalContent({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
       <div
         ref={modalRef}
-        className="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-sm rounded-3xl bg-white dark:bg-neutral-900 shadow-2xl border border-slate-200 dark:border-neutral-800 p-5 space-y-4 animate-in zoom-in-95 duration-150"
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 tracking-tight">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-neutral-100 tracking-tight">
             {mode === "create" ? "New Status Column" : "Edit Status"}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -126,7 +126,7 @@ function StatusConfigModalContent({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider mb-1.5">
               Name
             </label>
             <input
@@ -135,7 +135,7 @@ function StatusConfigModalContent({
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. In Review"
               autoFocus
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
+              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-100/80 dark:bg-neutral-800/80 border border-slate-200/80 dark:border-neutral-700/80 text-slate-800 dark:text-neutral-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
             />
           </div>
 
@@ -176,7 +176,7 @@ function StatusConfigModalContent({
             </p>
           )}
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-neutral-800">
             {mode === "edit" && !status?.isDefault && onDelete ? (
               <button
                 type="button"

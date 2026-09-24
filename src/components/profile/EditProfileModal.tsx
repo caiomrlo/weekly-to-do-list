@@ -116,7 +116,7 @@ export function EditProfileModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleClose();
@@ -128,10 +128,10 @@ export function EditProfileModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-profile-title"
-        className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+        className="w-full max-w-md rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-neutral-800/80">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <UserPen className="w-4 h-4" />
@@ -148,7 +148,7 @@ export function EditProfileModal({
             type="button"
             onClick={handleClose}
             disabled={isSaving}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
@@ -189,7 +189,7 @@ export function EditProfileModal({
                     placeholder="Enter your full name"
                     disabled={isSaving}
                     maxLength={100}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 focus:border-amber-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-slate-50 dark:bg-neutral-800/60 border border-slate-200 dark:border-neutral-700/80 focus:border-amber-500 focus:bg-white dark:focus:bg-neutral-900 focus:outline-none transition-colors"
                   />
                 </div>
               </div>
@@ -209,7 +209,7 @@ export function EditProfileModal({
                     value={userEmail}
                     readOnly
                     disabled
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/30 border border-slate-200/60 dark:border-slate-800 cursor-not-allowed select-none"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-neutral-800/30 border border-slate-200/60 dark:border-neutral-800 cursor-not-allowed select-none"
                   />
                 </div>
               </div>
@@ -217,12 +217,12 @@ export function EditProfileModal({
           </div>
 
           {/* Modal Footer */}
-          <div className="flex items-center justify-end gap-2.5 px-5 py-3.5 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2.5 px-5 py-3.5 bg-slate-50/70 dark:bg-neutral-800/40 border-t border-slate-100 dark:border-neutral-800">
             <button
               type="button"
               onClick={handleClose}
               disabled={isSaving}
-              className="px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>

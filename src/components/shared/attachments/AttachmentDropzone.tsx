@@ -45,8 +45,8 @@ export function AttachmentDropzone({
           ? "border-dashed border-amber-500 bg-amber-50/50 dark:bg-amber-950/40 scale-[1.01]"
           : totalItemsCount === 0
           ? isCardVariant
-            ? "border-dashed border-slate-200/90 dark:border-slate-800/90 hover:border-amber-400 dark:hover:border-amber-500/70 bg-white/40 dark:bg-slate-900/30 cursor-pointer"
-            : "border-dashed border-slate-300/80 dark:border-slate-700/80 hover:border-amber-400 dark:hover:border-amber-500/70 bg-slate-50/40 dark:bg-slate-900/30 p-4 text-center cursor-pointer"
+            ? "border-dashed border-slate-200/90 dark:border-neutral-800/90 hover:border-amber-400 dark:hover:border-amber-500/70 bg-white/40 dark:bg-neutral-900/30 cursor-pointer"
+            : "border-dashed border-slate-300/80 dark:border-neutral-700/80 hover:border-amber-400 dark:hover:border-amber-500/70 bg-slate-50/40 dark:bg-neutral-900/30 p-4 text-center cursor-pointer"
           : "border-transparent"
       }`}
     >

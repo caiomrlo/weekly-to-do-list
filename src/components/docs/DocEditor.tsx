@@ -205,13 +205,13 @@ export function DocEditor({
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto px-4 sm:px-8 py-6 space-y-5">
       {/* Top Header Controls Bar */}
-      <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-200/60 dark:border-slate-800/80">
+      <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-200/60 dark:border-neutral-800/80">
         <div className="flex items-center gap-3">
           {onBackToList && (
             <button
               type="button"
               onClick={onBackToList}
-              className="lg:hidden p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer"
+              className="lg:hidden p-2 rounded-xl bg-white/80 dark:bg-neutral-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-neutral-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer"
               title="Back to documents list"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -245,7 +245,7 @@ export function DocEditor({
             className={`p-2 rounded-xl border transition-all cursor-pointer ${
               isFavorite
                 ? "bg-amber-50 dark:bg-amber-950/50 text-amber-500 border-amber-300 dark:border-amber-800"
-                : "bg-white/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200/80 dark:border-slate-700/80 hover:text-amber-500 hover:border-amber-200"
+                : "bg-white/80 dark:bg-neutral-800/80 text-slate-400 dark:text-slate-500 border-slate-200/80 dark:border-neutral-700/80 hover:text-amber-500 hover:border-amber-200"
             }`}
             title={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
@@ -291,7 +291,7 @@ export function DocEditor({
             <button
               type="button"
               onClick={() => setIsConfirmingDelete(true)}
-              className="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200/80 dark:border-slate-700/80 hover:border-rose-200 dark:hover:border-rose-900 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-white/80 dark:bg-neutral-800/80 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200/80 dark:border-neutral-700/80 hover:border-rose-200 dark:hover:border-rose-900 transition-all cursor-pointer"
               title="Delete document"
             >
               <Trash2 className="w-4 h-4" />
@@ -307,7 +307,7 @@ export function DocEditor({
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled Document"
-          className="w-full text-2xl sm:text-3xl font-bold bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-amber-500 focus:outline-none transition-colors px-1 py-1 text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600"
+          className="w-full text-2xl sm:text-3xl font-bold bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-neutral-700 focus:border-amber-500 focus:outline-none transition-colors px-1 py-1 text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600"
         />
       </div>
 

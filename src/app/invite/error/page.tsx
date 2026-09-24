@@ -18,7 +18,7 @@ export default async function InviteErrorPage(props: {
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-amber-400/15 rounded-full blur-3xl pointer-events-none -z-10" />
 
       <div className="w-full max-w-md">
-        <div className="glass-panel rounded-3xl p-7 sm:p-9 border border-white/80 dark:border-slate-800 text-center shadow-lg">
+        <div className="glass-panel rounded-3xl p-7 sm:p-9 border border-white/80 dark:border-neutral-800 text-center shadow-lg">
           <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200/80 dark:border-rose-900/60 text-rose-500 mx-auto flex items-center justify-center mb-5 shadow-sm">
             <Link2Off className="w-7 h-7" />
           </div>
@@ -42,7 +42,7 @@ export default async function InviteErrorPage(props: {
 
             <Link
               href="/login"
-              className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-sm transition-colors flex items-center justify-center gap-2"
+              className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-slate-700 dark:text-slate-200 font-medium text-sm transition-colors flex items-center justify-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Sign In</span>
