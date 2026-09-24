@@ -51,7 +51,7 @@ flowchart TD
             TagActions["Tag Actions (Backend)\n(getTags, createTag, deleteTag)"]
             TaskStatusActions["Status Actions\n(getStatuses, createStatus, updateStatus, deleteStatus, reorderStatuses)"]
             TaskActions["Task Actions\n(create, update, toggle, delete, move/reorder, moveKanban, query with projects/tags/statuses)"]
-            UserActions["User Actions\n(getPreferences, updatePreferences)"]
+            UserActions["User Actions\n(getPreferences, updatePreferences, updateProfile)"]
         end
 
         subgraph Lib["Core Utilities (src/lib/*)"]
@@ -122,7 +122,7 @@ flowchart TD
 - **UX Principles**: Inline grouping over deep card nesting, zero redundant labels/clutter, progressive disclosure via popovers, and transient mutation feedback (`Saving...`).
 
 ### 3.2. Backend & API (`src/app/actions/`, `src/app/api/`)
-- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `workspace-invites`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` (preferences, avatar upload & deletion).
+- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `workspace-invites`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` (preferences, avatar upload & deletion, profile updates).
 - **Route Handlers (`src/app/api/`, `src/app/invite/`)**: `attachments/[id]` generates authenticated presigned Cloudflare R2 URLs for media access; `avatar/[id]` serves unauthenticated public WebP user avatars with immutable HTTP caching or redirects to `R2_PUBLIC_URL`; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`; `invite/[token]` validates invite tokens, auto-joins authenticated users, updates active workspace cookies, and handles unauthenticated auth redirects.
 - **Middleware (`src/middleware.ts`)**: Edge runtime session cookie validation (`better-auth/cookies`) protecting root and authentication routes with redirect parameter preservation.
 - *For detailed action signatures or component props, refer directly to the respective files in `src/app/actions/` and `src/components/`.*

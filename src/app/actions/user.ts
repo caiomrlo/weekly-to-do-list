@@ -206,3 +206,53 @@ export async function deleteUserAvatarAction(): Promise<{
     return { error: "Failed to remove avatar image." };
   }
 }
+
+export interface UpdateUserProfilePayload {
+  name: string;
+}
+
+export async function updateUserProfileAction(
+  payload: UpdateUserProfilePayload
+): Promise<{
+  success?: boolean;
+  name?: string;
+  error?: string;
+}> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  const trimmedName = payload.name?.trim();
+  if (!trimmedName || trimmedName.length < 2) {
+    return { error: "Name must be at least 2 characters long." };
+  }
+
+  if (trimmedName.length > 100) {
+    return { error: "Name cannot exceed 100 characters." };
+  }
+
+  try {
+    await db
+      .update(users)
+      .set({
+        name: trimmedName,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, session.userId));
+
+    revalidatePath("/", "layout");
+    return { success: true, name: trimmedName };
+  } catch (err: unknown) {
+    console.error("Error updating user profile:", err);
+    return { error: "Failed to update profile. Please try again." };
+  }
+}
+
+export async function updateUserProfileNameAction(name: string): Promise<{
+  success?: boolean;
+  name?: string;
+  error?: string;
+}> {
+  return updateUserProfileAction({ name });
+}

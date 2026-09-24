@@ -5,6 +5,7 @@ import { Camera, UserPen, LogOut } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { ProfilePictureModal } from "@/components/profile/ProfilePictureModal";
+import { EditProfileModal } from "@/components/profile/EditProfileModal";
 
 export interface ProfileMenuProps {
   userEmail: string;
@@ -23,11 +24,14 @@ export function ProfileMenu({
 }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPictureModalOpen, setIsPictureModalOpen] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [overrideImage, setOverrideImage] = useState<string | null | undefined>(undefined);
+  const [overrideName, setOverrideName] = useState<string | undefined>(undefined);
   const currentImage = overrideImage !== undefined ? overrideImage : userImage;
+  const currentName = overrideName !== undefined ? overrideName : userName;
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Listen to global user avatar update events
+  // Listen to global user avatar and profile update events
   useEffect(() => {
     function handleAvatarEvent(e: Event) {
       const customEvent = e as CustomEvent<{ image?: string | null }>;
@@ -36,9 +40,18 @@ export function ProfileMenu({
       }
     }
 
+    function handleProfileEvent(e: Event) {
+      const customEvent = e as CustomEvent<{ name?: string }>;
+      if (customEvent.detail && "name" in customEvent.detail && customEvent.detail.name) {
+        setOverrideName(customEvent.detail.name);
+      }
+    }
+
     window.addEventListener("user-avatar-updated", handleAvatarEvent);
+    window.addEventListener("user-profile-updated", handleProfileEvent);
     return () => {
       window.removeEventListener("user-avatar-updated", handleAvatarEvent);
+      window.removeEventListener("user-profile-updated", handleProfileEvent);
     };
   }, []);
 
@@ -74,7 +87,7 @@ export function ProfileMenu({
     };
   }, [isOpen]);
 
-  const displayName = userName?.trim() || userEmail.split("@")[0] || "User";
+  const displayName = currentName?.trim() || userEmail.split("@")[0] || "User";
 
   return (
     <div className="relative" ref={menuRef}>
@@ -94,7 +107,7 @@ export function ProfileMenu({
       >
         <UserAvatar
           size="md"
-          name={userName}
+          name={currentName}
           email={userEmail}
           image={currentImage}
           color={userAvatarColor}
@@ -114,7 +127,7 @@ export function ProfileMenu({
           <div className="p-2.5 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl mb-1.5 border border-slate-100 dark:border-slate-800/80">
             <UserAvatar
               size="md"
-              name={userName}
+              name={currentName}
               email={userEmail}
               image={currentImage}
               color={userAvatarColor}
@@ -152,8 +165,8 @@ export function ProfileMenu({
               type="button"
               role="menuitem"
               onClick={() => {
-                // Action placeholder for future profile editing modal
                 setIsOpen(false);
+                setIsEditProfileModalOpen(true);
               }}
               className="w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
             >
@@ -185,11 +198,23 @@ export function ProfileMenu({
           isOpen={isPictureModalOpen}
           onClose={() => setIsPictureModalOpen(false)}
           userEmail={userEmail}
-          userName={userName}
+          userName={currentName}
           currentImage={currentImage}
           userAvatarColor={userAvatarColor}
           userId={userId}
           onAvatarUpdated={(newImageUrl) => setOverrideImage(newImageUrl)}
+        />
+      )}
+
+      {/* Edit Profile Modal */}
+      {isEditProfileModalOpen && (
+        <EditProfileModal
+          key={currentName || "edit-profile"}
+          isOpen={isEditProfileModalOpen}
+          onClose={() => setIsEditProfileModalOpen(false)}
+          userEmail={userEmail}
+          userName={currentName}
+          onProfileUpdated={({ name: updatedName }) => setOverrideName(updatedName)}
         />
       )}
     </div>

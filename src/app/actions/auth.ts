@@ -49,9 +49,11 @@ async function applyResponseCookies(response: Response): Promise<void> {
 }
 
 export async function registerAction(formData: {
+  name?: string;
   email: string;
   password: string;
 }): Promise<AuthResponse> {
+  const name = formData.name?.trim() || "";
   const email = formData.email?.trim().toLowerCase();
   const password = formData.password;
 
@@ -62,6 +64,8 @@ export async function registerAction(formData: {
   if (!password || password.length < 6) {
     return { error: "Password must be at least 6 characters." };
   }
+
+  const displayName = name.length > 0 ? name : email.split("@")[0];
 
   try {
     const existing = await db
@@ -78,7 +82,7 @@ export async function registerAction(formData: {
       body: {
         email,
         password,
-        name: email.split("@")[0],
+        name: displayName,
       },
       headers: await headers(),
       asResponse: true,
@@ -127,6 +131,7 @@ export async function registerAction(formData: {
       await db
         .update(users)
         .set({
+          name: displayName,
           avatarColor: randomColor,
           preferences: {
             ...(newUser.preferences || {}),

@@ -4,6 +4,8 @@ import {
   updateUserPreferencesAction,
   uploadUserAvatarAction,
   deleteUserAvatarAction,
+  updateUserProfileNameAction,
+  updateUserProfileAction,
 } from "@/app/actions/user";
 import { db, cleanupTestUser } from "../setup/test-db";
 import {
@@ -244,6 +246,68 @@ describe("Integration: User Preferences Actions", () => {
 
       expect(dbUser.image).toBeNull();
       expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+    });
+  });
+
+  describe("updateUserProfileNameAction & updateUserProfileAction", () => {
+    it("should reject when not authenticated", async () => {
+      const res = await updateUserProfileNameAction("New Name");
+      expect(res.error).toBe("Not authenticated.");
+    });
+
+    it("should reject names shorter than 2 characters", async () => {
+      testUser = await createTestUser();
+      await loginAsTestUser(testUser);
+
+      const res = await updateUserProfileNameAction("A");
+      expect(res.error).toBe("Name must be at least 2 characters long.");
+
+      const emptyRes = await updateUserProfileNameAction("   ");
+      expect(emptyRes.error).toBe("Name must be at least 2 characters long.");
+    });
+
+    it("should reject names exceeding 100 characters", async () => {
+      testUser = await createTestUser();
+      await loginAsTestUser(testUser);
+
+      const res = await updateUserProfileNameAction("A".repeat(101));
+      expect(res.error).toBe("Name cannot exceed 100 characters.");
+    });
+
+    it("should successfully update user name in database and revalidate", async () => {
+      testUser = await createTestUser();
+      await loginAsTestUser(testUser);
+
+      const res = await updateUserProfileNameAction("Bob Smith");
+      expect(res.error).toBeUndefined();
+      expect(res.success).toBe(true);
+      expect(res.name).toBe("Bob Smith");
+
+      // Verify DB was updated
+      const [dbUser] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, testUser.id));
+
+      expect(dbUser.name).toBe("Bob Smith");
+      expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+    });
+
+    it("should successfully update profile using updateUserProfileAction payload", async () => {
+      testUser = await createTestUser();
+      await loginAsTestUser(testUser);
+
+      const res = await updateUserProfileAction({ name: "Alice Cooper" });
+      expect(res.error).toBeUndefined();
+      expect(res.success).toBe(true);
+      expect(res.name).toBe("Alice Cooper");
+
+      const [dbUser] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, testUser.id));
+
+      expect(dbUser.name).toBe("Alice Cooper");
     });
   });
 });

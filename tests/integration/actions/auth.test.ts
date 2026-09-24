@@ -85,6 +85,30 @@ describe("Integration: Auth Actions (registerAction, loginAction, logoutAction)"
       expect(sessionUser?.email).toBe(uniqueEmail);
     });
 
+    it("should successfully register a new user with a provided name", async () => {
+      const uniqueEmail = `reg-named-${randomUUID().slice(0, 8)}@integration.test`;
+      const res = await registerAction({
+        name: "Alice Developer",
+        email: uniqueEmail,
+        password: "SecurePassword123!",
+      });
+
+      expect(res.error).toBeUndefined();
+      expect(res.success).toBe(true);
+
+      const [saved] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, uniqueEmail));
+
+      expect(saved).toBeDefined();
+      expect(saved.name).toBe("Alice Developer");
+      userIdsToCleanup.push(saved.id);
+
+      const sessionUser = await getSessionUser();
+      expect(sessionUser?.name).toBe("Alice Developer");
+    });
+
     it("should reject registration if email is already registered", async () => {
       const existingUser = await createTestUser();
       userIdsToCleanup.push(existingUser.id);
