@@ -8,7 +8,7 @@ import {
   DEFAULT_USER_PREFERENCES,
   UserPreferences,
 } from "@/db/schema";
-import { AUTH_COOKIE_NAME } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, getAuthSecret } from "@/lib/auth";
 import {
   ACTIVE_WORKSPACE_COOKIE,
   getActiveWorkspaceContext,
@@ -25,10 +25,7 @@ export interface TestUserData {
   preferences: UserPreferences;
 }
 
-const AUTH_SECRET =
-  process.env.BETTER_AUTH_SECRET ||
-  process.env.AUTH_SECRET ||
-  "weekly-todo-jwt-auth-super-secret-key-2026";
+const AUTH_SECRET = getAuthSecret();
 
 function signCookieValue(value: string, secret: string): string {
   const signature = createHmac("sha256", secret).update(value).digest("base64");

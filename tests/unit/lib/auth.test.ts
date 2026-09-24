@@ -1,9 +1,67 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getSessionUser, AUTH_COOKIE_NAME, auth } from "@/lib/auth";
+import { getSessionUser, AUTH_COOKIE_NAME, auth, getAuthSecret } from "@/lib/auth";
 
 describe("Better Auth configuration & session helpers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe("getAuthSecret", () => {
+    it("should return BETTER_AUTH_SECRET when present", () => {
+      const originalBetter = process.env.BETTER_AUTH_SECRET;
+      const originalAuth = process.env.AUTH_SECRET;
+      process.env.BETTER_AUTH_SECRET = "custom-better-secret";
+      process.env.AUTH_SECRET = "custom-auth-secret";
+
+      expect(getAuthSecret()).toBe("custom-better-secret");
+
+      process.env.BETTER_AUTH_SECRET = originalBetter;
+      process.env.AUTH_SECRET = originalAuth;
+    });
+
+    it("should fallback to AUTH_SECRET when BETTER_AUTH_SECRET is not present", () => {
+      const originalBetter = process.env.BETTER_AUTH_SECRET;
+      const originalAuth = process.env.AUTH_SECRET;
+      delete process.env.BETTER_AUTH_SECRET;
+      process.env.AUTH_SECRET = "legacy-auth-secret";
+
+      expect(getAuthSecret()).toBe("legacy-auth-secret");
+
+      process.env.BETTER_AUTH_SECRET = originalBetter;
+      process.env.AUTH_SECRET = originalAuth;
+    });
+
+    it("should throw an error if no secret environment variable is provided", () => {
+      const originalBetter = process.env.BETTER_AUTH_SECRET;
+      const originalAuth = process.env.AUTH_SECRET;
+      delete process.env.BETTER_AUTH_SECRET;
+      delete process.env.AUTH_SECRET;
+
+      expect(() => getAuthSecret()).toThrow(
+        "Better Auth secret is missing. Please define BETTER_AUTH_SECRET or AUTH_SECRET in your environment variables."
+      );
+
+      process.env.BETTER_AUTH_SECRET = originalBetter;
+      process.env.AUTH_SECRET = originalAuth;
+    });
+
+    it("should throw an error during module initialization when secrets are missing", async () => {
+      vi.resetModules();
+      const originalBetter = process.env.BETTER_AUTH_SECRET;
+      const originalAuth = process.env.AUTH_SECRET;
+      delete process.env.BETTER_AUTH_SECRET;
+      delete process.env.AUTH_SECRET;
+
+      try {
+        await expect(import("@/lib/auth")).rejects.toThrow(
+          "Better Auth secret is missing"
+        );
+      } finally {
+        process.env.BETTER_AUTH_SECRET = originalBetter;
+        process.env.AUTH_SECRET = originalAuth;
+        vi.resetModules();
+      }
+    });
   });
 
   describe("constants & instance", () => {

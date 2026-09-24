@@ -6,6 +6,16 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { DEFAULT_USER_PREFERENCES } from "@/db/schema";
 
+export function getAuthSecret(): string {
+  const secret = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error(
+      "Better Auth secret is missing. Please define BETTER_AUTH_SECRET or AUTH_SECRET in your environment variables."
+    );
+  }
+  return secret;
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -17,10 +27,7 @@ export const auth = betterAuth({
       verifications: schema.verifications,
     },
   }),
-  secret:
-    process.env.BETTER_AUTH_SECRET ||
-    process.env.AUTH_SECRET ||
-    "weekly-todo-jwt-auth-super-secret-key-2026",
+  secret: getAuthSecret(),
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
