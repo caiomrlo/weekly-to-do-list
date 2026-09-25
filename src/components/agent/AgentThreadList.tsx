@@ -22,7 +22,9 @@ interface AgentThreadListProps {
   onDeleteThread: (threadId: string) => void;
   onRenameThread: (threadId: string, newTitle: string) => void;
   isOpen: boolean;
+  isMobileOpen?: boolean;
   onToggleOpen: () => void;
+  onToggleMobileOpen?: () => void;
   isCreating?: boolean;
 }
 
@@ -34,7 +36,9 @@ export function AgentThreadList({
   onDeleteThread,
   onRenameThread,
   isOpen,
+  isMobileOpen = false,
   onToggleOpen,
+  onToggleMobileOpen,
   isCreating,
 }: AgentThreadListProps) {
   const [search, setSearch] = useState("");
@@ -64,55 +68,80 @@ export function AgentThreadList({
     setEditingId(null);
   };
 
+  const handleSelectThread = (threadId: string) => {
+    onSelectThread(threadId);
+    if (isMobileOpen && onToggleMobileOpen) {
+      onToggleMobileOpen();
+    }
+  };
+
+  const handleCreateThread = () => {
+    onCreateThread();
+    if (isMobileOpen && onToggleMobileOpen) {
+      onToggleMobileOpen();
+    }
+  };
+
+  const handleCloseSidebar = () => {
+    if (isMobileOpen && onToggleMobileOpen) {
+      onToggleMobileOpen();
+    } else {
+      onToggleOpen();
+    }
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
-      {isOpen && (
+      {isMobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs md:hidden"
-          onClick={onToggleOpen}
+          onClick={onToggleMobileOpen ?? onToggleOpen}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar Container: Consistent 256px width, clean glass transparency */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 flex flex-col w-72 sm:w-80 shrink-0 bg-white dark:bg-neutral-900 border-r border-slate-200 dark:border-neutral-800 transition-transform duration-300 ease-in-out md:translate-x-0 ${
-          isOpen ? "translate-x-0 shadow-xl md:shadow-none" : "-translate-x-full md:w-0 md:overflow-hidden md:border-r-0"
+        className={`fixed md:static inset-y-0 left-0 z-40 flex flex-col w-64 shrink-0 transition-all duration-300 ease-in-out md:translate-x-0 ${
+          isMobileOpen
+            ? "translate-x-0 shadow-xl md:shadow-none bg-white/95 dark:bg-neutral-900/95 md:bg-white/35 md:dark:bg-neutral-900/35 backdrop-blur-md md:backdrop-blur-xs border-r border-slate-200/60 dark:border-neutral-800/60"
+            : "-translate-x-full md:translate-x-0 bg-white/35 dark:bg-neutral-900/35 backdrop-blur-xs border-r border-slate-200/60 dark:border-neutral-800/60"
+        } ${
+          isOpen
+            ? "md:w-64 md:opacity-100"
+            : "md:w-0 md:overflow-hidden md:border-r-0 md:opacity-0"
         }`}
       >
         {/* Header Actions */}
-        <div className="p-3.5 border-b border-slate-200/80 dark:border-neutral-800/80 flex items-center justify-between gap-2">
+        <div className="p-3 sm:p-3.5 border-b border-slate-200/60 dark:border-neutral-800/60 flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="truncate">
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="truncate min-w-0">
+              <h2 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                 AI Conversations
               </h2>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                {threads.length} {threads.length === 1 ? "chat" : "chats"}
-              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
-              onClick={onCreateThread}
+              onClick={handleCreateThread}
               disabled={isCreating}
               className="p-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-colors cursor-pointer flex items-center justify-center group disabled:opacity-50"
               title="New Conversation"
               aria-label="New Conversation"
             >
-              <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
+              <Plus className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-200" />
             </button>
 
             <button
               type="button"
-              onClick={onToggleOpen}
-              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+              onClick={handleCloseSidebar}
+              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-colors cursor-pointer"
               title="Close sidebar"
               aria-label="Close sidebar"
             >
@@ -122,7 +151,7 @@ export function AgentThreadList({
         </div>
 
         {/* Search filter */}
-        <div className="p-3 border-b border-slate-200/60 dark:border-neutral-800/60">
+        <div className="p-2.5 sm:p-3 border-b border-slate-200/50 dark:border-neutral-800/50 shrink-0">
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -130,7 +159,7 @@ export function AgentThreadList({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search conversations..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-xl text-xs bg-slate-100/80 dark:bg-neutral-800/80 border border-slate-200/80 dark:border-neutral-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-amber-500 transition-all"
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl text-xs bg-white/60 dark:bg-neutral-800/50 border border-slate-200/70 dark:border-neutral-700/60 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-amber-500 transition-all"
             />
           </div>
         </div>
@@ -146,8 +175,8 @@ export function AgentThreadList({
               {!search && (
                 <button
                   type="button"
-                  onClick={onCreateThread}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors cursor-pointer"
+                  onClick={handleCreateThread}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Start new chat</span>
@@ -162,11 +191,11 @@ export function AgentThreadList({
               return (
                 <div
                   key={thread.id}
-                  onClick={() => !isEditing && onSelectThread(thread.id)}
-                  className={`group relative flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer select-none ${
+                  onClick={() => !isEditing && handleSelectThread(thread.id)}
+                  className={`group relative flex items-center justify-between gap-1.5 px-2.5 h-9 rounded-xl text-xs transition-colors cursor-pointer select-none shrink-0 ${
                     isActive
-                      ? "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 font-medium border border-amber-200/60 dark:border-amber-800/60 shadow-2xs"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-neutral-800/70 border border-transparent"
+                      ? "bg-amber-500/15 dark:bg-amber-400/15 text-amber-900 dark:text-amber-200 font-medium border border-amber-500/20 dark:border-amber-400/20 shadow-2xs"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-neutral-800/60 border border-transparent"
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">

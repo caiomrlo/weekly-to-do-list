@@ -56,6 +56,7 @@ export function AgentWorkspace({
   );
   const [messages, setMessages] = useState<AiMessage[]>(initialMessages);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const [preferences, setPreferences] = useState<UserPreferences>(
@@ -159,10 +160,11 @@ export function AgentWorkspace({
 
   return (
     <div
-      className={`min-h-screen flex flex-col theme-bg-${bgTheme} transition-colors duration-300 pb-16 md:pb-0`}
+      className={`h-[100dvh] flex flex-col theme-bg-${bgTheme} transition-colors duration-300 pb-16 md:pb-0 overflow-hidden`}
     >
       {/* Top Application Header */}
       <AppHeader
+        className="mb-2 sm:mb-3"
         userEmail={userEmail}
         userName={userName}
         userImage={userImage}
@@ -176,9 +178,9 @@ export function AgentWorkspace({
         activeWorkspaceId={activeWorkspaceId}
       />
 
-      {/* Main Agent Container */}
-      <main className="flex-1 flex px-3.5 sm:px-6 md:px-8 pb-4 max-w-7xl mx-auto w-full min-h-[calc(100vh-8.5rem)]">
-        <div className="flex-1 flex rounded-2xl overflow-hidden border border-slate-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm">
+      {/* Main Agent Container: Expanded to full width and available height below header */}
+      <main className="flex-1 min-h-0 flex px-2 sm:px-4 md:px-6 pb-2 sm:pb-3 w-full">
+        <div className="flex-1 min-h-0 flex rounded-2xl md:rounded-3xl overflow-hidden border border-white/70 dark:border-neutral-800/80 bg-white/75 dark:bg-neutral-900/75 backdrop-blur-md shadow-xl dark:shadow-2xl dark:shadow-black/40">
           {/* Threads Sidebar */}
           <AgentThreadList
             threads={threads}
@@ -188,7 +190,9 @@ export function AgentWorkspace({
             onDeleteThread={handleDeleteThread}
             onRenameThread={handleRenameThread}
             isOpen={isSidebarOpen}
+            isMobileOpen={isMobileSidebarOpen}
             onToggleOpen={() => setIsSidebarOpen((prev) => !prev)}
+            onToggleMobileOpen={() => setIsMobileSidebarOpen((prev) => !prev)}
             isCreating={isPending}
           />
 
@@ -200,16 +204,17 @@ export function AgentWorkspace({
               initialMessages={messages}
               isSidebarOpen={isSidebarOpen}
               onToggleSidebar={() => setIsSidebarOpen(true)}
+              onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50 dark:bg-neutral-950/40">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
-                <Bot className="w-7 h-7" />
+            <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 text-center bg-transparent">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 sm:mb-4">
+                <Bot className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">
                 {threads.length === 0 ? "No conversations yet" : "No conversation selected"}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 max-w-sm">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 sm:mb-5 max-w-sm px-4">
                 {threads.length === 0
                   ? "Start a conversation to interact with your AI Agent, list tasks, schedule activities, and plan projects."
                   : "Choose a conversation from the sidebar or start a new one to continue."}

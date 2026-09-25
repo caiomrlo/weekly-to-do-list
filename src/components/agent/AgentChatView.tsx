@@ -23,7 +23,6 @@ import {
   Wrench,
   Check,
   PanelLeft,
-  Cpu,
 } from "lucide-react";
 
 interface AgentChatViewProps {
@@ -31,6 +30,7 @@ interface AgentChatViewProps {
   initialMessages: AiMessage[];
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
+  onToggleMobileSidebar?: () => void;
 }
 
 const STARTER_SUGGESTIONS = [
@@ -58,8 +58,8 @@ const STARTER_SUGGESTIONS = [
 
 function UserMessage() {
   return (
-    <MessagePrimitive.Root className="flex justify-end my-3">
-      <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm shadow-xs leading-relaxed select-text font-normal">
+    <MessagePrimitive.Root className="flex justify-end my-2.5 sm:my-3">
+      <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl px-3.5 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs sm:text-sm shadow-xs leading-relaxed select-text font-normal">
         <MessagePrimitive.Parts />
       </div>
     </MessagePrimitive.Root>
@@ -106,16 +106,16 @@ const ToolCallFeedback: ToolCallMessagePartComponent = ({ toolName, status }) =>
 };
 
 const MarkdownText = () => (
-  <MarkdownTextPrimitive className="prose dark:prose-invert max-w-none text-sm text-slate-800 dark:text-slate-200" />
+  <MarkdownTextPrimitive className="prose dark:prose-invert max-w-none text-xs sm:text-sm text-slate-800 dark:text-slate-200" />
 );
 
 function AssistantMessage() {
   return (
-    <MessagePrimitive.Root className="flex gap-3 my-4">
-      <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20 mt-0.5">
-        <Bot className="w-4 h-4" />
+    <MessagePrimitive.Root className="flex gap-2.5 sm:gap-3 my-3 sm:my-4">
+      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20 mt-0.5">
+        <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
       </div>
-      <div className="flex-1 min-w-0 rounded-2xl px-4 py-3 bg-white dark:bg-neutral-800 border border-slate-200/80 dark:border-neutral-700/80 shadow-xs text-sm text-slate-800 dark:text-slate-200">
+      <div className="flex-1 min-w-0 pt-0.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
         <MessagePrimitive.Parts
           components={{
             Text: MarkdownText,
@@ -213,6 +213,7 @@ export function AgentChatView({
   initialMessages,
   isSidebarOpen,
   onToggleSidebar,
+  onToggleMobileSidebar,
 }: AgentChatViewProps) {
   const transport = useMemo(
     () =>
@@ -243,108 +244,113 @@ export function AgentChatView({
     messages: convertedMessages,
   });
 
+  const handleToggleClick = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768 && onToggleMobileSidebar) {
+      onToggleMobileSidebar();
+    } else {
+      onToggleSidebar();
+    }
+  };
+
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-neutral-950/40 overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col h-full bg-slate-50/20 dark:bg-neutral-950/20 overflow-hidden">
         {/* Chat Header */}
-        <div className="px-4 py-3 border-b border-slate-200/80 dark:border-neutral-800/80 flex items-center justify-between gap-3 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xs">
+        <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 border-b border-slate-200/60 dark:border-neutral-800/60 flex items-center justify-between gap-3 bg-white/40 dark:bg-neutral-900/40 backdrop-blur-xs shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            {!isSidebarOpen && (
-              <button
-                type="button"
-                onClick={onToggleSidebar}
-                className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
-                title="Open conversations sidebar"
-                aria-label="Open conversations sidebar"
-              >
-                <PanelLeft className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleToggleClick}
+              className={`p-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-colors cursor-pointer shrink-0 ${
+                isSidebarOpen ? "flex md:hidden" : "flex"
+              }`}
+              title="Open conversations sidebar"
+              aria-label="Open conversations sidebar"
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
 
             <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Bot className="w-4 h-4" />
             </div>
 
-            <div className="truncate">
-              <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+            <div className="truncate min-w-0">
+              <h1 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                 {thread.title}
               </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-neutral-800 border border-slate-200/60 dark:border-neutral-700/60 text-[11px] font-medium text-slate-600 dark:text-slate-300">
-              <Cpu className="w-3 h-3 text-amber-500" />
-              <span>gpt-6-luna</span>
             </div>
           </div>
         </div>
 
         {/* Chat Thread Messages Surface */}
         <ThreadPrimitive.Root className="flex-1 flex flex-col min-h-0 relative">
-          <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-6 scrollbar-thin">
-            {/* Empty State with Starter Suggestions */}
-            <ThreadPrimitive.Empty>
-              <div className="max-w-xl mx-auto flex flex-col items-center justify-center py-10 px-4 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 mb-4">
-                  <Bot className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
-                  How can I help you today?
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 max-w-md">
-                  I can check your weekly tasks, schedule new items, plan complete projects, or update statuses in your workspace.
-                </p>
+          <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-3 sm:px-6 md:px-8 py-4 sm:py-6 scrollbar-thin">
+            <div className="max-w-4xl xl:max-w-5xl mx-auto w-full">
+              {/* Empty State with Starter Suggestions */}
+              <ThreadPrimitive.Empty>
+                <div className="max-w-2xl mx-auto flex flex-col items-center justify-center py-8 sm:py-12 px-2 sm:px-4 text-center">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 mb-3 sm:mb-4">
+                    <Bot className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+                    How can I help you today?
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 sm:mb-6 max-w-md">
+                    I can check your weekly tasks, schedule new items, plan complete projects, or update statuses in your workspace.
+                  </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full text-left">
-                  {STARTER_SUGGESTIONS.map((s) => {
-                    const Icon = s.icon;
-                    return (
-                      <ThreadPrimitive.Suggestion
-                        key={s.prompt}
-                        prompt={s.prompt}
-                        send
-                        className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-neutral-800/90 hover:bg-slate-50 dark:hover:bg-neutral-800 border border-slate-200/80 dark:border-neutral-700/80 shadow-2xs hover:border-amber-500/40 dark:hover:border-amber-500/40 text-xs text-slate-700 dark:text-slate-300 font-medium transition-all cursor-pointer group"
-                      >
-                        <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="truncate">{s.label}</span>
-                      </ThreadPrimitive.Suggestion>
-                    );
-                  })}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 w-full text-left">
+                    {STARTER_SUGGESTIONS.map((s) => {
+                      const Icon = s.icon;
+                      return (
+                        <ThreadPrimitive.Suggestion
+                          key={s.prompt}
+                          prompt={s.prompt}
+                          send
+                          className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl bg-white/80 dark:bg-neutral-800/80 hover:bg-white dark:hover:bg-neutral-800 border border-slate-200/80 dark:border-neutral-700/80 shadow-2xs hover:border-amber-500/40 dark:hover:border-amber-500/40 text-xs text-slate-700 dark:text-slate-300 font-medium transition-all cursor-pointer group"
+                        >
+                          <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="truncate">{s.label}</span>
+                        </ThreadPrimitive.Suggestion>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </ThreadPrimitive.Empty>
+              </ThreadPrimitive.Empty>
 
-            {/* Messages */}
-            <ThreadPrimitive.Messages
-              components={{
-                UserMessage,
-                AssistantMessage,
-              }}
-            />
+              {/* Messages */}
+              <ThreadPrimitive.Messages
+                components={{
+                  UserMessage,
+                  AssistantMessage,
+                }}
+              />
+            </div>
           </ThreadPrimitive.Viewport>
 
           {/* Composer Input Bar */}
-          <div className="p-3 sm:p-4 md:px-8 border-t border-slate-200/80 dark:border-neutral-800/80 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md">
-            <ComposerPrimitive.Root className="relative flex items-end gap-2 bg-slate-100/90 dark:bg-neutral-800/90 rounded-2xl border border-slate-200/80 dark:border-neutral-700/80 p-2 focus-within:ring-2 focus-within:ring-amber-500/40 focus-within:border-amber-500/50 transition-all">
-              <ComposerPrimitive.Input
-                rows={1}
-                autoFocus
-                placeholder="Ask about your tasks or give instructions (e.g. 'What are my tasks for the week?')..."
-                className="flex-1 max-h-36 resize-none bg-transparent px-2.5 py-1.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden"
-              />
-              <ComposerPrimitive.Send className="p-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs">
-                <ArrowUp className="w-4 h-4" />
-              </ComposerPrimitive.Send>
-              <ComposerPrimitive.Cancel className="p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer shadow-xs">
-                <Square className="w-4 h-4 fill-current" />
-              </ComposerPrimitive.Cancel>
-            </ComposerPrimitive.Root>
-            <p className="text-[11px] text-center text-slate-400 dark:text-slate-500 mt-2">
-              The AI Agent has direct access to inspect and manage your active workspace tasks and projects.
-            </p>
+          <div className="p-2.5 sm:p-4 md:px-8 border-t border-slate-200/60 dark:border-neutral-800/60 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md shrink-0">
+            <div className="max-w-4xl xl:max-w-5xl mx-auto w-full">
+              <ComposerPrimitive.Root className="relative flex items-end gap-2 bg-white/85 dark:bg-neutral-800/85 rounded-2xl border border-slate-200/80 dark:border-neutral-700/80 p-1.5 sm:p-2 shadow-xs focus-within:ring-2 focus-within:ring-amber-500/40 focus-within:border-amber-500/50 transition-all">
+                <ComposerPrimitive.Input
+                  rows={1}
+                  autoFocus
+                  placeholder="Ask about your tasks..."
+                  className="flex-1 max-h-36 resize-none bg-transparent px-2.5 py-1.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden"
+                />
+                <ComposerPrimitive.Send className="p-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs shrink-0">
+                  <ArrowUp className="w-4 h-4" />
+                </ComposerPrimitive.Send>
+                <ComposerPrimitive.Cancel className="p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer shadow-xs shrink-0">
+                  <Square className="w-4 h-4 fill-current" />
+                </ComposerPrimitive.Cancel>
+              </ComposerPrimitive.Root>
+              <p className="text-[10px] sm:text-[11px] text-center text-slate-400 dark:text-slate-500 mt-1.5 sm:mt-2">
+                The AI Agent has direct access to inspect and manage your active workspace tasks and projects.
+              </p>
+            </div>
           </div>
         </ThreadPrimitive.Root>
       </div>

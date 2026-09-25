@@ -29,6 +29,7 @@ export interface AppHeaderProps {
   workspaces?: Workspace[];
   activeWorkspaceId?: string;
   children?: React.ReactNode;
+  className?: string;
 }
 
 export function AppHeader({
@@ -47,6 +48,7 @@ export function AppHeader({
   workspaces,
   activeWorkspaceId,
   children,
+  className,
 }: AppHeaderProps) {
   const pathname = usePathname();
   const isKanbanActive = pathname.startsWith("/kanban");
@@ -64,7 +66,11 @@ export function AppHeader({
       : "");
 
   return (
-    <header className="sticky top-0 z-30 w-full mb-4 sm:mb-6 backdrop-blur-xl bg-white/75 dark:bg-neutral-900/80 border-b border-white/60 dark:border-neutral-800/80 shadow-xs transition-colors">
+    <header
+      className={`sticky top-0 z-30 w-full backdrop-blur-xl bg-white/75 dark:bg-neutral-900/80 border-b border-white/60 dark:border-neutral-800/80 shadow-xs transition-colors shrink-0 ${
+        className ?? "mb-4 sm:mb-6"
+      }`}
+    >
       {/* Tier 1: Main Application Header (Brand, Navigation Views, System Controls) */}
       <div className="px-3.5 sm:px-6 md:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-3 sm:gap-4 border-b border-slate-200/50 dark:border-neutral-800/50">
         {/* Left: Brand Icon + View Switcher Tabs */}
