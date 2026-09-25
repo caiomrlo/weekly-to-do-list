@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import {
   AiThread,
   AiMessage,
@@ -148,19 +148,32 @@ export function AgentWorkspace({
     });
   };
 
-  const handleSelectBackground = (bgId: BackgroundThemeId) => {
+  const handleSelectBackground = async (bgId: BackgroundThemeId) => {
     const nextPrefs: UserPreferences = { ...preferences, background: bgId };
     setPreferences(nextPrefs);
-    updateUserPreferencesAction({ background: bgId }).catch((err) =>
-      console.error("Failed to update background:", err)
-    );
+    document.documentElement.setAttribute("data-theme-bg", bgId);
+    try {
+      localStorage.setItem("theme_bg", bgId);
+    } catch {}
+
+    try {
+      await updateUserPreferencesAction({ background: bgId });
+    } catch (err) {
+      console.error("Failed to update background:", err);
+    }
   };
 
-  const bgTheme = preferences.background || "default";
+  useEffect(() => {
+    const bg = (preferences.background as BackgroundThemeId) || "default";
+    document.documentElement.setAttribute("data-theme-bg", bg);
+    try {
+      localStorage.setItem("theme_bg", bg);
+    } catch {}
+  }, [preferences.background]);
 
   return (
     <div
-      className={`h-[100dvh] flex flex-col theme-bg-${bgTheme} transition-colors duration-300 pb-16 md:pb-0 overflow-hidden`}
+      className="h-[100dvh] flex flex-col transition-colors duration-300 pb-16 md:pb-0 overflow-hidden"
     >
       {/* Top Application Header */}
       <AppHeader
