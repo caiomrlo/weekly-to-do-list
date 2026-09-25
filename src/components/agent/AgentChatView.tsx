@@ -284,37 +284,39 @@ export function AgentChatView({
         {/* Chat Thread Messages Surface */}
         <ThreadPrimitive.Root className="flex-1 flex flex-col min-h-0 relative">
           <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-3 sm:px-6 md:px-8 py-4 sm:py-6 scrollbar-thin">
-            <div className="max-w-4xl xl:max-w-5xl mx-auto w-full">
+            <div className="max-w-4xl xl:max-w-5xl mx-auto w-full min-h-full flex flex-col">
               {/* Empty State with Starter Suggestions */}
               <ThreadPrimitive.Empty>
-                <div className="max-w-2xl mx-auto flex flex-col items-center justify-center py-8 sm:py-12 px-2 sm:px-4 text-center">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 mb-3 sm:mb-4">
-                    <Bot className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
-                    How can I help you today?
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 sm:mb-6 max-w-md">
-                    I can check your weekly tasks, schedule new items, plan complete projects, or update statuses in your workspace.
-                  </p>
+                <div className="flex-1 flex flex-col items-center justify-center my-auto py-6 sm:py-8 px-2 sm:px-4 text-center">
+                  <div className="max-w-2xl w-full flex flex-col items-center justify-center">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 mb-3 sm:mb-4">
+                      <Bot className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+                      How can I help you today?
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 sm:mb-6 max-w-md">
+                      I can check your weekly tasks, schedule new items, plan complete projects, or update statuses in your workspace.
+                    </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 w-full text-left">
-                    {STARTER_SUGGESTIONS.map((s) => {
-                      const Icon = s.icon;
-                      return (
-                        <ThreadPrimitive.Suggestion
-                          key={s.prompt}
-                          prompt={s.prompt}
-                          send
-                          className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl bg-white/80 dark:bg-neutral-800/80 hover:bg-white dark:hover:bg-neutral-800 border border-slate-200/80 dark:border-neutral-700/80 shadow-2xs hover:border-amber-500/40 dark:hover:border-amber-500/40 text-xs text-slate-700 dark:text-slate-300 font-medium transition-all cursor-pointer group"
-                        >
-                          <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-                            <Icon className="w-3.5 h-3.5" />
-                          </div>
-                          <span className="truncate">{s.label}</span>
-                        </ThreadPrimitive.Suggestion>
-                      );
-                    })}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 w-full text-left">
+                      {STARTER_SUGGESTIONS.map((s) => {
+                        const Icon = s.icon;
+                        return (
+                          <ThreadPrimitive.Suggestion
+                            key={s.prompt}
+                            prompt={s.prompt}
+                            send
+                            className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl bg-white/80 dark:bg-neutral-800/80 hover:bg-white dark:hover:bg-neutral-800 border border-slate-200/80 dark:border-neutral-700/80 shadow-2xs hover:border-amber-500/40 dark:hover:border-amber-500/40 text-xs text-slate-700 dark:text-slate-300 font-medium transition-all cursor-pointer group"
+                          >
+                            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="truncate">{s.label}</span>
+                          </ThreadPrimitive.Suggestion>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </ThreadPrimitive.Empty>
@@ -343,9 +345,6 @@ export function AgentChatView({
                   <ArrowUp className="w-4 h-4" />
                 </ComposerPrimitive.Send>
               </ComposerPrimitive.Root>
-              <p className="text-[10px] sm:text-[11px] text-center text-slate-400 dark:text-slate-500 mt-1.5 sm:mt-2">
-                The AI Agent has direct access to inspect and manage your active workspace tasks and projects.
-              </p>
             </div>
           </div>
         </ThreadPrimitive.Root>
