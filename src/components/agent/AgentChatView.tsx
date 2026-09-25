@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, Children, type PropsWithChildren } from "react";
 import { AiThread, AiMessage } from "@/db/schema";
 import {
   AssistantRuntimeProvider,
@@ -8,6 +8,7 @@ import {
   ComposerPrimitive,
   MessagePrimitive,
   type ToolCallMessagePartComponent,
+  type EmptyMessagePartProps,
 } from "@assistant-ui/react";
 import { MarkdownTextPrimitive } from "@assistant-ui/react-markdown";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
@@ -94,7 +95,7 @@ const ToolCallFeedback: ToolCallMessagePartComponent = ({ toolName, status }) =>
   };
 
   return (
-    <div className="my-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-900 border border-slate-200/80 dark:border-neutral-700/80 text-xs text-slate-600 dark:text-slate-300">
+    <div className="my-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-900 border border-slate-200/80 dark:border-neutral-700/80 text-xs text-slate-600 dark:text-slate-300 transition-all duration-200 animate-in fade-in-50">
       <Wrench
         className={`w-3.5 h-3.5 ${
           isDone ? "text-emerald-500" : "text-amber-500 animate-pulse"
@@ -105,6 +106,26 @@ const ToolCallFeedback: ToolCallMessagePartComponent = ({ toolName, status }) =>
     </div>
   );
 };
+
+function SingleToolGroup({ children }: PropsWithChildren<{ startIndex?: number; endIndex?: number }>) {
+  const childrenArray = Children.toArray(children);
+  if (childrenArray.length === 0) return null;
+  return <div className="w-fit">{childrenArray[childrenArray.length - 1]}</div>;
+}
+
+function MessageLoadingIndicator({ status }: EmptyMessagePartProps) {
+  if (status?.type !== "running") return null;
+
+  return (
+    <div className="my-2 inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-900 border border-slate-200/80 dark:border-neutral-700/80 text-xs text-slate-600 dark:text-slate-300 animate-in fade-in-50 duration-200">
+      <span className="relative flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+      </span>
+      <span className="font-medium">Analyzing...</span>
+    </div>
+  );
+}
 
 const MarkdownText = () => (
   <MarkdownTextPrimitive className="prose dark:prose-invert max-w-none text-xs sm:text-sm text-slate-800 dark:text-slate-200" />
@@ -118,8 +139,11 @@ function AssistantMessage() {
       </div>
       <div className="flex-1 min-w-0 pt-0.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
         <MessagePrimitive.Parts
+          unstable_showEmptyOnNonTextEnd={false}
           components={{
             Text: MarkdownText,
+            Empty: MessageLoadingIndicator,
+            ToolGroup: SingleToolGroup,
             tools: {
               Fallback: ToolCallFeedback,
             },
