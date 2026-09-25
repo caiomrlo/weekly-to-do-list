@@ -248,11 +248,13 @@ export async function POST(req: Request) {
               typeof firstUser?.content === "string"
                 ? firstUser.content
                 : Array.isArray(firstUser?.parts)
-                ? (
-                    firstUser.parts.find(
-                      (p: { type: string; text?: string }) => p.type === "text"
-                    ) as { text?: string } | undefined
-                  )?.text
+                ? firstUser.parts
+                    .filter(
+                      (p: { type: string; text?: string }) =>
+                        p.type === "text" && typeof p.text === "string"
+                    )
+                    .map((p: { text?: string }) => p.text || "")
+                    .join(" ")
                 : "";
 
             if (promptText && promptText.trim()) {

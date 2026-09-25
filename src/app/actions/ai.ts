@@ -112,6 +112,44 @@ export async function getAiThreadMessagesAction(
   }
 }
 
+export async function getAiThreadAction(
+  threadId: string
+): Promise<{ thread?: AiThread; error?: string }> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(threadId)) {
+    return { error: "Conversation not found." };
+  }
+
+  try {
+    const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
+
+    const [thread] = await db
+      .select()
+      .from(aiThreads)
+      .where(
+        and(
+          eq(aiThreads.id, threadId),
+          eq(aiThreads.workspaceId, activeWorkspace.id),
+          eq(aiThreads.userId, session.userId)
+        )
+      );
+
+    if (!thread) {
+      return { error: "Conversation not found." };
+    }
+
+    return { thread };
+  } catch (err: unknown) {
+    console.error("Error fetching AI thread:", err);
+    return { error: "Failed to load conversation." };
+  }
+}
+
 export async function deleteAiThreadAction(
   threadId: string
 ): Promise<{ success?: boolean; error?: string }> {

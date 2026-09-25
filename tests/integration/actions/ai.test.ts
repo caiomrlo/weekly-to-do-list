@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 import {
   getAiThreadsAction,
+  getAiThreadAction,
   createAiThreadAction,
   getAiThreadMessagesAction,
   deleteAiThreadAction,
@@ -34,6 +35,9 @@ describe("Integration: AI Actions", () => {
     it("should reject all actions when not authenticated", async () => {
       const getThreadsRes = await getAiThreadsAction();
       expect(getThreadsRes.error).toBe("Not authenticated.");
+
+      const getThreadRes = await getAiThreadAction("some-thread-id");
+      expect(getThreadRes.error).toBe("Not authenticated.");
 
       const createRes = await createAiThreadAction("Test");
       expect(createRes.error).toBe("Not authenticated.");
@@ -70,6 +74,48 @@ describe("Integration: AI Actions", () => {
 
       const createRes = await createAiThreadAction("   Sprint Planning   ");
       expect(createRes.thread?.title).toBe("Sprint Planning");
+    });
+  });
+
+  describe("getAiThreadAction", () => {
+    it("should retrieve a single thread by id for authenticated user", async () => {
+      userA = await createTestUser();
+      await loginAsTestUser(userA);
+
+      const createRes = await createAiThreadAction("Detailed Thread");
+      const threadId = createRes.thread!.id;
+
+      const getRes = await getAiThreadAction(threadId);
+      expect(getRes.thread).toBeDefined();
+      expect(getRes.thread?.id).toBe(threadId);
+      expect(getRes.thread?.title).toBe("Detailed Thread");
+    });
+
+    it("should return error when thread does not exist or has invalid id", async () => {
+      userA = await createTestUser();
+      await loginAsTestUser(userA);
+
+      const invalidRes = await getAiThreadAction("non-existent-id");
+      expect(invalidRes.error).toBe("Conversation not found.");
+
+      const nonExistentRes = await getAiThreadAction(
+        "00000000-0000-0000-0000-000000000000"
+      );
+      expect(nonExistentRes.error).toBe("Conversation not found.");
+    });
+
+    it("should prevent User B from reading User A's thread via getAiThreadAction", async () => {
+      userA = await createTestUser();
+      userB = await createTestUser();
+
+      await loginAsTestUser(userA);
+      const created = await createAiThreadAction("User A Private");
+      const threadId = created.thread!.id;
+
+      await loginAsTestUser(userB);
+      const getRes = await getAiThreadAction(threadId);
+      expect(getRes.error).toBe("Conversation not found.");
+      expect(getRes.thread).toBeUndefined();
     });
   });
 

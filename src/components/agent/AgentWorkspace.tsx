@@ -147,6 +147,12 @@ export function AgentWorkspace({
     });
   };
 
+  const handleUpdateThreadTitle = (threadId: string, newTitle: string) => {
+    setThreads((prev) =>
+      prev.map((t) => (t.id === threadId ? { ...t, title: newTitle } : t))
+    );
+  };
+
   const handleSelectBackground = async (bgId: BackgroundThemeId) => {
     const nextPrefs: UserPreferences = { ...preferences, background: bgId };
     setPreferences(nextPrefs);
@@ -217,6 +223,7 @@ export function AgentWorkspace({
               isSidebarOpen={isSidebarOpen}
               onToggleSidebar={() => setIsSidebarOpen(true)}
               onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
+              onUpdateThreadTitle={handleUpdateThreadTitle}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 text-center bg-transparent">

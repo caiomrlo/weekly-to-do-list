@@ -30,6 +30,7 @@ interface AgentChatViewProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   onToggleMobileSidebar?: () => void;
+  onUpdateThreadTitle?: (threadId: string, newTitle: string) => void;
 }
 
 const STARTER_SUGGESTIONS = [
@@ -213,6 +214,7 @@ export function AgentChatView({
   isSidebarOpen,
   onToggleSidebar,
   onToggleMobileSidebar,
+  onUpdateThreadTitle,
 }: AgentChatViewProps) {
   const transport = useMemo(
     () =>
@@ -241,6 +243,37 @@ export function AgentChatView({
   const runtime = useChatRuntime({
     transport,
     messages: convertedMessages,
+    onFinish: async ({ messages: allMessages, isError, isAbort }) => {
+      if (isError || isAbort) return;
+
+      if (thread.title === "New Chat" && onUpdateThreadTitle) {
+        const firstUser = allMessages.find((m) => m.role === "user");
+        let promptText = "";
+        if (firstUser) {
+          if (Array.isArray(firstUser.parts)) {
+            promptText = firstUser.parts
+              .filter(
+                (p): p is { type: "text"; text: string } =>
+                  p.type === "text" &&
+                  "text" in p &&
+                  typeof (p as { text: unknown }).text === "string"
+              )
+              .map((p) => p.text)
+              .join(" ");
+          } else if (
+            "content" in firstUser &&
+            typeof (firstUser as Record<string, unknown>).content === "string"
+          ) {
+            promptText = (firstUser as Record<string, unknown>).content as string;
+          }
+        }
+
+        const candidateTitle = promptText.trim().slice(0, 45);
+        if (candidateTitle) {
+          onUpdateThreadTitle(thread.id, candidateTitle);
+        }
+      }
+    },
   });
 
   const handleToggleClick = () => {
