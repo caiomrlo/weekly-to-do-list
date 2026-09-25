@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import {
   getAiThreadsAction,
   getAiThreadMessagesAction,
-  createAiThreadAction,
 } from "@/app/actions/ai";
 import { getUserPreferencesAction } from "@/app/actions/user";
 import { getUserWorkspacesAction } from "@/app/actions/workspaces";
@@ -29,7 +28,7 @@ export default async function AgentPage() {
     getUserWorkspacesAction(),
   ]);
 
-  let threads = threadsRes.threads || [];
+  const threads = threadsRes.threads || [];
   let initialMessages: AiMessage[] = [];
   let activeThreadId: string | undefined = undefined;
 
@@ -37,13 +36,6 @@ export default async function AgentPage() {
     activeThreadId = threads[0].id;
     const msgRes = await getAiThreadMessagesAction(threads[0].id);
     initialMessages = msgRes.messages || [];
-  } else {
-    // Auto-create initial default thread for a smooth first experience
-    const createdRes = await createAiThreadAction("New Chat");
-    if (createdRes.thread) {
-      threads = [createdRes.thread];
-      activeThreadId = createdRes.thread.id;
-    }
   }
 
   const initialPreferences = prefRes.preferences || DEFAULT_USER_PREFERENCES;

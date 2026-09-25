@@ -207,10 +207,12 @@ export function AgentWorkspace({
                 <Bot className="w-7 h-7" />
               </div>
               <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                No conversation selected
+                {threads.length === 0 ? "No conversations yet" : "No conversation selected"}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 max-w-sm">
-                Start a new chat to interact with your AI Agent, list tasks, schedule activities, and plan projects.
+                {threads.length === 0
+                  ? "Start a conversation to interact with your AI Agent, list tasks, schedule activities, and plan projects."
+                  : "Choose a conversation from the sidebar or start a new one to continue."}
               </p>
               <button
                 type="button"
