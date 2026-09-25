@@ -91,6 +91,8 @@ export async function getTaskByIdAction(
 
 export async function createTaskAction(data: {
   title: string;
+  content?: string;
+  description?: string;
   date?: string | null;
   time?: string;
   duration?: number | null;
@@ -143,6 +145,7 @@ export async function updateTaskAction(
   data: {
     title?: string;
     content?: string;
+    description?: string;
     date?: string | null;
     time?: string | null;
     duration?: number | null;

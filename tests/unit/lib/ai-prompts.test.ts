@@ -74,4 +74,21 @@ describe("ai-prompts: buildAgentSystemPrompt", () => {
 
     expect(prompt).toContain("- **User Name**: User");
   });
+
+  it("should contain critical judgment guidelines for task descriptions", () => {
+    const prompt = buildAgentSystemPrompt(baseContext);
+
+    expect(prompt).toContain("Task Description Critical Judgment");
+    expect(prompt).toContain("Tasks that REQUIRE a Description");
+    expect(prompt).toContain("Tasks that DO NOT need a Description");
+    expect(prompt).toContain("even if the user did not explicitly ask for a description");
+  });
+
+  it("should contain instructions for updating and editing task descriptions", () => {
+    const prompt = buildAgentSystemPrompt(baseContext);
+
+    expect(prompt).toContain("Task Updates & Descriptions");
+    expect(prompt).toContain("You HAVE the full capability to add, edit, and update the description");
+    expect(prompt).toContain("ALWAYS execute `updateTask`");
+  });
 });

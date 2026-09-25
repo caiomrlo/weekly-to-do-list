@@ -45,8 +45,12 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
           .boolean()
           .optional()
           .describe("If true, list only unscheduled tasks with no date assigned."),
+        taskId: z
+          .string()
+          .optional()
+          .describe("Optional task ID to inspect a specific task and its details/description."),
       }),
-      execute: async ({ startDate, endDate, completed, projectId, backlogOnly }) => {
+      execute: async ({ startDate, endDate, completed, projectId, backlogOnly, taskId }) => {
         try {
           let taskList;
           if (backlogOnly) {
@@ -71,11 +75,16 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
             taskList = taskList.filter((t) => t.projectId === projectId);
           }
 
+          if (taskId) {
+            taskList = taskList.filter((t) => t.id === taskId);
+          }
+
           return {
             total: taskList.length,
             tasks: taskList.map((t) => ({
               id: t.id,
               title: t.title,
+              description: t.content || null,
               date: t.date,
               time: t.time,
               duration: t.duration,
@@ -94,9 +103,15 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
 
     createTask: tool({
       description:
-        "Create a single task in the active workspace. Pass date in YYYY-MM-DD format, or null/omit for backlog.",
+        "Create a single task in the active workspace. Pass date in YYYY-MM-DD format, or null/omit for backlog. Can include a structured description (content / notes / checklist) whenever the task involves preparation, multiple steps, or non-obvious context.",
       inputSchema: z.object({
         title: z.string().describe("The clear, descriptive title of the task."),
+        description: z
+          .string()
+          .optional()
+          .describe(
+            "Clear, concise, and structured description (content / notes / checklist) for the task. Proactively provide this for complex tasks, project preparations, client work, or multi-step activities."
+          ),
         date: z
           .string()
           .nullable()
@@ -122,11 +137,12 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
           .optional()
           .describe("Status ID for the task."),
       }),
-      execute: async ({ title, date, time, duration, projectId, statusId }) => {
+      execute: async ({ title, description, date, time, duration, projectId, statusId }) => {
         try {
           const task = await createTaskInternal(
             {
               title,
+              content: description || "",
               date: date || null,
               time: time || undefined,
               duration: duration || null,
@@ -142,6 +158,7 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
             task: {
               id: task.id,
               title: task.title,
+              description: task.content || null,
               date: task.date,
               time: task.time,
               duration: task.duration,
@@ -166,6 +183,10 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
           .array(
             z.object({
               title: z.string().describe("Task title."),
+              description: z
+                .string()
+                .optional()
+                .describe("Optional concise description or notes for the task."),
               date: z
                 .string()
                 .nullable()
@@ -201,6 +222,7 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
             const task = await createTaskInternal(
               {
                 title: item.title,
+                content: item.description || "",
                 date: item.date || null,
                 time: item.time || undefined,
                 duration: item.duration || null,
@@ -213,6 +235,7 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
             createdList.push({
               id: task.id,
               title: task.title,
+              description: task.content || null,
               date: task.date,
               time: task.time,
               duration: task.duration,
@@ -238,10 +261,17 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
 
     updateTask: tool({
       description:
-        "Update an existing task's title, scheduled date, time, duration, completion status, or project.",
+        "Update an existing task's title, description (content / notes), scheduled date, time, duration, completion status, or project. Use this whenever the user wants to add, edit, or update a task's description or content.",
       inputSchema: z.object({
         taskId: z.string().describe("The ID of the task to update."),
         title: z.string().optional().describe("New title for the task."),
+        description: z
+          .string()
+          .nullable()
+          .optional()
+          .describe(
+            "New description (content / notes) for the task. Pass a string to set or update the description, or null/empty string to clear it."
+          ),
         date: z
           .string()
           .nullable()
@@ -275,6 +305,7 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
       execute: async ({
         taskId,
         title,
+        description,
         date,
         time,
         duration,
@@ -289,6 +320,7 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
 
           const hasDataUpdates =
             title !== undefined ||
+            description !== undefined ||
             date !== undefined ||
             time !== undefined ||
             duration !== undefined ||
@@ -301,6 +333,7 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
               taskId,
               {
                 title,
+                content: description !== undefined ? (description ?? "") : undefined,
                 date,
                 time,
                 duration,
@@ -315,6 +348,7 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
             success: true,
             taskId,
             title: updatedTask?.title,
+            description: updatedTask?.content || null,
             completed: completed !== undefined ? completed : updatedTask?.completed,
             date: updatedTask?.date,
             statusName: updatedTask?.status?.name,

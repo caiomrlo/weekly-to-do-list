@@ -21,6 +21,8 @@ import { getTaskByIdInternal } from "./task-queries";
 export async function createTaskInternal(
   data: {
     title: string;
+    content?: string;
+    description?: string;
     date?: string | null;
     time?: string;
     duration?: number | null;
@@ -111,6 +113,13 @@ export async function createTaskInternal(
     );
   const nextOrder = (maxOrderRow?.maxOrder ?? -1) + 1;
 
+  const resolvedContent =
+    data.content !== undefined
+      ? data.content
+      : data.description !== undefined
+      ? data.description
+      : "";
+
   const [inserted] = await db
     .insert(tasks)
     .values({
@@ -124,7 +133,7 @@ export async function createTaskInternal(
       date: targetDate,
       time: targetDate ? (data.time?.trim() || null) : null,
       duration: data.duration ?? null,
-      content: "",
+      content: resolvedContent || "",
       completed: isCompleted,
       order: nextOrder,
       createdAt: now,
@@ -248,6 +257,7 @@ export async function updateTaskInternal(
   data: {
     title?: string;
     content?: string;
+    description?: string;
     date?: string | null;
     time?: string | null;
     duration?: number | null;
@@ -274,7 +284,11 @@ export async function updateTaskInternal(
   };
 
   if (data.title !== undefined) updateValues.title = data.title.trim();
-  if (data.content !== undefined) updateValues.content = data.content;
+  if (data.content !== undefined) {
+    updateValues.content = data.content;
+  } else if (data.description !== undefined) {
+    updateValues.content = data.description ?? "";
+  }
   if (data.date !== undefined) updateValues.date = data.date && data.date.trim() ? data.date.trim() : null;
   if (data.time !== undefined) updateValues.time = data.time ? data.time.trim() : null;
   if (data.duration !== undefined) updateValues.duration = data.duration && data.duration > 0 ? data.duration : null;

@@ -123,6 +123,25 @@ describe("Integration: Tasks Actions", () => {
       expect(taskRes.task?.project?.name).toBe("Core App");
       expect(taskRes.task?.tag?.name).toBe("Feature");
     });
+
+    it("should create a task with description", async () => {
+      userA = await createTestUser();
+      await loginAsTestUser(userA);
+
+      const res = await createTaskAction({
+        title: "Task with description",
+        description: "This is a detailed description of the task.",
+      });
+
+      expect(res.error).toBeUndefined();
+      expect(res.task?.content).toBe("This is a detailed description of the task.");
+
+      const [dbRow] = await db
+        .select()
+        .from(tasks)
+        .where(eq(tasks.id, res.task!.id));
+      expect(dbRow.content).toBe("This is a detailed description of the task.");
+    });
   });
 
   describe("Subtasks & Hierarchy Constraint", () => {
@@ -245,6 +264,43 @@ describe("Integration: Tasks Actions", () => {
       expect(authorizedUpdate.task?.content).toBe("New rich markdown notes");
       expect(authorizedUpdate.task?.time).toBe("14:30");
       expect(authorizedUpdate.task?.duration).toBe(90);
+    });
+
+    it("should update and clear task description via description parameter", async () => {
+      userA = await createTestUser();
+      await loginAsTestUser(userA);
+
+      const created = await createTaskAction({
+        title: "Task to update description",
+        description: "Initial description",
+      });
+      const taskId = created.task!.id;
+
+      // Update description
+      const updated = await updateTaskAction(taskId, {
+        description: "Updated description via parameter",
+      });
+      expect(updated.error).toBeUndefined();
+      expect(updated.task?.content).toBe("Updated description via parameter");
+
+      const [dbRowUpdated] = await db
+        .select()
+        .from(tasks)
+        .where(eq(tasks.id, taskId));
+      expect(dbRowUpdated.content).toBe("Updated description via parameter");
+
+      // Clear description
+      const cleared = await updateTaskAction(taskId, {
+        description: "",
+      });
+      expect(cleared.error).toBeUndefined();
+      expect(cleared.task?.content).toBe("");
+
+      const [dbRowCleared] = await db
+        .select()
+        .from(tasks)
+        .where(eq(tasks.id, taskId));
+      expect(dbRowCleared.content).toBe("");
     });
   });
 
