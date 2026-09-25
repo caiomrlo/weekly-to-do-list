@@ -44,6 +44,7 @@ export function AgentThreadList({
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filteredThreads = threads.filter((t) =>
     t.title.toLowerCase().includes(search.toLowerCase())
@@ -51,6 +52,7 @@ export function AgentThreadList({
 
   const startRename = (thread: AiThread, e: React.MouseEvent) => {
     e.stopPropagation();
+    setDeletingId(null);
     setEditingId(thread.id);
     setEditingTitle(thread.title);
   };
@@ -69,6 +71,7 @@ export function AgentThreadList({
   };
 
   const handleSelectThread = (threadId: string) => {
+    setDeletingId(null);
     onSelectThread(threadId);
     if (isMobileOpen && onToggleMobileOpen) {
       onToggleMobileOpen();
@@ -76,6 +79,7 @@ export function AgentThreadList({
   };
 
   const handleCreateThread = () => {
+    setDeletingId(null);
     onCreateThread();
     if (isMobileOpen && onToggleMobileOpen) {
       onToggleMobileOpen();
@@ -187,6 +191,41 @@ export function AgentThreadList({
             filteredThreads.map((thread) => {
               const isActive = thread.id === activeThreadId;
               const isEditing = editingId === thread.id;
+              const isDeleting = deletingId === thread.id;
+
+              if (isDeleting) {
+                return (
+                  <div
+                    key={thread.id}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center justify-between gap-1.5 px-2.5 h-9 rounded-xl text-xs bg-rose-50/90 dark:bg-rose-950/60 border border-rose-200/90 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 shrink-0 select-none animate-in fade-in duration-150"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                      <span className="truncate font-medium text-xs">Delete?</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDeleteThread(thread.id);
+                          setDeletingId(null);
+                        }}
+                        className="px-2 py-0.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium text-[11px] transition-colors cursor-pointer shadow-2xs"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingId(null)}
+                        className="px-1.5 py-0.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-rose-100/60 dark:hover:bg-rose-900/40 text-[11px] transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <div
@@ -222,7 +261,7 @@ export function AgentThreadList({
                         />
                         <button
                           type="submit"
-                          className="p-1 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+                          className="p-1 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 cursor-pointer"
                           title="Save"
                         >
                           <Check className="w-3.5 h-3.5" />
@@ -230,7 +269,7 @@ export function AgentThreadList({
                         <button
                           type="button"
                           onClick={cancelRename}
-                          className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                           title="Cancel"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -246,7 +285,7 @@ export function AgentThreadList({
                       <button
                         type="button"
                         onClick={(e) => startRename(thread, e)}
-                        className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-neutral-700/60 transition-colors"
+                        className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-neutral-700/60 transition-colors cursor-pointer"
                         title="Rename conversation"
                       >
                         <Pencil className="w-3 h-3" />
@@ -255,13 +294,10 @@ export function AgentThreadList({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (
-                            confirm("Are you sure you want to delete this conversation?")
-                          ) {
-                            onDeleteThread(thread.id);
-                          }
+                          setDeletingId(thread.id);
+                          setEditingId(null);
                         }}
-                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                         title="Delete conversation"
                       >
                         <Trash2 className="w-3 h-3" />

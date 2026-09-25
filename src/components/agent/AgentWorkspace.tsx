@@ -118,21 +118,20 @@ export function AgentWorkspace({
     startTransition(async () => {
       const res = await deleteAiThreadAction(threadId);
       if (res.success) {
-        setThreads((prev) => {
-          const next = prev.filter((t) => t.id !== threadId);
-          if (activeThreadId === threadId) {
-            if (next.length > 0) {
-              setActiveThreadId(next[0].id);
-              getAiThreadMessagesAction(next[0].id).then((mRes) => {
-                setMessages(mRes.messages || []);
-              });
-            } else {
-              setActiveThreadId(null);
-              setMessages([]);
-            }
+        const remainingThreads = threads.filter((t) => t.id !== threadId);
+        setThreads(remainingThreads);
+
+        if (activeThreadId === threadId) {
+          if (remainingThreads.length > 0) {
+            const nextActiveId = remainingThreads[0].id;
+            setActiveThreadId(nextActiveId);
+            const mRes = await getAiThreadMessagesAction(nextActiveId);
+            setMessages(mRes.messages || []);
+          } else {
+            setActiveThreadId(null);
+            setMessages([]);
           }
-          return next;
-        });
+        }
       }
     });
   };
