@@ -23,6 +23,11 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.75",
+    "@ai-sdk/react": "^4.0.117",
+    "@assistant-ui/react": "^0.15.22",
+    "@assistant-ui/react-ai-sdk": "^1.4.13",
+    "@assistant-ui/react-markdown": "^0.14.17",
     "@aws-sdk/client-s3": "^3.1127.0",
     "@aws-sdk/s3-request-presigner": "^3.1127.0",
     "@better-auth/drizzle-adapter": "^1.7.4",
@@ -31,6 +36,7 @@
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
+    "ai": "^7.0.114",
     "better-auth": "^1.7.4",
     "drizzle-orm": "^0.45.2",
     "file-type": "^22.1.1",
@@ -39,7 +45,8 @@
     "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

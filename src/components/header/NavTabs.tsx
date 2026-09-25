@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Kanban, FileText } from "lucide-react";
+import { CalendarDays, Kanban, FileText, Bot } from "lucide-react";
 
 export function NavTabs() {
   const pathname = usePathname();
   const isPlannerActive = pathname === "/";
   const isKanbanActive = pathname.startsWith("/kanban");
   const isDocsActive = pathname.startsWith("/docs");
+  const isAgentActive = pathname.startsWith("/agent");
 
   const navItems = [
     {
@@ -28,6 +29,12 @@ export function NavTabs() {
       label: "Docs",
       icon: FileText,
       isActive: isDocsActive,
+    },
+    {
+      href: "/agent",
+      label: "Agent",
+      icon: Bot,
+      isActive: isAgentActive,
     },
   ];
 

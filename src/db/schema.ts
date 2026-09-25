@@ -444,6 +444,46 @@ export const taskAssignees = pgTable(
   ]
 );
 
+export const aiThreads = pgTable(
+  "ai_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 255 }).default("New Chat").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("ai_threads_workspace_id_idx").on(table.workspaceId),
+    index("ai_threads_user_id_idx").on(table.userId),
+    index("ai_threads_updated_at_idx").on(table.updatedAt),
+  ]
+);
+
+export const aiMessages = pgTable(
+  "ai_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => aiThreads.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 50 }).notNull(),
+    content: text("content").notNull(),
+    parts: jsonb("parts"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("ai_messages_thread_id_idx").on(table.threadId),
+    index("ai_messages_created_at_idx").on(table.createdAt),
+  ]
+);
+
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
@@ -534,5 +574,11 @@ export type DocWithRelations = Doc & {
   attachmentCount?: number;
   attachments?: Array<Attachment & { url: string; thumbUrl?: string | null }>;
 };
+
+export type AiThread = typeof aiThreads.$inferSelect;
+export type NewAiThread = typeof aiThreads.$inferInsert;
+
+export type AiMessage = typeof aiMessages.$inferSelect;
+export type NewAiMessage = typeof aiMessages.$inferInsert;
 
 

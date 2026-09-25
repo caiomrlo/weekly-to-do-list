@@ -51,9 +51,17 @@ export function AppHeader({
   const pathname = usePathname();
   const isKanbanActive = pathname.startsWith("/kanban");
   const isDocsActive = pathname.startsWith("/docs");
+  const isAgentActive = pathname.startsWith("/agent");
 
   const displayTitle =
-    title ?? (isDocsActive ? "Docs & Notes" : isKanbanActive ? "Kanban" : "");
+    title ??
+    (isDocsActive
+      ? "Docs & Notes"
+      : isKanbanActive
+      ? "Kanban"
+      : isAgentActive
+      ? "AI Agent"
+      : "");
 
   return (
     <header className="sticky top-0 z-30 w-full mb-4 sm:mb-6 backdrop-blur-xl bg-white/75 dark:bg-neutral-900/80 border-b border-white/60 dark:border-neutral-800/80 shadow-xs transition-colors">

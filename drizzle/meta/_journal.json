@@ -162,6 +162,13 @@
       "when": 1789656412200,
       "tag": "0022_naive_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790292494481,
+      "tag": "0023_goofy_black_crow",
+      "breakpoints": true
     }
   ]
 }

@@ -13,7 +13,7 @@ High-signal architectural boundaries and folder responsibilities:
 - **`src/app/(routes)/`**: Next.js App Router pages, dynamic routes, and layouts.
 - **`src/components/`**: Reusable React 19 UI components modularized by domain.
 - **`src/db/`**: Persistence configuration with PostgreSQL connection pooling (`index.ts`) and Drizzle ORM schemas and relations (`schema.ts`).
-- **`src/lib/`**: Core utilities, task domain services (`src/lib/tasks/`), Better Auth configuration, timezone-immune date arithmetic, Cloudflare R2 client, and shared React hooks.
+- **`src/lib/`**: Core utilities, task domain services (`src/lib/tasks/`), AI agent tools and prompts (`src/lib/ai/`), Better Auth configuration, timezone-immune date arithmetic, Cloudflare R2 client, and shared React hooks.
 - **`src/middleware.ts`**: Edge runtime middleware enforcing session cookie validation via Better Auth and route protection.
 - **`tests/`**: Automated test suites.
 - **`drizzle/`**: Auto-generated Drizzle Kit migration SQL files and schema snapshots.
@@ -33,12 +33,13 @@ High-signal architectural boundaries and folder responsibilities:
   - **`WorkspaceMemberAvatars` (`src/components/workspace/WorkspaceMemberAvatars.tsx`) & `WorkspaceInvitePopover` (`src/components/workspace/WorkspaceInvitePopover.tsx`)**: Dynamic workspace member stack with initial avatars and member count overflow, launching a lightweight anchored popover with shareable invite link management (toggle, copy, regenerate), integrated email invite structure, and real-time member directory.
   - **`TaskModal` (`src/components/TaskModal.tsx`)**: Task details modal featuring Tiptap WYSIWYG editor (`TaskDescriptionEditor`), subtask hierarchy, project selector, status picker popover, attachments, and linked docs.
   - **`DocsWorkspace` (`src/components/docs/DocsWorkspace.tsx`)**: Split-pane notes/documentation workspace with Tiptap editor (`DocRichEditor`), search/filters, linked tasks, and attachments.
+  - **`AgentWorkspace` (`src/components/agent/AgentWorkspace.tsx`)**: Conversational AI assistant interface (`/agent`) powered by `@assistant-ui/react` and Vercel AI SDK, featuring multi-thread conversation history management, streaming markdown responses, starter suggestion prompts, and tool execution feedback.
   - **`LoginPage` (`src/app/login/page.tsx`)**: Authentication card (login and registration with password visibility toggles, preserved post-auth redirect navigation, and contextual invite notifications).
 - **UX Principles**: Inline grouping over deep card nesting, zero redundant labels/clutter, progressive disclosure via popovers, and transient mutation feedback (`Saving...`).
 
 ### 2.2. Backend & API (`src/app/actions/`, `src/app/api/`)
-- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `workspace-invites`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `auth` (Better Auth instance API integration), and `user` (preferences, avatar upload & deletion, profile updates).
-- **Route Handlers (`src/app/api/`, `src/app/invite/`)**: `attachments/[id]` streams inline PDFs with strict sandbox/nosniff headers and generates authenticated presigned Cloudflare R2 URLs for media access and downloads; `avatar/[id]` serves unauthenticated public WebP user avatars with immutable HTTP caching or redirects to `R2_PUBLIC_URL`; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`; `invite/[token]` validates invite tokens, auto-joins authenticated users, updates active workspace cookies, and handles unauthenticated auth redirects.
+- **Server Actions (`src/app/actions/`)**: Direct Drizzle ORM mutations and queries for `workspaces`, `workspace-invites`, `tasks`, `task-statuses`, `docs`, `attachments`, `projects`, `tags`, `ai` (threads and message history), `auth` (Better Auth instance API integration), and `user` (preferences, avatar upload & deletion, profile updates).
+- **Route Handlers (`src/app/api/`, `src/app/invite/`)**: `chat` streams OpenAI conversational responses with Vercel AI SDK, executing dynamic server tools for listing, creating, updating, and deleting workspace tasks and projects; `attachments/[id]` streams inline PDFs with strict sandbox/nosniff headers and generates authenticated presigned Cloudflare R2 URLs for media access and downloads; `avatar/[id]` serves unauthenticated public WebP user avatars with immutable HTTP caching or redirects to `R2_PUBLIC_URL`; `auth/[...all]` serves Better Auth HTTP API endpoints via `toNextJsHandler`; `invite/[token]` validates invite tokens, auto-joins authenticated users, updates active workspace cookies, and handles unauthenticated auth redirects.
 - **Middleware (`src/middleware.ts`)**: Edge runtime session cookie validation (`better-auth/cookies`) protecting root and authentication routes with redirect parameter preservation.
 - *For detailed action signatures or component props, refer directly to the respective files in `src/app/actions/` and `src/components/`.*
 
@@ -53,7 +54,7 @@ High-signal architectural boundaries and folder responsibilities:
 
 ### 3.2. Domain Models & Schema
 
-The data model enforces strict workspace multi-tenancy across all core domain entities (tasks, documents, projects, tags, statuses, and recurring rules). Key patterns include single-level subtask hierarchies, member task assignments, on-demand recurrence projections, and polymorphic Cloudflare R2 attachments.
+The data model enforces strict workspace multi-tenancy across all core domain entities (tasks, documents, projects, tags, statuses, recurring rules, and conversational AI threads/messages). Key patterns include single-level subtask hierarchies, member task assignments, on-demand recurrence projections, polymorphic Cloudflare R2 attachments, and cascade-deleted AI conversation histories.
 
 > **Single Source of Truth**: All table schemas, foreign key constraints, indexes, and Drizzle relational mappings are defined strictly in [`src/db/schema.ts`](./src/db/schema.ts). Always inspect that file directly before writing database queries or migrations.
 
@@ -61,6 +62,10 @@ The data model enforces strict workspace multi-tenancy across all core domain en
 
 ## 4. External Integrations & APIs
 
+- **Artificial Intelligence (OpenAI & Vercel AI SDK)**:
+  - Generative task assistant powered by OpenAI models (configured via `OPENAI_MODEL`, defaulting to `gpt-6-luna`, with `OPENAI_API_KEY`).
+  - Streamed chat orchestration via Vercel AI SDK (`ai`, `@ai-sdk/openai`) and `@assistant-ui/react`.
+  - Type-safe tool calling (`createAgentTools`) executing real-time task queries, single and batch task creations, updates, deletions, and project management while enforcing workspace security isolation.
 - **Object Storage (Cloudflare R2)**:
   - S3-compatible cloud object storage without egress fees.
   - Interfaced via `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner`.
