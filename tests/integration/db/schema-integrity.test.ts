@@ -10,6 +10,8 @@ import {
   tags,
   attachments,
   taskDocs,
+  aiThreads,
+  aiMessages,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -77,6 +79,22 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
       docId: doc.id,
     });
 
+    // Insert AI thread and message
+    const [thread] = await db
+      .insert(aiThreads)
+      .values({
+        workspaceId,
+        userId,
+        title: "Cascade AI Thread",
+      })
+      .returning();
+
+    await db.insert(aiMessages).values({
+      threadId: thread.id,
+      role: "user",
+      content: "Cascade AI Message",
+    });
+
     // Delete user
     await db.delete(users).where(eq(users.id, userId));
 
@@ -101,6 +119,18 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
       .from(taskDocs)
       .where(eq(taskDocs.taskId, task.id));
     expect(taskDocCheck).toBeUndefined();
+
+    const [threadCheck] = await db
+      .select()
+      .from(aiThreads)
+      .where(eq(aiThreads.id, thread.id));
+    expect(threadCheck).toBeUndefined();
+
+    const messagesCheck = await db
+      .select()
+      .from(aiMessages)
+      .where(eq(aiMessages.threadId, thread.id));
+    expect(messagesCheck).toHaveLength(0);
   });
 
   it("should set foreign keys to NULL when project or tag is deleted (onDelete: set null)", async () => {

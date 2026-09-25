@@ -123,7 +123,7 @@ export async function deleteAiThreadAction(
   try {
     const { activeWorkspace } = await getActiveWorkspaceContext(session.userId);
 
-    await db
+    const [deleted] = await db
       .delete(aiThreads)
       .where(
         and(
@@ -131,7 +131,12 @@ export async function deleteAiThreadAction(
           eq(aiThreads.workspaceId, activeWorkspace.id),
           eq(aiThreads.userId, session.userId)
         )
-      );
+      )
+      .returning();
+
+    if (!deleted) {
+      return { error: "Conversation not found." };
+    }
 
     revalidatePath("/agent");
     return { success: true };
