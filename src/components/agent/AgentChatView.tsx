@@ -23,6 +23,7 @@ import {
   Check,
   PanelLeft,
 } from "lucide-react";
+import { VoiceRecorderControl } from "./VoiceRecorderControl";
 
 interface AgentChatViewProps {
   thread: AiThread;
@@ -284,6 +285,15 @@ export function AgentChatView({
     }
   };
 
+  const handleVoiceTranscript = (transcribedText: string) => {
+    if (!transcribedText.trim()) return;
+    const currentText = runtime.thread.composer.getState().text || "";
+    const combined = currentText.trim()
+      ? `${currentText.trim()} ${transcribedText.trim()}`
+      : transcribedText.trim();
+    runtime.thread.composer.setText(combined);
+  };
+
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <div className="flex-1 min-w-0 flex flex-col h-full bg-slate-50/20 dark:bg-neutral-950/20 overflow-hidden">
@@ -374,6 +384,7 @@ export function AgentChatView({
                   placeholder="Ask about your tasks..."
                   className="flex-1 max-h-36 resize-none bg-transparent py-1.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden"
                 />
+                <VoiceRecorderControl onTranscript={handleVoiceTranscript} />
                 <ComposerPrimitive.Send className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs shrink-0 self-end">
                   <ArrowUp className="w-4 h-4" />
                 </ComposerPrimitive.Send>
