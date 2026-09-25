@@ -15,7 +15,6 @@ import type { UIMessage } from "@ai-sdk/react";
 import {
   Bot,
   ArrowUp,
-  Square,
   Sparkles,
   CalendarDays,
   Inbox,
@@ -333,19 +332,16 @@ export function AgentChatView({
           {/* Composer Input Bar */}
           <div className="p-2.5 sm:p-4 md:px-8 border-t border-slate-200/60 dark:border-neutral-800/60 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md shrink-0">
             <div className="max-w-4xl xl:max-w-5xl mx-auto w-full">
-              <ComposerPrimitive.Root className="relative flex items-end gap-2 bg-white/85 dark:bg-neutral-800/85 rounded-2xl border border-slate-200/80 dark:border-neutral-700/80 p-1.5 sm:p-2 shadow-xs focus-within:ring-2 focus-within:ring-amber-500/40 focus-within:border-amber-500/50 transition-all">
+              <ComposerPrimitive.Root className="relative flex items-end gap-2 bg-slate-100 dark:bg-neutral-800 rounded-3xl pl-4 pr-1.5 py-1.5 sm:pr-2 sm:py-2 transition-all">
                 <ComposerPrimitive.Input
                   rows={1}
                   autoFocus
                   placeholder="Ask about your tasks..."
-                  className="flex-1 max-h-36 resize-none bg-transparent px-2.5 py-1.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden"
+                  className="flex-1 max-h-36 resize-none bg-transparent py-1.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden"
                 />
-                <ComposerPrimitive.Send className="p-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs shrink-0">
+                <ComposerPrimitive.Send className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs shrink-0 self-end">
                   <ArrowUp className="w-4 h-4" />
                 </ComposerPrimitive.Send>
-                <ComposerPrimitive.Cancel className="p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer shadow-xs shrink-0">
-                  <Square className="w-4 h-4 fill-current" />
-                </ComposerPrimitive.Cancel>
               </ComposerPrimitive.Root>
               <p className="text-[10px] sm:text-[11px] text-center text-slate-400 dark:text-slate-500 mt-1.5 sm:mt-2">
                 The AI Agent has direct access to inspect and manage your active workspace tasks and projects.
