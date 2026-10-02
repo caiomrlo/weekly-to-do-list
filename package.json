@@ -20,7 +20,9 @@
     "db:migrate:prod": "node scripts/migrate.mjs",
     "db:reset": "node scripts/reset-db.mjs",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "webpush:keys": "node scripts/generate-vapid-keys.mjs",
+    "notifications:dispatch": "tsx scripts/dispatch-notifications.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.75",
@@ -46,6 +48,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "^0.35.4",
+    "web-push": "^3.6.7",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -54,6 +57,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",

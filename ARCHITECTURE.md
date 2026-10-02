@@ -74,6 +74,12 @@ The data model enforces strict workspace multi-tenancy across all core domain en
   - User profile avatars validate magic bytes before `sharp` processing into optimized 150x150 WebP thumbnails stored at `avatars/{avatarId}.webp` (raw originals discarded) and served unauthenticated via `/api/avatar/[id]` or direct `R2_PUBLIC_URL` CDN domain.
   - Automated physical file deletion on task, attachment, and avatar removal/replacement.
 - **Static Assets & Fonts**: Google Fonts (`Geist` and `Geist_Mono`) via `next/font/google`.
+- **Web Push Notifications (`web-push`, Service Worker, Cron Dispatcher)**:
+  - W3C Web Push API standard integrated via browser Service Worker (`public/sw.js`) and VAPID key exchange (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`).
+  - Device subscriptions persisted in `push_subscriptions` with automatic cleanup of dead endpoints returning HTTP 404/410 Gone.
+  - Multi-timezone scheduler (`src/lib/notifications/dispatcher.ts`) calculating local user morning hours (`08:00`) and task start lead times (`reminderMinutesBefore`, default 15 min).
+  - Strict database-level idempotency enforced via `notification_logs` with unique indexes on `(userId, date)` for morning summaries and `(userId, taskId)` for task reminders.
+  - Scheduled execution exposed via `/api/cron/notifications` (protected by `CRON_SECRET`) and local CLI test runner (`npm run notifications:dispatch`).
 
 ---
 

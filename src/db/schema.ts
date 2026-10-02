@@ -3,12 +3,30 @@ import { sql } from "drizzle-orm";
 
 export type BackgroundThemeId = "default" | "sunset" | "ocean" | "aurora" | "lavender" | "slate";
 
+export interface NotificationPreferences {
+  enabled: boolean;
+  morningDaily: boolean;
+  morningHour: number; // 0-23, default 8
+  taskReminders: boolean;
+  reminderMinutesBefore: number; // e.g. 5, 10, 15, 30
+}
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  enabled: false,
+  morningDaily: true,
+  morningHour: 8,
+  taskReminders: true,
+  reminderMinutesBefore: 15,
+};
+
 export interface UserPreferences {
   showSaturday?: boolean;
   showSunday?: boolean;
   theme?: "light" | "dark" | "system";
   background?: BackgroundThemeId;
   activeWorkspaceId?: string;
+  timezone?: string;
+  notifications?: NotificationPreferences;
   [key: string]: unknown;
 }
 
@@ -17,6 +35,8 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   showSunday: false,
   theme: "light",
   background: "default",
+  timezone: "UTC",
+  notifications: DEFAULT_NOTIFICATION_PREFERENCES,
 };
 
 export const users = pgTable("users", {
@@ -483,6 +503,54 @@ export const aiMessages = pgTable(
   ]
 );
 
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("push_subscriptions_endpoint_unique_idx").on(table.endpoint),
+    index("push_subscriptions_user_id_idx").on(table.userId),
+  ]
+);
+
+export const notificationLogs = pgTable(
+  "notification_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 50 }).notNull(), // 'morning_summary' | 'task_reminder' | 'test'
+    date: date("date"), // 'YYYY-MM-DD' for morning summaries
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+    status: varchar("status", { length: 20 }).default("sent").notNull(), // 'sent' | 'failed'
+    errorMessage: text("error_message"),
+    sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("notification_logs_user_id_idx").on(table.userId),
+    index("notification_logs_date_idx").on(table.date),
+    index("notification_logs_task_id_idx").on(table.taskId),
+    uniqueIndex("notification_logs_morning_summary_unique_idx")
+      .on(table.userId, table.date)
+      .where(sql`type = 'morning_summary'`),
+    uniqueIndex("notification_logs_task_reminder_unique_idx")
+      .on(table.userId, table.taskId)
+      .where(sql`type = 'task_reminder'`),
+  ]
+);
+
+
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -580,5 +648,12 @@ export type NewAiThread = typeof aiThreads.$inferInsert;
 
 export type AiMessage = typeof aiMessages.$inferSelect;
 export type NewAiMessage = typeof aiMessages.$inferInsert;
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+export type NotificationLog = typeof notificationLogs.$inferSelect;
+export type NewNotificationLog = typeof notificationLogs.$inferInsert;
+
 
 

@@ -169,6 +169,13 @@
       "when": 1790292494481,
       "tag": "0023_goofy_black_crow",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790953023888,
+      "tag": "0024_wide_speed_demon",
+      "breakpoints": true
     }
   ]
 }

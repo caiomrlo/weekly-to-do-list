@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BackgroundThemeId, UserPreferences } from "@/db/schema";
-import { Settings, Check } from "lucide-react";
+import { Settings, Check, Bell, Globe, Loader2 } from "lucide-react";
+import { usePushNotifications } from "@/lib/hooks/usePushNotifications";
 
 interface BackgroundOption {
   id: BackgroundThemeId;
@@ -85,10 +86,34 @@ export function SettingsMenu({
     };
   }, [isOpen]);
 
+  const {
+    isSupported,
+    permission,
+    isSubscribed,
+    notificationPreferences,
+    isLoading: isNotifLoading,
+    error: notifError,
+    subscribe,
+    unsubscribe,
+    updatePreferences: updateNotifPreferences,
+  } = usePushNotifications(preferences);
+
+  const morningDaily = notificationPreferences.morningDaily ?? true;
+  const morningHour = notificationPreferences.morningHour ?? 8;
+  const taskReminders = notificationPreferences.taskReminders ?? true;
+  const reminderMinutesBefore =
+    notificationPreferences.reminderMinutesBefore ?? 15;
+  const currentTz =
+    preferences.timezone ||
+    (typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : "UTC");
+
   const hasCustomDays =
     Boolean(onToggleDay) && (preferences.showSaturday || preferences.showSunday);
   const hasCustomBg = preferences.background && preferences.background !== "default";
-  const hasCustomSettings = hasCustomDays || hasCustomBg;
+  const hasCustomNotif = Boolean(isSubscribed);
+  const hasCustomSettings = hasCustomDays || hasCustomBg || hasCustomNotif;
   const activeBg = (preferences.background as BackgroundThemeId) || "default";
 
   return (
@@ -250,6 +275,167 @@ export function SettingsMenu({
               </div>
             </div>
           )}
+
+          {/* Section 3: Web Push Notifications */}
+          <div className="pt-3 border-t border-slate-200/60 dark:border-neutral-800/60">
+            <div className="pb-2 mb-1 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" />
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  Notifications
+                </span>
+              </div>
+              {isNotifLoading && (
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium animate-pulse">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Saving...
+                </span>
+              )}
+            </div>
+
+            {!isSupported ? (
+              <p className="px-2 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100/60 dark:bg-neutral-800/60 rounded-lg">
+                Push notifications are not supported in this browser.
+              </p>
+            ) : permission === "denied" ? (
+              <p className="px-2 py-1.5 text-[11px] text-rose-600 dark:text-rose-400 bg-rose-50/60 dark:bg-rose-950/40 rounded-lg">
+                Notifications are blocked in your browser settings.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {/* Master Push Switch */}
+                <button
+                  type="button"
+                  disabled={isNotifLoading}
+                  onClick={() => {
+                    if (isSubscribed) {
+                      unsubscribe();
+                    } else {
+                      subscribe();
+                    }
+                  }}
+                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-neutral-800/70 cursor-pointer transition-colors text-left"
+                >
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                    Push Notifications
+                  </span>
+                  <div
+                    className={`w-8 h-[18px] flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+                      isSubscribed
+                        ? "bg-amber-500"
+                        : "bg-slate-300 dark:bg-neutral-700"
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                        isSubscribed ? "translate-x-3.5" : "translate-x-0"
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Sub-options revealed when subscribed */}
+                {isSubscribed && (
+                  <div className="pl-2 space-y-2 pt-1 border-l-2 border-amber-200 dark:border-amber-900/60 ml-1.5">
+                    {/* Morning Daily Summary */}
+                    <div className="flex items-center justify-between gap-2 px-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateNotifPreferences({
+                            morningDaily: !morningDaily,
+                          })
+                        }
+                        className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                      >
+                        <span
+                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${
+                            morningDaily
+                              ? "bg-amber-500 border-amber-500 text-white"
+                              : "border-slate-300 dark:border-neutral-600"
+                          }`}
+                        >
+                          {morningDaily && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </span>
+                        Daily morning briefing
+                      </button>
+
+                      {morningDaily && (
+                        <select
+                          value={morningHour}
+                          onChange={(e) =>
+                            updateNotifPreferences({
+                              morningHour: parseInt(e.target.value, 10),
+                            })
+                          }
+                          className="text-[10px] bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded px-1.5 py-0.5 text-slate-700 dark:text-slate-200 focus:outline-hidden cursor-pointer"
+                        >
+                          <option value={6}>06:00 AM</option>
+                          <option value={7}>07:00 AM</option>
+                          <option value={8}>08:00 AM</option>
+                          <option value={9}>09:00 AM</option>
+                          <option value={10}>10:00 AM</option>
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Pre-task Reminder */}
+                    <div className="flex items-center justify-between gap-2 px-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateNotifPreferences({
+                            taskReminders: !taskReminders,
+                          })
+                        }
+                        className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                      >
+                        <span
+                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${
+                            taskReminders
+                              ? "bg-amber-500 border-amber-500 text-white"
+                              : "border-slate-300 dark:border-neutral-600"
+                          }`}
+                        >
+                          {taskReminders && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </span>
+                        Task time reminder
+                      </button>
+
+                      {taskReminders && (
+                        <select
+                          value={reminderMinutesBefore}
+                          onChange={(e) =>
+                            updateNotifPreferences({
+                              reminderMinutesBefore: parseInt(e.target.value, 10),
+                            })
+                          }
+                          className="text-[10px] bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded px-1.5 py-0.5 text-slate-700 dark:text-slate-200 focus:outline-hidden cursor-pointer"
+                        >
+                          <option value={5}>5 min before</option>
+                          <option value={10}>10 min before</option>
+                          <option value={15}>15 min before</option>
+                          <option value={30}>30 min before</option>
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Detected Timezone Info */}
+                    <div className="px-1 pt-0.5 text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                      <Globe className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{currentTz}</span>
+                    </div>
+                  </div>
+                )}
+
+                {notifError && (
+                  <p className="text-[10px] text-rose-600 dark:text-rose-400 px-1">
+                    {notifError}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -12,6 +12,8 @@ import {
   taskDocs,
   aiThreads,
   aiMessages,
+  pushSubscriptions,
+  notificationLogs,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -95,6 +97,26 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
       content: "Cascade AI Message",
     });
 
+    // Insert push subscription and notification log
+    const [sub] = await db
+      .insert(pushSubscriptions)
+      .values({
+        userId,
+        endpoint: "https://fcm.googleapis.com/fcm/send/cascade-test",
+        p256dh: "key",
+        auth: "secret",
+      })
+      .returning();
+
+    const [notifLog] = await db
+      .insert(notificationLogs)
+      .values({
+        userId,
+        type: "test",
+        status: "sent",
+      })
+      .returning();
+
     // Delete user
     await db.delete(users).where(eq(users.id, userId));
 
@@ -131,6 +153,18 @@ describe("Integration: Database Schema Integrity & Cascades", () => {
       .from(aiMessages)
       .where(eq(aiMessages.threadId, thread.id));
     expect(messagesCheck).toHaveLength(0);
+
+    const [subCheck] = await db
+      .select()
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.id, sub.id));
+    expect(subCheck).toBeUndefined();
+
+    const [notifLogCheck] = await db
+      .select()
+      .from(notificationLogs)
+      .where(eq(notificationLogs.id, notifLog.id));
+    expect(notifLogCheck).toBeUndefined();
   });
 
   it("should set foreign keys to NULL when project or tag is deleted (onDelete: set null)", async () => {
