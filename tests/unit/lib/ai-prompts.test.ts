@@ -91,4 +91,16 @@ describe("ai-prompts: buildAgentSystemPrompt", () => {
     expect(prompt).toContain("You HAVE the full capability to add, edit, and update the description");
     expect(prompt).toContain("ALWAYS execute `updateTask`");
   });
+
+  it("should contain intelligent naming rules for tasks and projects", () => {
+    const prompt = buildAgentSystemPrompt(baseContext);
+
+    expect(prompt).toContain("Intelligent Naming for Tasks & Projects");
+    expect(prompt).toContain("Preserve Verbatim");
+    expect(prompt).toContain("Intelligent Synthesis");
+    expect(prompt).toContain("Strip Conversational Noise & Meta-phrases");
+    expect(prompt).toContain("Project Naming Standards");
+    expect(prompt).toContain("**NEVER** use informal all-lowercase names");
+    expect(prompt).toContain("Project Context Awareness");
+  });
 });

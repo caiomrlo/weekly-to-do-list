@@ -105,7 +105,11 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
       description:
         "Create a single task in the active workspace. Pass date in YYYY-MM-DD format, or null/omit for backlog. Can include a structured description (content / notes / checklist) whenever the task involves preparation, multiple steps, or non-obvious context.",
       inputSchema: z.object({
-        title: z.string().describe("The clear, descriptive title of the task."),
+        title: z
+          .string()
+          .describe(
+            "The clean, professional, action-oriented title of the task. Strip conversational noise (e.g. 'crie uma tarefa para...', 'lembre-me de'). Capitalize proper nouns and format cleanly. If the user provided an exact name in quotes, preserve it verbatim."
+          ),
         description: z
           .string()
           .optional()
@@ -182,7 +186,11 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
         tasks: z
           .array(
             z.object({
-              title: z.string().describe("Task title."),
+              title: z
+                .string()
+                .describe(
+                  "Clean, professional, action-oriented task title. Strip conversational filler and capitalize properly. If linked to a project, avoid repeating the project name redundantly."
+                ),
               description: z
                 .string()
                 .optional()
@@ -264,7 +272,12 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
         "Update an existing task's title, description (content / notes), scheduled date, time, duration, completion status, or project. Use this whenever the user wants to add, edit, or update a task's description or content.",
       inputSchema: z.object({
         taskId: z.string().describe("The ID of the task to update."),
-        title: z.string().optional().describe("New title for the task."),
+        title: z
+          .string()
+          .optional()
+          .describe(
+            "New clean, professional task title if renaming. Strip conversational filler and format cleanly unless the user specified an exact title in quotes."
+          ),
         description: z
           .string()
           .nullable()
@@ -413,7 +426,11 @@ export function createAgentTools({ userId, workspaceId }: AgentToolsContext) {
     createProject: tool({
       description: "Create a new project in the active workspace.",
       inputSchema: z.object({
-        name: z.string().describe("Project name (e.g. Website Launch, Redesign)."),
+        name: z
+          .string()
+          .describe(
+            "Clean, professional project name with standard Title Case capitalization (e.g. 'Cliente Amanda', 'Website Amanda', 'Redesign do Portal'). Never use all-lowercase or conversational commands (e.g. do NOT use 'cliente amanda' or 'criar site'). If the user specified an explicit name in quotes, respect it."
+          ),
         color: z
           .string()
           .optional()
