@@ -22,7 +22,7 @@ export interface UseAudioRecorderReturn {
 
 export function useAudioRecorder({
   onTranscript,
-  maxDurationSeconds = 30,
+  maxDurationSeconds = 90,
 }: UseAudioRecorderOptions): UseAudioRecorderReturn {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -210,7 +210,7 @@ export function useAudioRecorder({
         const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
         setDuration(elapsedSec);
 
-        // Auto-stop when reaching max duration (30 seconds)
+        // Auto-stop when reaching max duration (90 seconds)
         if (elapsedSec >= maxDurationSeconds) {
           if (timerIntervalRef.current) {
             clearInterval(timerIntervalRef.current);

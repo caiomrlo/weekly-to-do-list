@@ -33,7 +33,7 @@ export function VoiceRecorderControl({
     clearError,
   } = useAudioRecorder({
     onTranscript,
-    maxDurationSeconds: 30,
+    maxDurationSeconds: 90,
   });
 
   // Auto-dismiss errors after 6 seconds
@@ -125,7 +125,7 @@ export function VoiceRecorderControl({
           onClick={startRecording}
           disabled={disabled}
           className="w-8 h-8 sm:w-9 sm:h-9 rounded-full text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-200/80 dark:hover:bg-neutral-700/80 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0 self-end"
-          title="Use microphone to dictate message (up to 30s)"
+          title="Use microphone to dictate message (up to 90s)"
           aria-label="Use microphone to dictate message"
         >
           <Mic className="w-4 h-4" />
