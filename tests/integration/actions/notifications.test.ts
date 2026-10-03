@@ -10,6 +10,7 @@ import {
   savePushSubscriptionAction,
   deletePushSubscriptionAction,
   updateNotificationPreferencesAction,
+  getVapidPublicKeyAction,
 } from "@/app/actions/notifications";
 import { pushSubscriptions, notificationLogs, users, tasks } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -32,6 +33,17 @@ describe("Integration: Push Notifications & Idempotency", () => {
     }
     testUser = await createTestUser();
     await loginAsTestUser(testUser);
+  });
+
+  it("should return VAPID public key dynamically for authenticated user", async () => {
+    const res = await getVapidPublicKeyAction();
+    expect(res.publicKey).toBeDefined();
+    expect(typeof res.publicKey).toBe("string");
+
+    // When logged out, should reject
+    logoutTestUser();
+    const unauthRes = await getVapidPublicKeyAction();
+    expect(unauthRes.error).toBe("Not authenticated.");
   });
 
   it("should save and update push subscription for authenticated user", async () => {

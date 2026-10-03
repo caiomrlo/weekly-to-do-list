@@ -10,6 +10,7 @@ import {
   savePushSubscriptionAction,
   deletePushSubscriptionAction,
   updateNotificationPreferencesAction,
+  getVapidPublicKeyAction,
 } from "@/app/actions/notifications";
 import { updateUserPreferencesAction } from "@/app/actions/user";
 
@@ -90,7 +91,16 @@ export function usePushNotifications(preferences: UserPreferences) {
         throw new Error("Push notifications are not supported in this browser.");
       }
 
-      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      let vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidPublicKey) {
+        const keyRes = await getVapidPublicKeyAction();
+        if (keyRes.publicKey) {
+          vapidPublicKey = keyRes.publicKey;
+        } else if (keyRes.error) {
+          throw new Error(keyRes.error);
+        }
+      }
+
       if (!vapidPublicKey) {
         throw new Error("Web Push is not configured on the server.");
       }

@@ -20,6 +20,26 @@ export interface PushSubscriptionInput {
   userAgent?: string;
 }
 
+export async function getVapidPublicKeyAction(): Promise<{
+  publicKey?: string;
+  error?: string;
+}> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { error: "Not authenticated." };
+  }
+
+  const publicKey =
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
+
+  if (!publicKey) {
+    console.error("[NotificationsAction] VAPID public key is not set in environment.");
+    return { error: "VAPID public key is not configured on the server." };
+  }
+
+  return { publicKey };
+}
+
 export async function savePushSubscriptionAction(
   input: PushSubscriptionInput
 ): Promise<{ success?: boolean; error?: string }> {
