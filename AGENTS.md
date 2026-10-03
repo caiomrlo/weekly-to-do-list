@@ -60,4 +60,5 @@ Strictly adhere to cognitive load reduction and clean interface rules across all
 - **Transient-Only Mutation Feedback**: Never leave static status indicators (e.g. permanent "Saved" text) polluting the layout. Feedback must be strictly transient and visible exclusively during active state transitions (e.g. animated `"Saving..."`), silently fading back to a clean state once resolved.
 - **Restrained, Professional Hover Interactions**: Avoid distracting hover effects. Never use scaling (`hover:scale-*`), positional translation (`hover:translate-*`), or icon rotations on hover across avatars, thumbnails, or action icons. Restrict hover states strictly to subtle color shifts, background tints, or ring highlights.
 
-
+## 8. Containerized Environment Variables
+- **Dynamic Retrieval for Public Configs**: In container deployments (Docker/Easypanel/Coolify), environment variables are injected at runtime, not build time. Never rely solely on static `process.env.NEXT_PUBLIC_*` in client code; always provide a Server Action or Route Handler fallback to fetch public configuration dynamically.
