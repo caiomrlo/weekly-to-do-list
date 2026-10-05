@@ -9,8 +9,19 @@ export async function middleware(request: NextRequest) {
 
   const isLoginPage = pathname === "/login" || pathname === "/login/";
   const isInviteRoute = pathname.startsWith("/invite");
+  const isPublicApiRoute =
+    pathname.startsWith("/api/cron") ||
+    pathname.startsWith("/api/avatar") ||
+    pathname.startsWith("/api/auth");
+  const isStaticPublicFile = pathname === "/sw.js";
 
-  if (!isAuthenticated && !isLoginPage && !isInviteRoute) {
+  if (
+    !isAuthenticated &&
+    !isLoginPage &&
+    !isInviteRoute &&
+    !isPublicApiRoute &&
+    !isStaticPublicFile
+  ) {
     const loginUrl = new URL("/login", request.url);
     if (pathname !== "/") {
       loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
@@ -35,6 +46,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/auth|api/cron|api/avatar|_next/static|_next/image|favicon.ico|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
